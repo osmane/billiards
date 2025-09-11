@@ -53,11 +53,14 @@ export class ThreeCushion implements Rules {
   }
 
   tableGeometry() {
-    TableGeometry.tableX = R * 49
-    TableGeometry.tableY = R * 24
-    TableGeometry.X = TableGeometry.tableX + R
-    TableGeometry.Y = TableGeometry.tableY + R
-    TableGeometry.hasPockets = false
+    // 2.84 m × 1.42 m playing surface (half‑dimensions: 1.42 m × 0.71 m)
+    TableGeometry.tableX = 1.42;        // half-length in metres
+    TableGeometry.tableY = 0.71;        // half-width in metres
+    // outer limits include one ball radius on each side
+    TableGeometry.X = TableGeometry.tableX + R;
+    TableGeometry.Y = TableGeometry.tableY + R;
+    // 3‑cushion tables have no pockets
+    TableGeometry.hasPockets = false;
   }
 
   table(): Table {
