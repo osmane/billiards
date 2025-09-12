@@ -1,6 +1,9 @@
 const path = require("path")
 const TerserPlugin = require("terser-webpack-plugin")
+const HtmlWebpackPlugin = require("html-webpack-plugin")
+const CopyWebpackPlugin = require("copy-webpack-plugin") // <-- BU SATIRI EKLEYİN
 let packagedeps = require("./package.json")
+
 module.exports = {
   entry: {
     vendor: Object.keys(packagedeps.dependencies),
@@ -16,6 +19,7 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /\.ts$/,
         use: "swc-loader",
         exclude: /node_modules/,
       },
@@ -39,19 +43,20 @@ module.exports = {
   performance: { hints: false },
   mode: "production",
   optimization: {
-    minimize: true,
-    minimizer: [
-      new TerserPlugin({
-        minify: TerserPlugin.swcMinify,
-        extractComments: false,
-        terserOptions: {
-          safari10: true,
-        },
-      }),
-    ],
-    usedExports: true,
-    moduleIds: "named",
+    // ...
   },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: "./index.html",
+      chunks: ["vendor", "index"],
+      filename: "index.html"
+    }),
+    new CopyWebpackPlugin({ 
+      patterns: [
+        { from: "public", to: "." } 
+      ]
+    })
+  ],
   stats: {
     errorDetails: true,
   },
