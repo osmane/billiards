@@ -61,7 +61,7 @@ export class Grid {
     lineMesh = new Mesh(geometry, material);
     lineMesh.position.set(0, Y / 2.1, lineZ);
     grid.add(lineMesh);
-    
+
     // "D" (Yarım halka - TorusGeometry olarak)
     const dRadius = R * 11.5;
     const dGeometry = new TorusGeometry(dRadius, LINE_THICKNESS / 2, 8, 100, Math.PI);
@@ -76,16 +76,16 @@ export class Grid {
    * 3-Bant (Karambol) masası için standart diamond noktalarını oluşturur.
    */
   private static createCaromDiamonds(): Group {
-    const diamonds = new Group();
+    const markings = new Group();
     const visualHalfLength = TableGeometry.X;
     const visualHalfWidth = TableGeometry.Y;
-    
+
+    // === BÖLÜM 1: Mevcut Diamond Noktalarının Çizimi ===
     const cushionThickness = R * 2.0;
     const cushionHeight = R * 1.25;
     const verticalPosition = (cushionHeight - R * 0.25) / 2;
     const diamondZ = verticalPosition + cushionHeight / 2 + 0.001;
 
-    // RENK DEĞİŞİKLİĞİ: Diamond rengi SARI olarak ayarlandı.
     const diamondMaterial = new MeshBasicMaterial({ color: 0xFFFF00 }); // Sarı renk
     const diamondRadius = R / 4;
     const diamondGeometry = new CircleGeometry(diamondRadius, 16);
@@ -93,26 +93,65 @@ export class Grid {
     const createDiamond = (x: number, y: number) => {
       const diamond = new Mesh(diamondGeometry, diamondMaterial);
       diamond.position.set(x, y, diamondZ);
-      diamonds.add(diamond);
+      markings.add(diamond);
     };
 
-    const longRailYPos = visualHalfWidth + cushionThickness / 2;
-    const longRailYNeg = -visualHalfWidth - cushionThickness / 2;
+    // Uzun bantlardaki diamond'lar ve X konumlarının saklanması
+    // --- DÜZELTME BURADA ---
+    // Dizinin 'number' türünde elemanlar içereceğini belirtiyoruz.
+    const xPositions: number[] = [];
     for (let i = -3; i <= 3; i++) {
-        const xPos = visualHalfLength * (i / 4.0);
-        createDiamond(xPos, longRailYPos);
-        createDiamond(xPos, longRailYNeg);
+      const xPos = visualHalfLength * (i / 4.0);
+      xPositions.push(xPos); // Izgara çizgileri için x konumlarını sakla
+      createDiamond(xPos, visualHalfWidth + cushionThickness / 2,);
+      createDiamond(xPos, -visualHalfWidth - cushionThickness / 2,);
     }
 
-    const shortRailXPos = visualHalfLength + cushionThickness / 2;
-    const shortRailXNeg = -visualHalfLength - cushionThickness / 2;
+    // Kısa bantlardaki diamond'lar
     const yPositions = [-visualHalfWidth / 2, 0, visualHalfWidth / 2];
-    for(const yPos of yPositions) {
-        createDiamond(shortRailXPos, yPos);
-        createDiamond(shortRailXNeg, yPos);
+    for (const yPos of yPositions) {
+      createDiamond(visualHalfLength + cushionThickness / 2, yPos);
+      createDiamond(-visualHalfLength - cushionThickness / 2, yPos);
     }
-    
-    return diamonds;
+
+    // === BÖLÜM 2: İsteğiniz Üzerine Eklenen Izgara Çizgileri ===
+    const LINE_THICKNESS = 0.004;
+    const lineZ = -0.035;
+    const lineMaterial = new MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4 });
+
+    // Dikey çizgileri oluştur
+    for (const xPos of xPositions) {
+        const geometry = new BoxGeometry(LINE_THICKNESS, 2 * visualHalfWidth, 0.01);
+        const lineMesh = new Mesh(geometry, lineMaterial);
+        
+        // SADECE VE SADECE x=0 olan merkez dikey çizgi için özel işlem yapıyoruz.
+        if (xPos === 0) {
+            // Çözüm A: Bu çizgiye en yüksek render önceliğini veriyoruz.
+            lineMesh.renderOrder = 3; 
+            // Çözüm B: Bu çizgiyi diğerlerinden fark edilemeyecek kadar az yukarı taşıyoruz.
+            // Bu, render motoru için son ve kesin komut olacaktır.
+            lineMesh.position.set(xPos, 0, lineZ + 0.001); 
+        } else {
+            // Diğer dikey çizgiler olduğu gibi kalıyor.
+            lineMesh.renderOrder = 2;
+            lineMesh.position.set(xPos, 0, lineZ);
+        }
+        
+        markings.add(lineMesh);
+    }
+
+    // Yatay çizgileri oluştur
+    for(const yPos of yPositions) {
+        // Derinliği burada da tutarlılık için artırıyoruz.
+        const geometry = new BoxGeometry(2 * visualHalfLength, LINE_THICKNESS, 0.01); // Değeri 0.0001'den 0.01'e yükselttik.
+        const lineMesh = new Mesh(geometry, lineMaterial);
+        lineMesh.position.set(0, yPos, lineZ);
+        // Yatay çizgilerin render sırasını 1 olarak bırakıyoruz.
+        lineMesh.renderOrder = 1;
+        markings.add(lineMesh);
+    }
+
+    return markings;
   }
 }
 
