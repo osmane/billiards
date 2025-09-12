@@ -16,7 +16,7 @@ export class Grid {
       this.point(0, (11.13 * R) / 0.5),
     ]
 
-    const stepx = TableGeometry.X / 4
+    const stepx = isCarom ? (TableGeometry.tableX / 4) : (TableGeometry.X / 4)
     const xs = [1, 2, 3, -1, -2, -3]
     const yedge = isCarom ? TableGeometry.tableY
                       : TableGeometry.tableY + R;

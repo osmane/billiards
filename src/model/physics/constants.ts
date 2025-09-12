@@ -4,7 +4,7 @@ export let muS = 0.16
 export let muC = 0.85
 export let rho = 0.034
 export let m = 0.23
-export let R = 0.03275
+//export let R = 0.03275
 export let e = 0.86
 
 // Mathaven specific
@@ -26,6 +26,21 @@ export const sinθ = 2 / 5
 // Fixed angle of cushion contact point above ball center
 export const cosθ = Math.sqrt(21) / 5
 
+// src/model/physics/constants.ts
+
+export const CAROM_TABLE_LENGTH = 2.84;     // Oynanabilir alan (banttan banta) uzunluk
+export const CAROM_TABLE_WIDTH  = 1.42;     // Oynanabilir alan (banttan banta) genişlik
+export const CAROM_BALL_DIAMETER = 0.0615;   // 61.5 mm
+export const CAROM_BALL_RADIUS = CAROM_BALL_DIAMETER / 2;
+
+// Diğer oyun modları için varsayılan değerler
+export let R = 0.028575; // Standart pool topu yarıçapı
+export let BALL_MASS = 0.165; // kg
+
+export function setR(radius: number) {
+  R = radius;
+}
+
 refresh()
 
 function refresh() {
@@ -34,10 +49,11 @@ function refresh() {
   I = (2 / 5) * m * R * R
 }
 
-export function setR(val: number) {
+/*export function setR(val: number) {
   R = val
   refresh()
-}
+}*/
+
 export function setm(val: number) {
   m = val
   refresh()

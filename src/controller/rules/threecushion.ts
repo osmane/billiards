@@ -6,7 +6,6 @@ import { WatchAim } from "../../controller/watchaim"
 import { WatchEvent } from "../../events/watchevent"
 import { Ball } from "../../model/ball"
 import { Outcome } from "../../model/outcome"
-import { R } from "../../model/physics/constants"
 import { Table } from "../../model/table"
 import { Rack } from "../../utils/rack"
 import { CameraTop } from "../../view/cameratop"
@@ -15,7 +14,12 @@ import { Rules } from "./rules"
 import { zero } from "../../utils/utils"
 import { Respot } from "../../utils/respot"
 import { StartAimEvent } from "../../events/startaimevent"
-import { setR } from "../../model/physics/constants";
+import {
+  setR,
+  CAROM_BALL_RADIUS,
+  CAROM_TABLE_LENGTH,
+  CAROM_TABLE_WIDTH
+} from "../../model/physics/constants";
 
 export class ThreeCushion implements Rules {
   readonly container: Container
@@ -45,26 +49,28 @@ export class ThreeCushion implements Rules {
     return zero
   }
 
-  asset(): string {
-    return "models/threecushion.min.gltf"
-  }
-
   secondToPlay() {
     this.cueball = this.container.table.balls[1]
   }
 
   tableGeometry() {
-    // 1) Carom top yarıçapı (61.5 mm → 0.03075 m)
-    setR(0.03075);
+    // 1) Global top yarıçapını 3-bant topu için ayarla
+    setR(CAROM_BALL_RADIUS);
 
-    // 2) Oyun yüzeyi (nose-to-nose) yarı ölçüler
-    TableGeometry.tableX = 1.42;
-    TableGeometry.tableY = 0.71;
+    // 2) Masa geometrisini standart karambol ölçüleriyle ayarla
+    TableGeometry.setCaromDimensions(
+      CAROM_TABLE_LENGTH,
+      CAROM_TABLE_WIDTH,
+      CAROM_BALL_RADIUS
+    );
 
-    // 3) Carom’da cepsiz masa
-    TableGeometry.X = TableGeometry.tableX; // +R eklemeyin (önerilen)
-    TableGeometry.Y = TableGeometry.tableY;
-    TableGeometry.hasPockets = false;
+    CameraTop.zoomFactor = 0.92;
+  }
+
+  asset(): string {
+    // Görsel masa TableMesh tarafından dinamik olarak oluşturulacağı için
+    // GLTF modelini yüklemiyoruz. Bu nedenle boş bir string döndürüyoruz.
+    return '';
   }
 
   table(): Table {

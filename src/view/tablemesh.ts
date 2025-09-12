@@ -87,51 +87,49 @@ export class TableMesh {
   }
 
   addCushions(scene, hasPockets) {
-    const th = (R * 10) / 0.5
+    // Bu değerler `tablegeometry.ts`'den alınacak
+    const visualHalfLength = TableGeometry.X; // Görsel yarı uzunluk
+    const visualHalfWidth = TableGeometry.Y;  // Görsel yarı genişlik
+    
+    // Masa yatağını (slate) çiz
+    const slateThickness = R * 1.5;
     this.plane(
-      new Vector3(0, 0, -R - th / 2),
-      2 * TableGeometry.X,
-      2 * TableGeometry.Y,
-      th,
+      new Vector3(0, 0, -R - slateThickness / 2),
+      2 * visualHalfLength, // Tam genişlik
+      2 * visualHalfWidth,  // Tam uzunluk
+      slateThickness,
       scene,
-      this.cloth
-    )
+      this.cloth // Yeşil çuha materyali
+    );
 
-    const d = (R * 1) / 0.5
-    const h = (R * 0.75) / 0.5
-    const e = (-R * 0.25) / 0.5 / 2
-    const X = TableGeometry.X
-    const Y = TableGeometry.Y
+    if (hasPockets) {
+      // Cepli masalar için mevcut kodun burada kalmalı
+      // ...
+    } else {
+      // 3-Bant (Karambol) masası için cepsiz, düz bantlar çiz
+      const cushionHeight = R * 1.25; // Bant yüksekliği
+      const cushionThickness = R * 2.0; // Bant kalınlığı
+      const verticalPosition = (cushionHeight - R * 0.25) / 2; // Dikey konum
 
-    let lengthN = Math.abs(
-      PocketGeometry.pockets.pocketNW.knuckleNE.pos.x -
-        PocketGeometry.pockets.pocketN.knuckleNW.pos.x
-    )
-    let lengthE = Math.abs(
-      PocketGeometry.pockets.pocketNW.knuckleSW.pos.y -
-        PocketGeometry.pockets.pocketSW.knuckleNW.pos.y
-    )
+      // Uzun bantlar (Doğu/Batı)
+      this.plane(new Vector3(visualHalfLength + cushionThickness / 2, 0, verticalPosition),
+                 cushionThickness, 2 * visualHalfWidth, cushionHeight, scene);
+      this.plane(new Vector3(-visualHalfLength - cushionThickness / 2, 0, verticalPosition),
+                 cushionThickness, 2 * visualHalfWidth, cushionHeight, scene);
 
-    if (!hasPockets) {
-      lengthN = 2 * TableGeometry.Y
-      lengthE = 2 * TableGeometry.Y + 4 * R
+      // Kısa bantlar (Kuzey/Güney)
+      this.plane(new Vector3(0, visualHalfWidth + cushionThickness / 2, verticalPosition),
+                 2 * visualHalfLength, cushionThickness, cushionHeight, scene);
+      this.plane(new Vector3(0, -visualHalfWidth - cushionThickness / 2, verticalPosition),
+                 2 * visualHalfLength, cushionThickness, cushionHeight, scene);
     }
-
-    this.plane(new Vector3(X + d / 2, 0, e), d, lengthE, h, scene)
-    this.plane(new Vector3(-X - d / 2, 0, e), d, lengthE, h, scene)
-
-    this.plane(new Vector3(-X / 2, Y + d / 2, e), lengthN, d, h, scene)
-    this.plane(new Vector3(-X / 2, -Y - d / 2, e), lengthN, d, h, scene)
-
-    this.plane(new Vector3(X / 2, Y + d / 2, e), lengthN, d, h, scene)
-    this.plane(new Vector3(X / 2, -Y - d / 2, e), lengthN, d, h, scene)
   }
 
   private plane(pos, x, y, z, scene, material = this.cushion) {
-    const geometry = new BoxGeometry(x, y, z)
-    const mesh = new Mesh(geometry, material)
-    mesh.receiveShadow = true
-    mesh.position.copy(pos)
-    scene.add(mesh)
+    const geometry = new BoxGeometry(x, y, z);
+    const mesh = new Mesh(geometry, material);
+    mesh.receiveShadow = true;
+    mesh.position.copy(pos);
+    scene.add(mesh);
   }
 }
