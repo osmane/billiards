@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>multi player billiards testing setup</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="description" content="billiards" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"
+    />
+  </head>
+
+  <body>
+    <h1>tailuge/billiards multiplayer test page</h1>
+    local assets (for dev)
+    <br />
+    single player
+    <ul>
+      <li><a href="/dist/">single player nineball</a></li>
+      <li>
+        <a href="/dist/?ruletype=threecushion">single player three cushion</a>
+      </li>
+      <li>
+        <a href="/dist/?ruletype=fourteenone">single player 14-1</a>
+      </li>
+      <li>
+        <a href="/dist/?ruletype=snooker">single player snooker</a>
+      </li>
+    </ul>
+    two player
+    <ul>
+      <li>
+        <a class="addwss" href="./2p.html?ruletype=nineball"
+          >two players nineball in single window</a
+        >
+        for quick testing
+      </li>
+      <li>
+        <a class="addwss" href="./2p.html?ruletype=threecushion"
+          >two players three cushion in single window</a
+        >
+      </li>
+      <li>
+        <a class="addwss" href="./2p.html?ruletype=fourteenone"
+          >two players 14-1 in single window</a
+        >
+      </li>
+      <li>
+        <a class="addwss" href="./2p.html?ruletype=snooker"
+          >two players snooker in single window</a
+        >
+      </li>
+    </ul>
+  </body>
+
+  <script>
+    const server = window.location.origin
+    const wss = server.replace(/^http/, "ws") + "/ws"
+    const wssparam = `websocketserver=${wss}`
+    const elts = document.getElementsByClassName("addwss")
+    for (const elt of elts) {
+      elt.href += `&${wssparam}`
+    }
+  </script>
+</html>
