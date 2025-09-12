@@ -5,7 +5,7 @@ import { Table } from "../model/table"
 import { Grid } from "./grid"
 import { renderer } from "../utils/webgl"
 import { Assets } from "./assets"
-import { Snooker } from "../controller/rules/snooker"
+// Snooker import'u artık gerekli olmadığı için kaldırılabilir, çünkü bu mantık Grid sınıfına taşındı.
 
 export class View {
   readonly scene = new Scene()
@@ -78,9 +78,12 @@ export class View {
     }
     this.scene.add(this.assets.table)
     this.table.mesh = this.assets.table
-    if (this.assets.rules.asset() !== Snooker.tablemodel) {
-      this.scene.add(new Grid().generateLineSegments())
-    }
+    
+    // --- DEĞİŞİKLİK BURADA ---
+    // Eski, koşullu ve hatalı grid oluşturma kodunu kaldırıyoruz.
+    // Yerine, oyun moduna göre doğru işaretleri (grid veya diamond)
+    // kendisi oluşturan yeni statik fonksiyonumuzu çağırıyoruz.
+    this.scene.add(Grid.createMarkings())
   }
 
   ballToCheck = 0
