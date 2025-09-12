@@ -59,10 +59,10 @@ export class BallMesh {
   }
 
   initialiseMesh(color) {
-    const geometry = new IcosahedronGeometry(R, 1)
+    const geometry = new IcosahedronGeometry(R, 4)
     const material = new MeshPhongMaterial({
       emissive: 0,
-      flatShading: true,
+      flatShading: false,
       vertexColors: true,
       forceSinglePass: true,
       shininess: 25,
