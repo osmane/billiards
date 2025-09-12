@@ -66,6 +66,7 @@ export class ThreeCushion implements Rules {
 
     CameraTop.zoomFactor = 0.92;
   }
+  
 
   asset(): string {
     // Görsel masa TableMesh tarafından dinamik olarak oluşturulacağı için
