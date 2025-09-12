@@ -32,37 +32,42 @@ export class Assets {
     })
     // Load table model and scale it to match TableGeometry dimensions
     importGltf(this.rules.asset(), (m) => {
-      // Raw Three.js scene (already scaled in importGltf by R/0.5)
-      this.table = m.scene
-      TableMesh.mesh = m.scene.children[0]
+      this.table = m.scene;
+      TableMesh.mesh = m.scene.children[0];
 
-      // Compute bounding box of the loaded table mesh
-      const bbox = new Box3().setFromObject(this.table)
-      const size = new Vector3()
-      bbox.getSize(size)
+      // 1) Use the main table mesh (children[0]) for measuring playfield size.
+      const playfield = TableMesh.mesh;
+      playfield.updateMatrixWorld(true);
 
-      // TableGeometry.tableX/Y are half-lengths, so multiply by 2 for full dimensions
-      const targetLengthX = TableGeometry.tableX * 2
-      const targetLengthZ = TableGeometry.tableY * 2
+      // 2) Measure its bounding box in X (length) and Y (width) – Z is height!
+      let bbox = new Box3().setFromObject(playfield);
+      const size = new Vector3();
+      bbox.getSize(size);
 
-      // Calculate a uniform scaling factor based on width and length
-      const scaleX = targetLengthX / (size.x || 1)
-      const scaleZ = targetLengthZ / (size.z || 1)
-      const uniformScale = Math.min(scaleX, scaleZ)
+      // TableGeometry.tableX/Y are half-dimensions; multiply by 2 for full nose‑to‑nose size.
+      const targetLength = TableGeometry.tableX * 2;
+      const targetWidth = TableGeometry.tableY * 2;
 
-      // Apply the uniform scale to the entire table scene
-      this.table.scale.multiplyScalar(uniformScale)
-      this.table.updateMatrixWorld(true)
+      // 3) Compute a uniform scale factor using size.x and size.y.
+      const scaleX = targetLength / (size.x || 1);
+      const scaleY = targetWidth / (size.y || 1);
+      const uniformScale = Math.min(scaleX, scaleY);
 
-      // Optional: re-centre the model on the origin (0,0) in the XZ-plane
-      const center = new Vector3()
-      bbox.getCenter(center)
-      this.table.position.x -= center.x * uniformScale
-      this.table.position.z -= center.z * uniformScale
+      // Apply the uniform scale to the whole table scene.
+      this.table.scale.multiplyScalar(uniformScale);
+      this.table.updateMatrixWorld(true);
 
-      // Notify that this asset has finished loading
-      this.done()
-    })
+      // 4) Recompute the bounding box after scaling and re-centre the model.
+      bbox = new Box3().setFromObject(playfield);
+      const center = new Vector3();
+      bbox.getCenter(center);
+      this.table.position.x -= center.x;
+      this.table.position.y -= center.y; // y-axis is the table’s short dimension
+      // leave z unchanged
+
+      this.done();
+    });
+
     // Load cue model (no additional scaling needed)
     importGltf("models/cue.gltf", (m) => {
       // m: GLTF object; m.scene holds the Three.js scene; m.scene.children[0] is the mesh
