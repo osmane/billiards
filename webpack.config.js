@@ -10,7 +10,7 @@ module.exports = {
     compare: { dependOn: "vendor", import: "./src/compare.ts" },
   },
   output: {
-    path: path.resolve(__dirname, "docs"),
+    path: path.resolve(__dirname, "dist"),
     filename: "[name].js",
   },
   module: {
@@ -26,7 +26,7 @@ module.exports = {
   },
   devServer: {
     static: {
-      directory: path.join(__dirname, "docs"),
+      directory: path.join(__dirname, "dist"),
     },
     allowedHosts: [".gitpod.io"],
     host: "0.0.0.0",
