@@ -13,7 +13,7 @@ import { PocketGeometry } from "./pocketgeometry"
 import { R } from "../model/physics/constants"
 
 export class TableMesh {
-  logger = (_) => {}
+  logger = (_) => { }
 
   static mesh
 
@@ -34,7 +34,7 @@ export class TableMesh {
       const k = PocketGeometry.pockets.pocketNW.knuckleNE
       this.logger(
         "knuckle-pocket gap = " +
-          (p.pos.distanceTo(k.pos) - p.radius - k.radius)
+        (p.pos.distanceTo(k.pos) - p.radius - k.radius)
       )
     }
     return group
@@ -87,10 +87,9 @@ export class TableMesh {
   }
 
   addCushions(scene, hasPockets) {
-    // Bu değerler `tablegeometry.ts`'den alınacak
     const visualHalfLength = TableGeometry.X; // Görsel yarı uzunluk
     const visualHalfWidth = TableGeometry.Y;  // Görsel yarı genişlik
-    
+
     // Masa yatağını (slate) çiz
     const slateThickness = R * 1.5;
     this.plane(
@@ -103,25 +102,31 @@ export class TableMesh {
     );
 
     if (hasPockets) {
-      // Cepli masalar için mevcut kodun burada kalmalı
+      // Cepli masalar için mevcut kod
       // ...
     } else {
+      // --- DEĞİŞİKLİK BURADA ---
       // 3-Bant (Karambol) masası için cepsiz, düz bantlar çiz
-      const cushionHeight = R * 1.25; // Bant yüksekliği
-      const cushionThickness = R * 2.0; // Bant kalınlığı
+      const cushionHeight = R * 1.25;
+      const cushionThickness = R * 2.0;
       const verticalPosition = -R + (cushionHeight / 2);
 
+      // Uzun bantların (oyun yüzeyinin dışındaki) tam uzunluğunu hesapla
+      const fullCushionLength = 2 * visualHalfLength + 2 * cushionThickness;
+      // Kısa bantların (oyun yüzeyinin dışındaki) tam uzunluğunu hesapla
+      const fullCushionWidth = 2 * visualHalfWidth;
+
       // Uzun bantlar (Doğu/Batı)
-      this.plane(new Vector3(visualHalfLength + cushionThickness / 2, 0, verticalPosition),
-                 cushionThickness, 2 * visualHalfWidth, cushionHeight, scene);
-      this.plane(new Vector3(-visualHalfLength - cushionThickness / 2, 0, verticalPosition),
-                 cushionThickness, 2 * visualHalfWidth, cushionHeight, scene);
+      this.plane(new Vector3(0, visualHalfWidth + cushionThickness / 2, verticalPosition),
+        fullCushionLength, cushionThickness, cushionHeight, scene);
+      this.plane(new Vector3(0, -visualHalfWidth - cushionThickness / 2, verticalPosition),
+        fullCushionLength, cushionThickness, cushionHeight, scene);
 
       // Kısa bantlar (Kuzey/Güney)
-      this.plane(new Vector3(0, visualHalfWidth + cushionThickness / 2, verticalPosition),
-                 2 * visualHalfLength, cushionThickness, cushionHeight, scene);
-      this.plane(new Vector3(0, -visualHalfWidth - cushionThickness / 2, verticalPosition),
-                 2 * visualHalfLength, cushionThickness, cushionHeight, scene);
+      this.plane(new Vector3(visualHalfLength + cushionThickness / 2, 0, verticalPosition),
+        cushionThickness, fullCushionWidth, cushionHeight, scene);
+      this.plane(new Vector3(-visualHalfLength - cushionThickness / 2, 0, verticalPosition),
+        cushionThickness, fullCushionWidth, cushionHeight, scene);
     }
   }
 

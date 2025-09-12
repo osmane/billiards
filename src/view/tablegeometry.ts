@@ -1,5 +1,3 @@
-// src/view/tablegeometry.ts
-
 import { R } from "../model/physics/constants"
 
 function getDefaultPoolDimensions(radius: number) {
