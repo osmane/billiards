@@ -15,6 +15,7 @@ import { Rules } from "./rules"
 import { zero } from "../../utils/utils"
 import { Respot } from "../../utils/respot"
 import { StartAimEvent } from "../../events/startaimevent"
+import { setR } from "../../model/physics/constants";
 
 export class ThreeCushion implements Rules {
   readonly container: Container
@@ -53,13 +54,16 @@ export class ThreeCushion implements Rules {
   }
 
   tableGeometry() {
-    // 2.84 m × 1.42 m playing surface (half‑dimensions: 1.42 m × 0.71 m)
-    TableGeometry.tableX = 1.42;        // half-length in metres
-    TableGeometry.tableY = 0.71;        // half-width in metres
-    // outer limits include one ball radius on each side
-    TableGeometry.X = TableGeometry.tableX + R;
-    TableGeometry.Y = TableGeometry.tableY + R;
-    // 3‑cushion tables have no pockets
+    // 1) Carom top yarıçapı (61.5 mm → 0.03075 m)
+    setR(0.03075);
+
+    // 2) Oyun yüzeyi (nose-to-nose) yarı ölçüler
+    TableGeometry.tableX = 1.42;
+    TableGeometry.tableY = 0.71;
+
+    // 3) Carom’da cepsiz masa
+    TableGeometry.X = TableGeometry.tableX; // +R eklemeyin (önerilen)
+    TableGeometry.Y = TableGeometry.tableY;
     TableGeometry.hasPockets = false;
   }
 
