@@ -1,9 +1,10 @@
 {
   "name": "billiards",
   "description": "Billiards",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "author": "tailuge",
-  "homepage": "https://github.com/tailuge",
+  "homepage": "https://osmane.github.io/billiards",
+  "main": "index.js",
   "keywords": [
     "billiards",
     "snooker",
@@ -16,7 +17,7 @@
     "yarn": "1.x"
   },
   "scripts": {
-    "test": "jest --config ./test/jest.config.js --verbose",
+    "test": "jest --testPathPattern=test",
     "coverage": "jest --config ./test/jest.config.js --coverage",
     "dev": "webpack",
     "serve": "webpack serve",
@@ -24,8 +25,9 @@
     "markdownlint": "npx markdownlint-cli2 README.md --fix",
     "deps": "npx yarn-check --skip-unused",
     "gltfpack": "npx gltfpack -i ...",
-    "build": "webpack --mode production",
-    "deploy": "gh-pages -d dist"
+    "build": "webpack",
+    "start": "webpack serve",
+    "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
     "cross-fetch": "^4.1.0",

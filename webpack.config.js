@@ -9,6 +9,10 @@ module.exports = {
     mathaven: { dependOn: "vendor", import: "./src/mathaven.ts" },
     compare: { dependOn: "vendor", import: "./src/compare.ts" },
   },
+  output: {
+    path: path.resolve(__dirname, "docs"),
+    filename: "[name].js",
+  },
   module: {
     rules: [
       {
@@ -22,7 +26,7 @@ module.exports = {
   },
   devServer: {
     static: {
-      directory: path.join(__dirname, "dist"),
+      directory: path.join(__dirname, "docs"),
     },
     allowedHosts: [".gitpod.io"],
     host: "0.0.0.0",
