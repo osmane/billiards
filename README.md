@@ -7,7 +7,7 @@
 [![Open in Gitpod](https://img.shields.io/badge/Gitpod-Open%20in%20Gitpod-%230092CF.svg)](https://gitpod.io/#https://github.com/tailuge/billiards)
 ![GitHub](https://img.shields.io/github/license/tailuge/billiards.svg)
 
-[![Demo and Screenshot](https://raw.githubusercontent.com/tailuge/billiards/master/dist/images/t3.png)](https://tailuge.github.io/billiards/dist)
+[![Demo and Screenshot](https://raw.githubusercontent.com/tailuge/billiards/master/dist/images/t3.png)](https://osmane.github.io/billiards/)
 
 This is an open-source project bringing unsophisticated billiards physics written in typescript to the browser. Play pool, snooker, or 3-cushion online right here.
 
@@ -24,11 +24,11 @@ This is an open-source project bringing unsophisticated billiards physics writte
 
 Demos run in all major desktop and mobile browsers and uses WebGL
 
-* [Nine ball ⬀](https://tailuge.github.io/billiards/dist) make a break and share replay link with friends
-* [Three cushion billiards ⬀](https://tailuge.github.io/billiards/dist?ruletype=threecushion) the ultimate test of physics and player (average on both counts)
-* [Snooker ⬀](https://tailuge.github.io/billiards/dist?ruletype=snooker) we await the first 147 submission to the leaderboard.
-* 4-ball [Straight pool ⬀](https://tailuge.github.io/billiards/dist?ruletype=fourteenone). 
-* Inspect physics and tweak constants using [diagrams](https://tailuge.github.io/billiards/dist/diagrams/diagrams.html).
+* [Nine ball ⬀](https://osmane.github.io/billiards/) make a break and share replay link with friends
+* [Three cushion billiards ⬀](https://osmane.github.io/billiards/?ruletype=threecushion) the ultimate test of physics and player (average on both counts)
+* [Snooker ⬀](https://osmane.github.io/billiards/?ruletype=snooker) we await the first 147 submission to the leaderboard.
+* 4-ball [Straight pool ⬀](https://osmane.github.io/billiards/?ruletype=fourteenone). 
+* Inspect physics and tweak constants using [diagrams](https://osmane.github.io/billiards//diagrams/diagrams.html).
 * Try to get on the leaderboard of highest [breaks](https://scoreboard-tailuge.vercel.app/leaderboard.html) hosted on vercel.com
 * Try [two player](https://scoreboard-tailuge.vercel.app/lobby) online lobby using nchan
 
@@ -75,7 +75,7 @@ where
 
 #### collisions
 
-Based on paper by [Alciatore](https://billiards.colostate.edu/technical_proofs/new/TP_A-14.pdf) incorporating throw effect due to the small amount of friction between balls. Figures to prove consistency between the [code](./src/model/physics/collisionthrow.ts) and paper [here](https://tailuge.github.io/billiards/dist/diagrams/mathaven.html). 
+Based on paper by [Alciatore](https://billiards.colostate.edu/technical_proofs/new/TP_A-14.pdf) incorporating throw effect due to the small amount of friction between balls. Figures to prove consistency between the [code](./src/model/physics/collisionthrow.ts) and paper [here](https://osmane.github.io/billiards//diagrams/mathaven.html). 
 
 
 For ball $a$:
@@ -112,7 +112,7 @@ $\hat{t}$: tangential unit vector perpendicular to $\hat{n}$.
 
 #### cushion bounce
 
-This is based on a paper by [Mathaven](https://billiards.colostate.edu/physics_articles/Mathavan_IMechE_2010.pdf). Many of the [figures](https://tailuge.github.io/billiards/dist/diagrams/mathaven.html) from the paper are recreated to confirm correctness.
+This is based on a paper by [Mathaven](https://billiards.colostate.edu/physics_articles/Mathavan_IMechE_2010.pdf). Many of the [figures](https://osmane.github.io/billiards//diagrams/mathaven.html) from the paper are recreated to confirm correctness.
 
 Slip velocity at cushion contact point I
 
