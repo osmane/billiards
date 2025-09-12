@@ -7,7 +7,7 @@
 [![Open in Gitpod](https://img.shields.io/badge/Gitpod-Open%20in%20Gitpod-%230092CF.svg)](https://gitpod.io/#https://github.com/tailuge/billiards)
 ![GitHub](https://img.shields.io/github/license/tailuge/billiards.svg)
 
-[![Demo and Screenshot](https://raw.githubusercontent.com/osmane/billiards/master/dist/images/t3.png)](https://osmane.github.io/billiards/)
+[![Demo and Screenshot](https://raw.githubusercontent.com/osmane/billiards/master/public/images/t3.png)](https://osmane.github.io/billiards/)
 
 This is an open-source project bringing unsophisticated billiards physics written in typescript to the browser. Play pool, snooker, or 3-cushion online right here.
 
@@ -262,7 +262,7 @@ July 2019
 
 March 2021
 
-![2021](https://raw.githubusercontent.com/osmane/billiards/master/dist/images/t3.png)
+![2021](https://raw.githubusercontent.com/osmane/billiards/master/public/images/t3.png)
 
 August 2023 (mobile)
 
