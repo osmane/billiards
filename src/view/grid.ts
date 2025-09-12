@@ -77,14 +77,16 @@ export class Grid {
    */
   private static createCaromDiamonds(): Group {
     const markings = new Group();
+    
+    // --- DEĞİŞİKLİK BURADA BAŞLIYOR ---
+
+    // 1. Gerekli tüm boyutları tanımla: Hem fiziksel (hesaplama için) hem de görsel (çizim için)
+    const physicalHalfLength = TableGeometry.tableX;
+    const physicalHalfWidth = TableGeometry.tableY;
     const visualHalfLength = TableGeometry.X;
     const visualHalfWidth = TableGeometry.Y;
-
-    // === BÖLÜM 1: Mevcut Diamond Noktalarının Çizimi ===
+    
     const cushionThickness = R * 2.0;
-    const cushionHeight = R * 1.25;
-    const verticalPosition = (cushionHeight - R * 0.25) / 2;
-    const diamondZ = verticalPosition + cushionHeight / 2 + 0.001;
 
     const diamondMaterial = new MeshBasicMaterial({ color: 0xFFFF00 }); // Sarı renk
     const diamondRadius = R / 4;
@@ -92,63 +94,66 @@ export class Grid {
 
     const createDiamond = (x: number, y: number) => {
       const diamond = new Mesh(diamondGeometry, diamondMaterial);
+      const cushionHeight = R * 1.25;
+      const diamondZ = -R + cushionHeight + 0.0001;
       diamond.position.set(x, y, diamondZ);
       markings.add(diamond);
     };
 
-    // Uzun bantlardaki diamond'lar ve X konumlarının saklanması
-    // --- DÜZELTME BURADA ---
-    // Dizinin 'number' türünde elemanlar içereceğini belirtiyoruz.
+    // 2. Diamond ve Grid pozisyonlarını FİZİKSEL boyutlara göre hesapla
     const xPositions: number[] = [];
     for (let i = -3; i <= 3; i++) {
-      const xPos = visualHalfLength * (i / 4.0);
-      xPositions.push(xPos); // Izgara çizgileri için x konumlarını sakla
-      createDiamond(xPos, visualHalfWidth + cushionThickness / 2,);
-      createDiamond(xPos, -visualHalfWidth - cushionThickness / 2,);
+      // HESAPLAMAYI FİZİKSEL GENİŞLİKLE YAP
+      const xPos = physicalHalfLength * (i / 4.0);
+      xPositions.push(xPos); 
     }
 
-    // Kısa bantlardaki diamond'lar
-    const yPositions = [-visualHalfWidth / 2, 0, visualHalfWidth / 2];
+    // 3. Hesaplanan FİZİKSEL pozisyonları kullanarak diamond'ları GÖRSEL konumlara (bantların üzerine) yerleştir.
+    for (const xPos of xPositions) {
+        createDiamond(xPos, visualHalfWidth + cushionThickness / 2);
+        createDiamond(xPos, -visualHalfWidth - cushionThickness / 2);
+    }
+    
+    // Y ekseni için de aynı düzeltmeyi yap
+    const yPositions = [
+        -physicalHalfWidth / 2, 
+        0, 
+        physicalHalfWidth / 2
+    ];
     for (const yPos of yPositions) {
       createDiamond(visualHalfLength + cushionThickness / 2, yPos);
       createDiamond(-visualHalfLength - cushionThickness / 2, yPos);
     }
 
-    // === BÖLÜM 2: İsteğiniz Üzerine Eklenen Izgara Çizgileri ===
+    // === BÖLÜM 2: Izgara Çizgileri ===
     const LINE_THICKNESS = 0.004;
     const lineZ = -0.035;
     const lineMaterial = new MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4 });
 
-    // Dikey çizgileri oluştur
+    // 4. Dikey çizgileri, FİZİKSEL pozisyonlara göre ama GÖRSEL uzunlukta çiz.
     for (const xPos of xPositions) {
-        const geometry = new BoxGeometry(LINE_THICKNESS, 2 * visualHalfWidth, 0.01);
-        const lineMesh = new Mesh(geometry, lineMaterial);
-        
-        // SADECE VE SADECE x=0 olan merkez dikey çizgi için özel işlem yapıyoruz.
-        if (xPos === 0) {
-            // Çözüm A: Bu çizgiye en yüksek render önceliğini veriyoruz.
-            lineMesh.renderOrder = 3; 
-            // Çözüm B: Bu çizgiyi diğerlerinden fark edilemeyecek kadar az yukarı taşıyoruz.
-            // Bu, render motoru için son ve kesin komut olacaktır.
-            lineMesh.position.set(xPos, 0, lineZ + 0.001); 
-        } else {
-            // Diğer dikey çizgiler olduğu gibi kalıyor.
-            lineMesh.renderOrder = 2;
-            lineMesh.position.set(xPos, 0, lineZ);
-        }
-        
-        markings.add(lineMesh);
+      // Çizginin uzunluğu hala masanın tamamını kaplamalı (visualHalfWidth)
+      const geometry = new BoxGeometry(LINE_THICKNESS, 2 * visualHalfWidth, 0.01);
+      const lineMesh = new Mesh(geometry, lineMaterial);
+      
+      if (xPos === 0) {
+        lineMesh.renderOrder = 3;
+        lineMesh.position.set(xPos, 0, lineZ + 0.001);
+      } else {
+        lineMesh.renderOrder = 2;
+        lineMesh.position.set(xPos, 0, lineZ);
+      }
+      markings.add(lineMesh);
     }
 
-    // Yatay çizgileri oluştur
-    for(const yPos of yPositions) {
-        // Derinliği burada da tutarlılık için artırıyoruz.
-        const geometry = new BoxGeometry(2 * visualHalfLength, LINE_THICKNESS, 0.01); // Değeri 0.0001'den 0.01'e yükselttik.
-        const lineMesh = new Mesh(geometry, lineMaterial);
-        lineMesh.position.set(0, yPos, lineZ);
-        // Yatay çizgilerin render sırasını 1 olarak bırakıyoruz.
-        lineMesh.renderOrder = 1;
-        markings.add(lineMesh);
+    // 5. Yatay çizgileri, FİZİKSEL pozisyonlara göre ama GÖRSEL uzunlukta çiz.
+    for (const yPos of yPositions) {
+      // Çizginin uzunluğu hala masanın tamamını kaplamalı (visualHalfLength)
+      const geometry = new BoxGeometry(2 * visualHalfLength, LINE_THICKNESS, 0.01); 
+      const lineMesh = new Mesh(geometry, lineMaterial);
+      lineMesh.position.set(0, yPos, lineZ);
+      lineMesh.renderOrder = 1;
+      markings.add(lineMesh);
     }
 
     return markings;

@@ -109,7 +109,7 @@ export class TableMesh {
       // 3-Bant (Karambol) masası için cepsiz, düz bantlar çiz
       const cushionHeight = R * 1.25; // Bant yüksekliği
       const cushionThickness = R * 2.0; // Bant kalınlığı
-      const verticalPosition = (cushionHeight - R * 0.25) / 2; // Dikey konum
+      const verticalPosition = -R + (cushionHeight / 2);
 
       // Uzun bantlar (Doğu/Batı)
       this.plane(new Vector3(visualHalfLength + cushionThickness / 2, 0, verticalPosition),
