@@ -5,7 +5,7 @@ export function renderer(element: HTMLElement) {
     return undefined
   }
 
-  const renderer = new WebGLRenderer({ antialias: false })
+  const renderer = new WebGLRenderer({ antialias: true })
   renderer.shadowMap.enabled = false
   renderer.autoClear = false
   renderer.setSize(element.offsetWidth, element.offsetHeight)
