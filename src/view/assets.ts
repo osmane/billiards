@@ -1,4 +1,5 @@
-import { Mesh, Box3, Vector3 } from "three"
+// src/view/assets.ts
+import { Object3D, Mesh, Box3, Vector3 } from "three"
 import { RuleFactory } from "../controller/rules/rulefactory"
 import { importGltf } from "../utils/gltf"
 import { Rules } from "../controller/rules/rules"
@@ -8,78 +9,123 @@ import { CueMesh } from "./cuemesh"
 import { TableGeometry } from "./tablegeometry"
 
 export class Assets {
-  ready
+  ready: () => void
   rules: Rules
-  background: Mesh
-  table: Mesh
-  cue: Mesh
 
+  // Not: GLTF.scene genelde Group/Object3D; Mesh yerine Object3D daha güvenli
+  background: Object3D | Mesh
+  table: Object3D | Mesh
+  cue: Object3D | Mesh
   sound: Sound
 
-  constructor(ruletype) {
-    // Create rule instance and set up table geometry for current mode
+  constructor(ruletype: string) {
+    // Oyun kuralını oluştur ve TableGeometry’yi o moda göre ayarla
     this.rules = RuleFactory.create(ruletype, null)
     this.rules.tableGeometry()
   }
 
-  loadFromWeb(ready) {
+  loadFromWeb(ready: () => void) {
     this.ready = ready
     this.sound = new Sound(true)
-    // Load background model
+
+    // 1) Arka plan modeli
     importGltf("models/background.gltf", (m) => {
       this.background = m.scene
       this.done()
     })
-    // Load table model and scale it to match TableGeometry dimensions
+
+    // 2) Masa modeli (oyun yüzeyine göre ölçekle & merkezle)
     importGltf(this.rules.asset(), (m) => {
-      this.table = m.scene;
-      TableMesh.mesh = m.scene.children[0];
+      this.table = m.scene
 
-      // 1) Use the main table mesh (children[0]) for measuring playfield size.
-      const playfield = TableMesh.mesh;
-      playfield.updateMatrixWorld(true);
+      // --- Playfield (kumaş) alt-mesh’ini seç ---
+      // Öncelik: TableMesh.mesh -> doğrudan çocuklarda isimle eşleşme -> tüm ağaçta traverse -> children[0]
+      let playfield: Object3D | undefined = TableMesh.mesh
 
-      // 2) Measure its bounding box in X (length) and Y (width) – Z is height!
-      let bbox = new Box3().setFromObject(playfield);
-      const size = new Vector3();
-      bbox.getSize(size);
+      if (!playfield) {
+        const kids = Array.isArray(this.table.children) ? this.table.children : []
+        playfield = kids.find((n) => {
+          const nm = (n.name || "").toLowerCase()
+          return nm.includes("cloth") || nm.includes("playfield") || nm.includes("felt")
+        })
+      }
 
-      // TableGeometry.tableX/Y are half-dimensions; multiply by 2 for full nose‑to‑nose size.
-      const targetLength = TableGeometry.tableX * 2;
-      const targetWidth = TableGeometry.tableY * 2;
+      if (!playfield) {
+        this.table.traverse((o) => {
+          if (playfield) return
+          const nm = (o.name || "").toLowerCase()
+          if (nm.includes("cloth") || nm.includes("playfield") || nm.includes("felt")) {
+            playfield = o
+          }
+        })
+      }
 
-      // 3) Compute a uniform scale factor using size.x and size.y.
-      const scaleX = targetLength / (size.x || 1);
-      const scaleY = targetWidth / (size.y || 1);
-      const uniformScale = Math.min(scaleX, scaleY);
+      if (!playfield) {
+        playfield = (this.table.children && this.table.children[0]) || undefined
+      }
 
-      // Apply the uniform scale to the whole table scene.
-      this.table.scale.multiplyScalar(uniformScale);
-      this.table.updateMatrixWorld(true);
+      if (!playfield) {
+        throw new Error("Playfield (cloth) mesh not found in GLTF.")
+      }
 
-      // 4) Recompute the bounding box after scaling and re-centre the model.
-      bbox = new Box3().setFromObject(playfield);
-      const center = new Vector3();
-      bbox.getCenter(center);
-      this.table.position.x -= center.x;
-      this.table.position.y -= center.y; // y-axis is the table’s short dimension
-      // leave z unchanged
+      // --- Boyut ölç ---
+      playfield.updateMatrixWorld(true)
+      let bbox = new Box3().setFromObject(playfield)
+      const size = new Vector3()
+      bbox.getSize(size) // size.x ~ uzun kenar, size.y ~ kısa kenar (modele göre değişebilir)
 
-      this.done();
-    });
+      // TableGeometry.tableX/Y: burun-burun yarım ölçüler → hedef tam ölçüler:
+      const targetLen = 2 * TableGeometry.tableX
+      const targetWid = 2 * TableGeometry.tableY
 
-    // Load cue model (no additional scaling needed)
+      // --- Eksen/dönüklük farkına dayanıklı uniform scale ---
+      // Bazı GLTF’lerde uzun eksen Y’de olabilir; ikisini de karşılaştırıp en güvenlisini seçiyoruz
+      const scaleX = targetLen / (size.x || 1)
+      const scaleY = targetWid / (size.y || 1)
+      const scaleX_swapped = targetLen / (size.y || 1)
+      const scaleY_swapped = targetWid / (size.x || 1)
+
+      // İki olası eşlemeden “daha düzgün” olanı seç (alan bazlı sapma veya minimum ölçek farkı)
+      const uniformA = Math.min(scaleX, scaleY)         // (x→len, y→wid)
+      const uniformB = Math.min(scaleX_swapped, scaleY_swapped) // (x→wid, y→len)
+
+      const useSwap = Math.abs(scaleX - scaleY) > Math.abs(scaleX_swapped - scaleY_swapped)
+      const s = useSwap ? uniformB : uniformA
+
+      this.table.scale.multiplyScalar(s)
+      this.table.updateMatrixWorld(true)
+
+      // --- X/Y’de merkeze al (Z’yi olduğu gibi bırak) ---
+      bbox = new Box3().setFromObject(playfield)
+      const c = new Vector3()
+      bbox.getCenter(c)
+      this.table.position.x -= c.x
+      this.table.position.y -= c.y
+
+      // (İsterseniz burada mm cinsinden sapmayı loglayabilirsiniz)
+      // const after = new Vector3(); bbox.getSize(after);
+      // console.debug("playfield target (m):", targetLen, targetWid, "actual:", after.x, after.y)
+
+      // TableMesh.mesh’i atamak isterseniz (bazı yerlere referans gidiyor olabilir):
+      // Eğer özel bir playfield mesh’iniz yoksa ana child’ı koruyun.
+      if (!TableMesh.mesh) {
+        TableMesh.mesh = (m.scene.children && m.scene.children[0]) as any
+      }
+
+      this.done()
+    })
+
+    // 3) Istaka modeli (özel ölçek gerekmiyor)
     importGltf("models/cue.gltf", (m) => {
-      // m: GLTF object; m.scene holds the Three.js scene; m.scene.children[0] is the mesh
-      this.cue = m
-      CueMesh.mesh = m.scene.children[0]
+      this.cue = m.scene
+      CueMesh.mesh = (m.scene.children && m.scene.children[0]) as any
       this.done()
     })
   }
 
+  // Yerelde (GLTF’siz) prosedürel masa için
   creatLocal() {
     this.sound = new Sound(false)
-    // Generate a procedural table when running locally; uses TableGeometry values
     TableMesh.mesh = new TableMesh().generateTable(TableGeometry.hasPockets)
     this.table = TableMesh.mesh
   }
@@ -91,9 +137,9 @@ export class Assets {
   }
 
   private done() {
-    // Once all three assets (background, table, cue) are loaded, invoke the callback
+    // Arka plan + masa + ıstaka hazır olunca callback
     if (this.background && this.table && this.cue) {
-      this.ready()
+      this.ready && this.ready()
     }
   }
 }
