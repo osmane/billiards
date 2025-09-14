@@ -163,7 +163,7 @@ export class BrowserContainer {
 
   offerUpload() {
     this.container.chat.showMessage(
-      `<a class="pill" target="_blank" href="https://scoreboard-tailuge.vercel.app/hiscore.html${location.search}"> upload high score 🏆</a`
+      `<a class="pill" target="_blank" href="https://scoreboard-osmane-billiards.vercel.app/hiscore.html${location.search}"> upload high score 🏆</a`
     )
   }
 }

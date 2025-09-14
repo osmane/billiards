@@ -5,7 +5,7 @@ export class NchanMessageRelay implements MessageRelay {
   private readonly websockets: Map<string, WebSocket> = new Map()
 
   constructor(
-    private readonly baseURL: string = "billiards-network.onrender.com"
+    private readonly baseURL: string = "osmane-billiards-network.onrender.com"
   ) {}
 
   subscribe(channel: string, callback: (message: string) => void): void {

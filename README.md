@@ -29,8 +29,8 @@ Demos run in all major desktop and mobile browsers and uses WebGL
 * [Snooker ⬀](https://osmane.github.io/billiards/?ruletype=snooker) we await the first 147 submission to the leaderboard.
 * 4-ball [Straight pool ⬀](https://osmane.github.io/billiards/?ruletype=fourteenone). 
 * Inspect physics and tweak constants using [diagrams](https://osmane.github.io/billiards//diagrams/diagrams.html).
-* Try to get on the leaderboard of highest [breaks](https://scoreboard-tailuge.vercel.app/leaderboard.html) hosted on vercel.com
-* Try [two player](https://scoreboard-tailuge.vercel.app/lobby) online lobby using nchan
+* Try to get on the leaderboard of highest [breaks](https://scoreboard-osmane-billiards.vercel.app/leaderboard.html) hosted on vercel.com
+* Try [two player](https://scoreboard-osmane-billiards.vercel.app/lobby) online lobby using nchan
 
 ## Reference material
 
