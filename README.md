@@ -1,11 +1,11 @@
 # billiards
 
-[![codecov](https://codecov.io/gh/tailuge/billiards/branch/master/graph/badge.svg?token=BH11KRAEL0)](https://codecov.io/gh/tailuge/billiards)
-[![CodeFactor](https://www.codefactor.io/repository/github/tailuge/billiards/badge)](https://www.codefactor.io/repository/github/tailuge/billiards)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=tailuge_billiards&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=tailuge_billiards)
-[![Tests](https://github.com/tailuge/billiards/actions/workflows/main.yml/badge.svg)](https://github.com/tailuge/billiards/actions/workflows/main.yml)
-[![Open in Gitpod](https://img.shields.io/badge/Gitpod-Open%20in%20Gitpod-%230092CF.svg)](https://gitpod.io/#https://github.com/tailuge/billiards)
-![GitHub](https://img.shields.io/github/license/tailuge/billiards.svg)
+[![codecov](https://codecov.io/gh/osmane/billiards/branch/master/graph/badge.svg?token=BH11KRAEL0)](https://codecov.io/gh/osmane/billiards)
+[![CodeFactor](https://www.codefactor.io/repository/github/osmane/billiards/badge)](https://www.codefactor.io/repository/github/osmane/billiards)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=osmane_billiards&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=osmane_billiards)
+[![Tests](https://github.com/osmane/billiards/actions/workflows/main.yml/badge.svg)](https://github.com/osmane/billiards/actions/workflows/main.yml)
+[![Open in Gitpod](https://img.shields.io/badge/Gitpod-Open%20in%20Gitpod-%230092CF.svg)](https://gitpod.io/#https://github.com/osmane/billiards)
+![GitHub](https://img.shields.io/github/license/osmane/billiards.svg)
 
 [![Demo and Screenshot](https://raw.githubusercontent.com/osmane/billiards/master/public/images/t3.png)](https://osmane.github.io/billiards/)
 
@@ -254,11 +254,11 @@ Use mouse, touch screen or keyboard:
 
 July 2018
 
-![2018](https://raw.githubusercontent.com/tailuge/billiards/master/dist/images/t1.png)
+![2018](https://raw.githubusercontent.com/osmane/billiards/master/dist/images/t1.png)
 
 July 2019
 
-![2019](https://raw.githubusercontent.com/tailuge/billiards/master/dist/images/t2.png)
+![2019](https://raw.githubusercontent.com/osmane/billiards/master/dist/images/t2.png)
 
 March 2021
 
@@ -268,11 +268,11 @@ August 2023 (mobile)
 
 top | aim  
 :--:|:--:
-<kbd>![2023](https://raw.githubusercontent.com/tailuge/billiards/master/dist/images/mobile1.jpg)</kbd> | <kbd>![2023](https://raw.githubusercontent.com/tailuge/billiards/master/dist/images/mobile2.jpg)</kbd>
+<kbd>![2023](https://raw.githubusercontent.com/osmane/billiards/master/dist/images/mobile1.jpg)</kbd> | <kbd>![2023](https://raw.githubusercontent.com/osmane/billiards/master/dist/images/mobile2.jpg)</kbd>
 
 Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=tailuge/billiards&type=Date)](https://star-history.com/#tailuge/billiards&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=osmane/billiards&type=Date)](https://star-history.com/#osmane/billiards&Date)
 
 
 ## Licence 

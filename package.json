@@ -2,7 +2,7 @@
   "name": "billiards",
   "description": "Billiards",
   "version": "0.3.2",
-  "author": "tailuge",
+  "author": "osmane",
   "homepage": "https://osmane.github.io/billiards",
   "main": "index.js",
   "keywords": [
