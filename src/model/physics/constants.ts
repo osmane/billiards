@@ -3,8 +3,6 @@ export let mu = 0.00985
 export let muS = 0.16
 export let muC = 0.85
 export let rho = 0.034
-export let m = 0.23
-//export let R = 0.03275
 export let e = 0.86
 
 // Mathaven specific
@@ -29,16 +27,27 @@ export const cosθ = Math.sqrt(21) / 5
 // src/model/physics/constants.ts
 
 export const CAROM_TABLE_LENGTH = 2.84;     // Oynanabilir alan (banttan banta) uzunluk
-export const CAROM_TABLE_WIDTH  = 1.42;     // Oynanabilir alan (banttan banta) genişlik
+export const CAROM_TABLE_WIDTH = 1.42;     // Oynanabilir alan (banttan banta) genişlik
 export const CAROM_BALL_DIAMETER = 0.0615;   // 61.5 mm
-export const CAROM_BALL_RADIUS = CAROM_BALL_DIAMETER / 2;
 
-// Diğer oyun modları için varsayılan değerler
-export let R = 0.028575; // Standart pool topu yarıçapı
 export let BALL_MASS = 0.165; // kg
+
+export const POOL_BALL_RADIUS = 0.05715 / 2;   // 57.15 mm (2 1/4")
+export const SNOOKER_BALL_RADIUS = 0.0525 / 2; // 52.5 mm (2 1/16")
+export const CAROM_BALL_RADIUS = 0.0615 / 2;   // 61.5 mm
+
+// (yeni) Kütleler (kg) — tipik aralıklar; gerekirse kalibre et:
+export const POOL_BALL_MASS = 0.17;     // 0.165–0.17 kg yaygın
+export const SNOOKER_BALL_MASS = 0.142; // ~142 g
+export const CAROM_BALL_MASS = 0.21;    // 0.205–0.215 kg
+
+// Zaten var: global parametreler ve setter’lar
+export let R = POOL_BALL_RADIUS;
+export let m = POOL_BALL_MASS;
 
 export function setR(radius: number) {
   R = radius;
+  refresh?.();
 }
 
 refresh()
@@ -49,14 +58,9 @@ function refresh() {
   I = (2 / 5) * m * R * R
 }
 
-/*export function setR(val: number) {
-  R = val
-  refresh()
-}*/
-
 export function setm(val: number) {
-  m = val
-  refresh()
+  m = val;
+  refresh?.();
 }
 export function setmu(val: number) {
   mu = val
