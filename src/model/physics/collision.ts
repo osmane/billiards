@@ -2,14 +2,38 @@ import { Ball, State } from "../ball"
 import { CollisionThrow } from "./collisionthrow"
 import { R } from "./constants"
 
+
+// Continuous collision detection (analytical time-of-impact for two moving balls)
+// Returns the smallest t in [0, dt] where |(pa-pb) + (va-vb)*t| = 2R, or -1 if none.
+function timeOfImpactBallBall(a: Ball, b: Ball, dt: number): number {
+  const dp = a.pos.clone().sub(b.pos)
+  const dv = a.vel.clone().sub(b.vel)
+  const r = 2 * R
+  const A = dv.dot(dv)
+  const B = 2 * dp.dot(dv)
+  const C = dp.dot(dp) - r * r
+  if (A <= 1e-12) return -1 // no relative motion
+  const disc = B * B - 4 * A * C
+  if (disc < 0) return -1
+  const sqrtD = Math.sqrt(disc)
+  const t1 = (-B - sqrtD) / (2 * A)
+  const t2 = (-B + sqrtD) / (2 * A)
+  // We want the earliest non-negative root within the step
+  let t = Number.POSITIVE_INFINITY
+  if (t1 >= 0 && t1 <= dt) t = Math.min(t, t1)
+  if (t2 >= 0 && t2 <= dt) t = Math.min(t, t2)
+  return isFinite(t) ? t : -1
+}
+
 export class Collision {
   static willCollide(a: Ball, b: Ball, t: number): boolean {
-    return (
-      (a.inMotion() || b.inMotion()) &&
-      a.onTable() &&
-      b.onTable() &&
-      a.futurePosition(t).distanceToSquared(b.futurePosition(t)) < 4 * R * R
-    )
+    if (!(a.onTable() && b.onTable())) return false
+    if (!(a.inMotion() || b.inMotion())) return false
+    // Continuous check with analytic TOI to reduce tunneling at high speeds
+    const toi = timeOfImpactBallBall(a, b, t)
+    if (toi >= 0) return true
+    // Fallback: end-of-step proximity check (legacy behavior)
+    return a.futurePosition(t).distanceToSquared(b.futurePosition(t)) < 4 * R * R
   }
 
   static collide(a: Ball, b: Ball) {

@@ -57,17 +57,30 @@ export function pow(y, x) {
 }
 
 export function sin(theta) {
-  return Math.fround(Math.sin(theta))
+  // Precision: avoid unnecessary Math.fround – keep double precision for stability
+  return Math.sin(theta)
 }
 
 export function cos(theta) {
-  return Math.fround(Math.cos(theta))
+  // Precision: avoid unnecessary Math.fround – keep double precision for stability
+  return Math.cos(theta)
 }
 
 export function sqrt(theta) {
-  return Math.fround(Math.sqrt(theta))
+  // Precision: avoid unnecessary Math.fround – keep double precision for stability
+  return Math.sqrt(theta)
 }
 
 export function exp(theta) {
-  return Math.fround(Math.exp(theta))
+  // Precision: avoid unnecessary Math.fround – keep double precision for stability
+  return Math.exp(theta)
+}
+
+
+// Zero-out tiny components to reduce numerical noise without losing precision
+export function snapSmall(v: Vector3, eps = 1e-6) {
+  if (Math.abs(v.x) < eps) v.x = 0
+  if (Math.abs(v.y) < eps) v.y = 0
+  if (Math.abs(v.z) < eps) v.z = 0
+  return v
 }

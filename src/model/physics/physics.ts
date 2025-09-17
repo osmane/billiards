@@ -215,8 +215,9 @@ export function muCushion(v: Vector3, w?: Vector3) {
 }
 
 export function restitutionCushion(v: Vector3) {
+  // Keep restitution in [0,1] to avoid non-physical gains
   const e = 0.39 + 0.257 * v.x - 0.044 * v.x * v.x
-  return e
+  return clamp(e, 0, 1)
 }
 
 function cartesionToBallCentric(v, w) {

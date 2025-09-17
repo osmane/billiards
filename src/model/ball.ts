@@ -1,5 +1,5 @@
 import { Vector3 } from "three"
-import { zero, vec, passesThroughZero } from "../utils/utils"
+import { zero, vec, passesThroughZero, snapSmall } from "../utils/utils"
 import {
   forceRoll,
   rollingFull,
@@ -36,13 +36,20 @@ export class Ball {
     this.ballmesh = new BallMesh(color || 0xeeeeee * Math.random())
   }
 
-  update(t) {
-    this.updatePosition(t)
-    if (this.state == State.Falling) {
+  update(t: number) {
+    // Semi-implicit integration: update velocity first then position (except when Falling).
+    if (this.state === State.Falling) {
+      // Preserve original falling behavior.
+      this.updatePosition(t)
       this.pocket.updateFall(this, t)
     } else {
+      // 1) update velocity based on current state/forces
       this.updateVelocity(t)
+      // 2) then advance the pose with the new velocity
+      this.updatePosition(t)
     }
+    // Numeric hygiene: zero-out tiny components (for stability)
+    snapSmall(this.vel); snapSmall(this.rvel); snapSmall(this.pos)
   }
 
   updateMesh(t) {
