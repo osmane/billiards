@@ -1,75 +1,206 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
+
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Three-Cushion – URL Builder</title>
-<style>
-  :root{
-    --bg:#0b1220; --panel:#101827; --ink:#e5e7eb; --muted:#9ca3af; --accent:#60a5fa;
-    --table-rail:#1f2937; --table-slate:#0a2a8a; --table-cloth:#0b4cc0;
-  }
-  html,body{height:100%;}
-  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;}
-  .wrap{display:grid;grid-template-columns:1fr 360px; gap:16px; padding:16px; height:100%; box-sizing:border-box;}
-  .card{background:var(--panel); border:1px solid #22304a; border-radius:16px; box-shadow:0 10px 20px rgba(0,0,0,.25);}
-  .stage{position:relative; display:flex; align-items:center; justify-content:center;}
-  canvas{
-    display:block;
-    max-width:100%;
-    max-height:100%;
-    aspect-ratio: 1280 / 640;
-    border-radius:12px;
-  }
-  .side{padding:16px; display:flex; flex-direction:column; gap:14px;}
-  h1{font-size:16px;margin:0 0 6px 0;}
-  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  label{color:var(--muted)}
-  input[type="text"], textarea{width:100%; background:#0e1726; color:var(--ink); border:1px solid #263142; border-radius:10px; padding:10px 12px; font:12px/1.3 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;}
-  textarea{min-height:110px;}
-  .btn{background:var(--accent); color:#0b1220; border:0; padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:600}
-  .hint{color:var(--muted); font-size:12px}
-  .coords{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; background:#0e1726; border:1px solid #263142; padding:8px 10px; border-radius:8px}
-  .ball-key{display:flex; gap:8px; align-items:center}
-  .dot{width:12px; height:12px; border-radius:50%}
-  .dot.white{background:#fff; box-shadow:0 0 0 2px #ddd inset}
-  .dot.yellow{background:#ffd84d; box-shadow:0 0 0 2px #b08e12 inset}
-  .dot.red{background:#ff3b3b; box-shadow:0 0 0 2px #a31515 inset}
-  .footer{margin-top:auto; color:var(--muted); font-size:12px}
-  .open{white-space:nowrap}
-  
-  /* Dairesel Kontrol Stilleri */
-  #angle-value{padding: 6px 10px; min-width:42px; text-align:center;}
-  .knob{
-    position:relative;
-    width:70px;
-    height:70px;
-    border-radius:50%;
-    background:radial-gradient(circle, #2a364d, var(--panel));
-    border:2px solid #22304a;
-    box-shadow:0 2px 5px rgba(0,0,0,.2);
-    cursor:pointer;
-    -webkit-user-select:none; user-select:none;
-  }
-  .knob-rotator{
-    position:absolute;
-    width:100%;
-    height:100%;
-    top:0; left:0;
-  }
-  .knob-indicator{
-    position:absolute;
-    width:8px;
-    height:8px;
-    border-radius:50%;
-    background:var(--accent);
-    top:8px;
-    left:50%;
-    transform:translateX(-50%);
-    box-shadow:0 0 5px var(--accent);
-  }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Three-Cushion – URL Builder (Standart Uyumlu)</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #101827;
+      --ink: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #60a5fa;
+      --table-rail: #1f2937;
+      --table-slate: #0a2a8a;
+      --table-cloth: #0b4cc0;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .wrap {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 16px;
+      padding: 16px;
+      height: 100%;
+      box-sizing: border-box;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid #22304a;
+      border-radius: 16px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, .25);
+    }
+
+    .stage {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      aspect-ratio: 1280 / 640;
+      border-radius: 12px;
+    }
+
+    .side {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    h1 {
+      font-size: 16px;
+      margin: 0 0 6px 0;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap
+    }
+
+    label {
+      color: var(--muted)
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      background: #0e1726;
+      color: var(--ink);
+      border: 1px solid #263142;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: 12px/1.3 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    textarea {
+      min-height: 110px;
+    }
+
+    .btn {
+      background: var(--accent);
+      color: #0b1220;
+      border: 0;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px
+    }
+
+    .coords {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      background: #0e1726;
+      border: 1px solid #263142;
+      padding: 8px 10px;
+      border-radius: 8px
+    }
+
+    .ball-key {
+      display: flex;
+      gap: 8px;
+      align-items: center
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%
+    }
+
+    .dot.white {
+      background: #fff;
+      box-shadow: 0 0 0 2px #ddd inset
+    }
+
+    .dot.yellow {
+      background: #ffd84d;
+      box-shadow: 0 0 0 2px #b08e12 inset
+    }
+
+    .dot.red {
+      background: #ff3b3b;
+      box-shadow: 0 0 0 2px #a31515 inset
+    }
+
+    .footer {
+      margin-top: auto;
+      color: var(--muted);
+      font-size: 12px
+    }
+
+    .open {
+      white-space: nowrap
+    }
+
+    /* Dairesel Kontrol Stilleri */
+    #angle-value {
+      padding: 6px 10px;
+      min-width: 42px;
+      text-align: center;
+    }
+
+    .knob {
+      position: relative;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #2a364d, var(--panel));
+      border: 2px solid #22304a;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, .2);
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .knob-rotator {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+    }
+
+    .knob-indicator {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      box-shadow: 0 0 5px var(--accent);
+    }
+  </style>
 </head>
+
 <body>
   <div class="wrap">
     <div class="card stage">
@@ -100,8 +231,8 @@
         <a class="btn open" id="open" target="_blank" rel="noopener">Open in game</a>
       </div>
 
-      <div class="hint">Drag the balls on the table. URL updates live. Mapping uses the game's normalized range (≈±0.8186).</div>
-      
+      <div class="hint">Mapping uses game coordinates: X ∈ [−1.42, +1.42], Y ∈ [−0.71, +0.71].</div>
+
       <div class="row" style="justify-content:center;">
         <div id="angle-knob" class="knob" title="Set cue angle">
           <div id="knob-rotator" class="knob-rotator">
@@ -115,186 +246,239 @@
     </div>
   </div>
 
-<script>
-(function(){
-  const MAX_Y = 0.8186;
-  const MAX_X = MAX_Y * 2;
-  const R = 14;
-  const canvas = document.getElementById('table');
-  const ctx = canvas.getContext('2d');
-  
-  // Açı kontrol elemanları
-  const angleKnob = document.getElementById('angle-knob');
-  const knobRotator = document.getElementById('knob-rotator');
-  const angleValueDisplay = document.getElementById('angle-value');
+  <script>
+    (function () {
+      // === GERÇEK 3-BANT MASA ÖLÇEKLERİ (metre) ===
+      const CAROM_LEN = 2.84;               // uzun kenar (banttan banda)
+      const CAROM_WID = 1.42;               // kısa kenar (banttan banda)
+      const X = CAROM_LEN / 2;              // 1.42
+      const Y = CAROM_WID / 2;              // 0.71
 
-  let currentAngle = 0; // Mevcut açıyı (derece olarak) sakla
+      const Rpx = 14;                       // görsel top yarıçapı (piksel) – sadece clamp ve çizim için
+      const canvas = document.getElementById('table');
+      const ctx = canvas.getContext('2d');
 
-  const rail = 18;
-  const frame = 22;
-  const pad = rail + frame;
+      // Açı kontrol elemanları
+      const angleKnob = document.getElementById('angle-knob');
+      const knobRotator = document.getElementById('knob-rotator');
+      const angleValueDisplay = document.getElementById('angle-value');
+      let currentAngle = 0; // derece
 
-  const inner = { x: pad, y: pad, w: canvas.width - pad*2, h: canvas.height - pad*2 };
-  let balls = {
-    white: {x: inner.x + inner.w*0.10, y: inner.y + inner.h*0.55, c:'#ffffff'},
-    yellow:{x: inner.x + inner.w*0.62, y: inner.y + inner.h*0.32, c:'#ffd84d'},
-    red:   {x: inner.x + inner.w*0.64, y: inner.y + inner.h*0.55, c:'#ff3b3b'}
-  };
-  let dragging = null;
-  let hoverKey = null;
+      // Görsel çerçeve/bant
+      const rail = 18;
+      const frame = 22;
+      const pad = rail + frame;
 
-  function drawGrid(){
-    ctx.fillStyle = '#1b2233'; ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle = '#0c1a3a'; ctx.fillRect(frame, frame, canvas.width-2*frame, canvas.height-2*frame);
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--table-rail');
-    ctx.fillRect(rail, rail, canvas.width-2*rail, canvas.height-2*rail);
-    drawDiamonds();
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--table-slate');
-    ctx.fillRect(pad-6, pad-6, inner.w+12, inner.h+12);
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--table-cloth');
-    ctx.fillRect(inner.x, inner.y, inner.w, inner.h);
-    ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 1;
-    const gx = 8, gy = 4;
-    for(let i=1;i<gx;i++){ const x = inner.x + (inner.w/gx)*i; ctx.beginPath(); ctx.moveTo(x, inner.y); ctx.lineTo(x, inner.y+inner.h); ctx.stroke(); }
-    for(let j=1;j<gy;j++){ const y = inner.y + (inner.h/gy)*j; ctx.beginPath(); ctx.moveTo(inner.x, y); ctx.lineTo(inner.x+inner.w, y); ctx.stroke(); }
-  }
+      // İç alanı 2:1 sabitle ve rail alanı içinde ortala
+      const availW = canvas.width - pad * 2;
+      const availH = canvas.height - pad * 2;
+      let innerW = availW;
+      let innerH = innerW / 2;
+      if (innerH > availH) { innerH = availH; innerW = innerH * 2; }
+      const inner = {
+        x: Math.round(pad + (availW - innerW) / 2),
+        y: Math.round(pad + (availH - innerH) / 2),
+        w: Math.round(innerW),
+        h: Math.round(innerH)
+      };
 
-  function drawDiamonds(){
-    ctx.fillStyle = 'rgba(255,255,255,0.7)'; const diamondRadius = 4;
-    for(let i = 0; i <= 8; i++){
-      const x = inner.x + (inner.w / 8) * i;
-      ctx.beginPath(); ctx.arc(x, frame / 2, diamondRadius, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(x, canvas.height - (frame / 2), diamondRadius, 0, Math.PI * 2); ctx.fill();
-    }
-    for(let i = 0; i <= 4; i++){
-      const y = inner.y + (inner.h / 4) * i;
-      ctx.beginPath(); ctx.arc(frame / 2, y, diamondRadius, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(canvas.width - (frame / 2), y, diamondRadius, 0, Math.PI * 2); ctx.fill();
-    }
-  }
+      // Başlangıç topları – oyunun rafı ile bire bir
+      let balls = (() => {
+        const w0 = fromGame(-X / 2, -Y / 4);
+        const y0 = fromGame(-X / 2, 0);
+        const r0 = fromGame(X / 2, 0);
+        return {
+          white: { x: w0.x, y: w0.y, c: '#ffffff' },
+          yellow: { x: y0.x, y: y0.y, c: '#ffd84d' },
+          red: { x: r0.x, y: r0.y, c: '#ff3b3b' }
+        };
+      })();
 
-  function drawBalls(){
-    for(const k of ['white','yellow','red']){
-      const b = balls[k];
-      ctx.beginPath(); ctx.arc(b.x, b.y, R, 0, Math.PI*2); ctx.fillStyle = b.c; ctx.fill();
-      ctx.lineWidth = 2; ctx.strokeStyle = k===hoverKey? '#60a5fa' : 'rgba(0,0,0,.5)'; ctx.stroke();
-      ctx.beginPath(); ctx.arc(b.x+2, b.y+2, R, 0, Math.PI*2); ctx.strokeStyle = 'rgba(0,0,0,.15)'; ctx.stroke();
-    }
-  }
+      let dragging = null;
+      let hoverKey = null;
 
-  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-  function toGame(x, y){
-    const nx = (x - inner.x) / inner.w, ny = (y - inner.y) / inner.h;
-    const gx = -MAX_X + nx * (2*MAX_X), gy =  MAX_Y - ny * (2*MAX_Y);
-    return {x:+gx.toFixed(12), y:+gy.toFixed(12)};
-  }
+      function drawGrid() {
+        // Arka plan ve dış çerçeve
+        ctx.fillStyle = '#1b2233'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#0c1a3a'; ctx.fillRect(frame, frame, canvas.width - 2 * frame, canvas.height - 2 * frame);
 
-  function buildURL(){
-    const cueChoice = document.querySelector('input[name="cueWho"]:checked').value;
-    const whiteG = toGame(balls.white.x, balls.white.y);
-    const yellowG= toGame(balls.yellow.x, balls.yellow.y);
-    const redG   = toGame(balls.red.x, balls.red.y);
-    const init = cueChoice==='white'
-      ? [whiteG.x, whiteG.y, yellowG.x, yellowG.y, redG.x, redG.y]
-      : [yellowG.x, yellowG.y, whiteG.x, whiteG.y, redG.x, redG.y];
-    const cue = cueChoice==='white' ? whiteG : yellowG;
-    const angleRadians = currentAngle * (Math.PI / 180);
-    const state = {
-      init,
-      shots: [{
-        type: 'AIM',
-        offset: {x: 0.10185185185185185, y: 0.009259259259259259, z: 0},
-        angle: angleRadians,
-        power: 5.0,
-        pos: {x: cue.x, y: cue.y, z: 0}, i: 0
-      }],
-      start: 0, now: Date.now(), score: 0, wholeGame: false, v: 1
-    };
-    const url = `https://osmane.github.io/billiards/?ruletype=threecushion&state=${encodeURIComponent(JSON.stringify(state))}`;
-    document.getElementById('url').value = url;
-    document.getElementById('open').href = url;
-    const fmt = v => (Math.abs(v) < 1e-6 ? '0' : v.toFixed(6));
-    const lines = [`WHITE  → x:${fmt(whiteG.x)}  y:${fmt(whiteG.y)}`, `YELLOW → x:${fmt(yellowG.x)}  y:${fmt(yellowG.y)}`, `RED    → x:${fmt(redG.x)}  y:${fmt(redG.y)}`, 'init order: ' + (cueChoice==='white' ? 'white, yellow, red' : 'yellow, white, red')];
-    document.getElementById('coords').textContent = lines.join('\n');
-  }
+        // Rail (bant) alanı
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--table-rail');
+        ctx.fillRect(rail, rail, canvas.width - 2 * rail, canvas.height - 2 * rail);
 
-  function render(){ drawGrid(); drawBalls(); }
-  function loop(){ render(); requestAnimationFrame(loop); }
-  loop();
-  buildURL();
+        // Elmaslar
+        drawDiamonds();
 
-  function pick(mx,my){
-    for(const k of ['white','yellow','red']){
-      const b = balls[k];
-      if(Math.hypot(mx - b.x, my - b.y) <= R+2) return k;
-    }
-    return null;
-  }
-  canvas.addEventListener('mousemove', (e)=>{
-    const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) * (canvas.width/rect.width);
-    const my = (e.clientY - rect.top)  * (canvas.height/rect.height);
-    hoverKey = pick(mx,my);
-    if(dragging){
-      const b = balls[dragging];
-      b.x = clamp(mx, inner.x+R, inner.x+inner.w-R);
-      b.y = clamp(my, inner.y+R, inner.y+inner.h-R);
+        // Slate ve kumaş (inner'a hizalı)
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--table-slate');
+        ctx.fillRect(inner.x - 6, inner.y - 6, inner.w + 12, inner.h + 12);
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--table-cloth');
+        ctx.fillRect(inner.x, inner.y, inner.w, inner.h);
+
+        // Grid çizgileri (opsiyonel)
+        ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 1;
+        const gx = 8, gy = 4;
+        for (let i = 1; i < gx; i++) { const x = inner.x + (inner.w / gx) * i; ctx.beginPath(); ctx.moveTo(x, inner.y); ctx.lineTo(x, inner.y + inner.h); ctx.stroke(); }
+        for (let j = 1; j < gy; j++) { const y = inner.y + (inner.h / gy) * j; ctx.beginPath(); ctx.moveTo(inner.x, y); ctx.lineTo(inner.x + inner.w, y); ctx.stroke(); }
+      }
+
+      function drawDiamonds() {
+        ctx.fillStyle = 'rgba(255,255,255,0.7)'; const r = 4;
+        for (let i = 0; i <= 8; i++) {
+          const x = inner.x + (inner.w / 8) * i;
+          ctx.beginPath(); ctx.arc(x, frame / 2, r, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(x, canvas.height - (frame / 2), r, 0, Math.PI * 2); ctx.fill();
+        }
+        for (let i = 0; i <= 4; i++) {
+          const y = inner.y + (inner.h / 4) * i;
+          ctx.beginPath(); ctx.arc(frame / 2, y, r, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(canvas.width - (frame / 2), y, r, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+
+      function drawBalls() {
+        for (const k of ['white', 'yellow', 'red']) {
+          const b = balls[k];
+          ctx.beginPath(); ctx.arc(b.x, b.y, Rpx, 0, Math.PI * 2); ctx.fillStyle = b.c; ctx.fill();
+          ctx.lineWidth = 2; ctx.strokeStyle = k === hoverKey ? '#60a5fa' : 'rgba(0,0,0,.5)'; ctx.stroke();
+          ctx.beginPath(); ctx.arc(b.x + 2, b.y + 2, Rpx, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(0,0,0,.15)'; ctx.stroke();
+        }
+      }
+
+      function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+      // Canvas -> Oyun (metre) dönüşümü
+      function toGame(x, y) {
+        const nx = (x - inner.x) / inner.w;
+        const ny = (y - inner.y) / inner.h;
+        const gx = -X + nx * (2 * X);
+        const gy = Y - ny * (2 * Y);   // canvas y aşağı büyür
+        return { x: +gx.toFixed(12), y: +gy.toFixed(12) };
+      }
+
+      // Oyun (metre) -> Canvas dönüşümü
+      function fromGame(gx, gy) {
+        const nx = (gx + X) / (2 * X);
+        const ny = (Y - gy) / (2 * Y);
+        const cx = inner.x + nx * inner.w;
+        const cy = inner.y + ny * inner.h;
+        return { x: cx, y: cy };
+      }
+
+      function buildURL() {
+        const cueChoice = document.querySelector('input[name="cueWho"]:checked').value;
+        const whiteG = toGame(balls.white.x, balls.white.y);
+        const yellowG = toGame(balls.yellow.x, balls.yellow.y);
+        const redG = toGame(balls.red.x, balls.red.y);
+
+        // init sırası SABİT: White, Yellow, Red
+        const init = [whiteG.x, whiteG.y, yellowG.x, yellowG.y, redG.x, redG.y];
+
+        // Seçilen istekâ topunun pozisyonu ve indeksi
+        const cue = (cueChoice === 'white') ? whiteG : yellowG;
+        const cueIndex = (cueChoice === 'white') ? 0 : 1;   // <<< ÖNEMLİ
+
+        const angleDegGame = ((270 - currentAngle) % 360 + 360) % 360; // normalize et
+        const angleRadians = angleDegGame * (Math.PI / 180);
+        const state = {
+          init,
+          shots: [{
+            type: 'AIM',
+            offset: { x: 0.10185185185185185, y: 0.009259259259259259, z: 0 },
+            angle: angleRadians,
+            power: 5.0,
+            pos: { x: cue.x, y: cue.y, z: 0 },
+            i: cueIndex                                    // <<< ÖNEMLİ
+          }],
+          start: 0, now: Date.now(), score: 0, wholeGame: false, v: 1
+        };
+
+        const url = `https://osmane.github.io/billiards/?ruletype=threecushion&state=${encodeURIComponent(JSON.stringify(state))}`;
+        document.getElementById('url').value = url;
+        document.getElementById('open').href = url;
+
+        const fmt = v => (Math.abs(v) < 1e-6 ? '0' : v.toFixed(6));
+        document.getElementById('coords').textContent = [
+          `WHITE  → x:${fmt(whiteG.x)}  y:${fmt(whiteG.y)}`,
+          `YELLOW → x:${fmt(yellowG.x)}  y:${fmt(yellowG.y)}`,
+          `RED    → x:${fmt(redG.x)}  y:${fmt(redG.y)}`,
+          'init order: white, yellow, red',
+          `cue index: ${cueIndex}`
+        ].join('\n');
+      }
+
+
+      function render() { drawGrid(); drawBalls(); }
+      function loop() { render(); requestAnimationFrame(loop); }
+      loop();
       buildURL();
-    }
-  });
-  canvas.addEventListener('mousedown', (e)=>{
-    const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) * (canvas.width/rect.width);
-    const my = (e.clientY - rect.top)  * (canvas.height/rect.height);
-    dragging = pick(mx,my);
-  });
-  window.addEventListener('mouseup', ()=> { dragging = null; });
 
-  document.querySelectorAll('input[name="cueWho"]').forEach(r=>{ r.addEventListener('change', buildURL); });
-  
-  // --- Açı Kontrolü için Yeni Mantık ---
-  let isDraggingKnob = false;
+      function pick(mx, my) {
+        for (const k of ['white', 'yellow', 'red']) {
+          const b = balls[k];
+          if (Math.hypot(mx - b.x, my - b.y) <= Rpx + 2) return k;
+        }
+        return null;
+      }
 
-  function setAngleFromEvent(e) {
-    const rect = angleKnob.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const dx = e.clientX - centerX;
-    const dy = e.clientY - centerY;
-    
-    // Math.atan2 ile radyan cinsinden açıyı hesapla, sonra dereceye çevir
-    // 0 derecenin yukarıyı göstermesi için 90 derece ekle
-    let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
-    if (angle < 0) { angle += 360; } // Açıyı 0-360 aralığına normalleştir
-    
-    currentAngle = angle;
-    knobRotator.style.transform = `rotate(${currentAngle}deg)`;
-    angleValueDisplay.textContent = `${Math.round(currentAngle)}°`;
-    buildURL();
-  }
+      canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+        hoverKey = pick(mx, my);
+        if (dragging) {
+          const b = balls[dragging];
+          b.x = clamp(mx, inner.x + Rpx, inner.x + inner.w - Rpx);
+          b.y = clamp(my, inner.y + Rpx, inner.y + inner.h - Rpx);
+          buildURL();
+        }
+      });
+      canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+        dragging = pick(mx, my);
+      });
+      window.addEventListener('mouseup', () => { dragging = null; });
 
-  angleKnob.addEventListener('mousedown', (e) => {
-    isDraggingKnob = true;
-    setAngleFromEvent(e); // Tıklandığında anında güncelle
-  });
-  
-  window.addEventListener('mousemove', (e) => {
-    if (isDraggingKnob) {
-      setAngleFromEvent(e);
-    }
-  });
-  
-  window.addEventListener('mouseup', () => {
-    isDraggingKnob = false;
-  });
+      document.querySelectorAll('input[name="cueWho"]').forEach(r => { r.addEventListener('change', buildURL); });
 
-  document.getElementById('copy').addEventListener('click', async ()=>{
-    const url = document.getElementById('url').value;
-    try{ await navigator.clipboard.writeText(url); }catch(e){}
-    document.getElementById('copy').textContent = 'Copied!';
-    setTimeout(()=>{ document.getElementById('copy').textContent = 'Copy'; }, 900);
-  });
-})();
-</script>
+      // --- Açı Kontrolü ---
+      let isDraggingKnob = false;
+
+      function setAngleFromEvent(e) {
+        const rect = angleKnob.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const dx = e.clientX - centerX;
+        const dy = e.clientY - centerY;
+        let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+        if (angle < 0) { angle += 360; }
+        currentAngle = angle;
+        knobRotator.style.transform = `rotate(${currentAngle}deg)`;
+        angleValueDisplay.textContent = `${Math.round(currentAngle)}°`;
+        buildURL();
+      }
+
+      angleKnob.addEventListener('mousedown', (e) => {
+        isDraggingKnob = true;
+        setAngleFromEvent(e);
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (isDraggingKnob) setAngleFromEvent(e);
+      });
+
+      window.addEventListener('mouseup', () => { isDraggingKnob = false; });
+
+      document.getElementById('copy').addEventListener('click', async () => {
+        const url = document.getElementById('url').value;
+        try { await navigator.clipboard.writeText(url); } catch (e) { }
+        document.getElementById('copy').textContent = 'Copied!';
+        setTimeout(() => { document.getElementById('copy').textContent = 'Copy'; }, 900);
+      });
+    })();
+  </script>
 </body>
+
 </html>
