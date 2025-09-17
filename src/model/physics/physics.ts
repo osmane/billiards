@@ -3,8 +3,21 @@ import { norm, upCross, up, sin, cos } from "../../utils/utils"
 import { muS, muC, g, m, Mz, Mxy, R, I, e, ee, μs, μw } from "./constants"
 import { Mathaven } from "./mathaven"
 
+const MU_CUSHION_MIN = 0.02
+const MU_CUSHION_MAX = 0.50
+const MU_CUSHION_BASE_SCALE = 1.0   // μw üzerine ölçek; isterseniz 0.9–1.1 arası oynatın
+const K_THETA_1 = 0.00              // açı sabiti (küçük/0)
+const K_THETA_2 = -0.05             // açı doğrusal terimi (zayıf negatif -> dik gelişte hafif azalsın)
+const K_THETA_3 = 0.00              // açı kuadratik terimi
+const K_V = 0.06                    // hız terimi üst sınırı (≈ +0.06'ya kadar)
+const S_REF = 0.50                  // m/s; kayma hızında doyma ölçeği
+
 export function surfaceVelocity(v, w) {
   return surfaceVelocityFull(v, w).setZ(0)
+}
+
+function clamp(x: number, lo: number, hi: number) {
+  return Math.max(lo, Math.min(hi, x))
 }
 
 const sv = new Vector3()
@@ -172,9 +185,33 @@ function impulseToDelta(PX, PY, PZ) {
   }
 }
 
-export function muCushion(v: Vector3) {
-  const theta = Math.atan2(Math.abs(v.y), v.x)
-  return 0.471 - theta * 0.241
+/**
+ * μ(θ, s): Bant sürtünmesi
+ * v: bant düzleminde top hız vektörü (+X'e doğru)
+ * w: (opsiyonel) açısal hız; verilmezse 0 kabul edilir
+ * θ: geliş açısı (0 = dik)
+ * s: temas noktasındaki kayma hızı büyüklüğü (spin dahil)
+ */
+export function muCushion(v: Vector3, w?: Vector3) {
+  // θ: sadece hız yönünden; pozitif X güvenliği (0'a bölünmeyi önlemek için epsilon)
+  const theta = Math.atan2(Math.abs(v.y), Math.max(1e-6, v.x))
+
+  // s: mevcut s0(v,w) yardımcı fonksiyonu ile temas noktasında kayma
+  // w verilmezse (eski çağrılara uyum), 0 vektör kullan
+  const sVec = s0(v, w ?? new Vector3(0, 0, 0))
+  const s = sVec.length()
+
+  // taban: mevcut μw’yi temel al
+  const base = MU_CUSHION_BASE_SCALE * μw
+
+  // açı terimi (hafif / kalibre edilebilir)
+  const ang = K_THETA_1 + K_THETA_2 * theta + K_THETA_3 * theta * theta
+
+  // hız terimi: tanh ile doyuma giden küçük bir katkı
+  const vel = K_V * Math.tanh(s / Math.max(1e-6, S_REF))
+
+  const mu = base + ang + vel
+  return clamp(mu, MU_CUSHION_MIN, MU_CUSHION_MAX)
 }
 
 export function restitutionCushion(v: Vector3) {
