@@ -84,31 +84,19 @@ export class BallMesh {
     this.trace = new Trace(500, color)
   }
 
-  addDots(geometry, baseColor) {
-    const count = geometry.attributes.position.count
-    const color = new Color(baseColor)
-    const red = new Color(0xaa2222)
+addDots(geometry, baseColor) {
+    const count = geometry.attributes.position.count;
+    const color = new Color(baseColor);
 
     geometry.setAttribute(
       "color",
       new BufferAttribute(new Float32Array(count * 3), 3)
-    )
+    );
 
-    const verticies = geometry.attributes.color
-    for (let i = 0; i < count / 3; i++) {
-      this.colorVerticesForFace(
-        i,
-        verticies,
-        this.scaleNoise(color.r),
-        this.scaleNoise(color.g),
-        this.scaleNoise(color.b)
-      )
+    const vertices = geometry.attributes.color;
+    for (let i = 0; i < count; i++) {
+      vertices.setXYZ(i, color.r, color.g, color.b);
     }
-
-    const dots = [0, 96, 111, 156, 186, 195]
-    dots.forEach((i) => {
-      this.colorVerticesForFace(i / 3, verticies, red.r, red.g, red.b)
-    })
   }
 
   addToScene(scene) {
@@ -116,15 +104,5 @@ export class BallMesh {
     scene.add(this.shadow)
     scene.add(this.spinAxisArrow)
     scene.add(this.trace.line)
-  }
-
-  private colorVerticesForFace(face, verticies, r, g, b) {
-    verticies.setXYZ(face * 3 + 0, r, g, b)
-    verticies.setXYZ(face * 3 + 1, r, g, b)
-    verticies.setXYZ(face * 3 + 2, r, g, b)
-  }
-
-  private scaleNoise(v) {
-    return (1.0 - Math.random() * 0.25) * v
   }
 }
