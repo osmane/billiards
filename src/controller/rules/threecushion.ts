@@ -14,12 +14,7 @@ import { Rules } from "./rules"
 import { zero } from "../../utils/utils"
 import { Respot } from "../../utils/respot"
 import { StartAimEvent } from "../../events/startaimevent"
-import {
-  setR,
-  CAROM_BALL_RADIUS,
-  CAROM_TABLE_LENGTH,
-  CAROM_TABLE_WIDTH
-} from "../../model/physics/constants";
+import { setR, setm, CAROM_BALL_RADIUS, CAROM_TABLE_LENGTH, CAROM_TABLE_WIDTH } from "../../model/physics/constants";
 
 export class ThreeCushion implements Rules {
   readonly container: Container
@@ -53,19 +48,12 @@ export class ThreeCushion implements Rules {
     this.cueball = this.container.table.balls[1]
   }
 
-  tableGeometry() {
-    // 1) Global top yarıçapını 3-bant topu için ayarla
-    setR(CAROM_BALL_RADIUS);
-
-    // 2) Masa geometrisini standart karambol ölçüleriyle ayarla
-    TableGeometry.setCaromDimensions(
-      CAROM_TABLE_LENGTH,
-      CAROM_TABLE_WIDTH,
-      CAROM_BALL_RADIUS
-    );
-
-    CameraTop.zoomFactor = 0.92;
-  }
+tableGeometry() {
+  setR(CAROM_BALL_RADIUS);
+  setm(0.21);
+  TableGeometry.setCaromDimensions(CAROM_TABLE_LENGTH, CAROM_TABLE_WIDTH, CAROM_BALL_RADIUS);
+  CameraTop.zoomFactor = 0.92;
+}
   
 
   asset(): string {
