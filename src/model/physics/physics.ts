@@ -125,7 +125,7 @@ function gripHan(v, w) {
 function slipHan(v, w) {
   const { c, B } = basisHan(v, w)
   const ecB = (1 + e) * (c / B)
-  const mu = muCushion(v)
+  const mu = muCushion(v, w)
   const phi = Math.atan2(v.y, v.x)
   const cos_phi = Math.cos(phi)
   const sin_phi = Math.sin(phi)
@@ -220,7 +220,7 @@ export function restitutionCushion(v: Vector3) {
 }
 
 function cartesionToBallCentric(v, w) {
-  const mathaven = new Mathaven(m, R, ee, μs, μw + 0.1)
+  const mathaven = new Mathaven(m, R, ee, μs, μw)
   mathaven.solve(v.x, v.y, w.x, w.y, w.z)
 
   const rv = new Vector3(mathaven.vx, mathaven.vy, 0)
