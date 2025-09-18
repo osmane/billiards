@@ -6,7 +6,7 @@ import {
   sliding,
   surfaceVelocityFull,
 } from "../model/physics/physics"
-import { BallMesh } from "../view/ballmesh"
+import { BallMesh, MeshUpdateOptions } from "../view/ballmesh"
 import { Pocket } from "./physics/pocket"
 
 export enum State {
@@ -52,8 +52,8 @@ export class Ball {
     snapSmall(this.vel); snapSmall(this.rvel); snapSmall(this.pos)
   }
 
-  updateMesh(t) {
-    this.ballmesh.updateAll(this, t)
+  updateMesh(t, options?: MeshUpdateOptions) {
+    this.ballmesh.updateAll(this, t, options)
   }
 
   private updatePosition(t: number) {

@@ -43,7 +43,7 @@ export class Trace {
   }
 
   addTrace(pos, vel) {
-    if (vel.length() === 0) {
+    if (!this.line.visible || vel.length() === 0) {
       return
     }
     const curvature = this.lastVel.angleTo(vel)

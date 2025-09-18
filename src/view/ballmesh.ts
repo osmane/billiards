@@ -15,6 +15,12 @@ import { norm, up, zero } from "./../utils/utils"
 import { R } from "../model/physics/constants"
 import { Trace } from "./trace"
 
+export interface MeshUpdateOptions {
+  positionsOnly?: boolean
+  skipTrace?: boolean
+  skipSpinAxis?: boolean
+}
+
 export class BallMesh {
   mesh: Mesh
   shadow: Mesh
@@ -26,12 +32,22 @@ export class BallMesh {
     this.initialiseMesh(color)
   }
 
-  updateAll(ball, t) {
+  updateAll(ball, t, options?: MeshUpdateOptions) {
     this.updatePosition(ball.pos)
-    this.updateArrows(ball.pos, ball.rvel, ball.state)
+
+    if (options?.positionsOnly) {
+      return
+    }
+
+    if (!options?.skipSpinAxis) {
+      this.updateArrows(ball.pos, ball.rvel, ball.state)
+    }
+
     if (ball.rvel.lengthSq() !== 0) {
       this.updateRotation(ball.rvel, t)
-      this.trace.addTrace(ball.pos, ball.vel)
+      if (!options?.skipTrace) {
+        this.trace.addTrace(ball.pos, ball.vel)
+      }
     }
   }
 
@@ -48,6 +64,9 @@ export class BallMesh {
   }
 
   updateArrows(pos, rvel, state) {
+    if (!this.spinAxisArrow.visible) {
+      return
+    }
     this.spinAxisArrow.setLength(R + (R * rvel.length()) / 2, R, R)
     this.spinAxisArrow.position.copy(pos)
     this.spinAxisArrow.setDirection(norm(rvel))

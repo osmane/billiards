@@ -8,9 +8,15 @@ import { AimEvent } from "../events/aimevent"
 import { TableGeometry } from "../view/tablegeometry"
 import { Outcome } from "./outcome"
 import { PocketGeometry } from "../view/pocketgeometry"
+import type { MeshUpdateOptions } from "../view/ballmesh"
 import { bounceHanBlend } from "./physics/physics"
 import { zero } from "../utils/utils"
 import { R } from "./physics/constants"
+
+export interface AdvanceStepStats {
+  retries: number
+  outcomeDelta: number
+}
 
 interface Pair {
   a: Ball
@@ -43,16 +49,18 @@ export class Table {
     }
   }
 
-  updateBallMesh(t) {
+  updateBallMesh(t, options?: MeshUpdateOptions) {
     this.balls.forEach((a) => {
-      a.updateMesh(t)
+      a.updateMesh(t, options)
     })
   }
 
-  advance(t: number) {
-    let depth = 0
+  advance(t: number, stats?: AdvanceStepStats) {
+    let retries = 0
+    const outcomesBefore = this.outcome.length
     while (!this.prepareAdvanceAll(t)) {
-      if (depth++ > 100) {
+      retries++
+      if (retries > 100) {
         throw new Error("Depth exceeded resolving collisions")
       }
     }
@@ -60,6 +68,10 @@ export class Table {
       a.update(t)
       a.fround()
     })
+    if (stats) {
+      stats.retries = retries
+      stats.outcomeDelta = this.outcome.length - outcomesBefore
+    }
   }
 
   /**
