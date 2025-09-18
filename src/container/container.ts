@@ -2,9 +2,8 @@ import { Input } from "../events/input"
 import { GameEvent } from "../events/gameevent"
 import { StationaryEvent } from "../events/stationaryevent"
 import { Controller } from "../controller/controller"
-import { Table, AdvanceStepStats } from "../model/table"
+import { Table } from "../model/table"
 import { View } from "../view/view"
-import type { MeshUpdateOptions } from "../view/ballmesh"
 import { Init } from "../controller/init"
 import { AimInputs } from "../view/aiminputs"
 import { Keyboard } from "../events/keyboard"
@@ -48,14 +47,7 @@ export class Container {
   accumulator = 0
   readonly maxSubSteps = 24
   readonly maxAccumulator = this.step * 96
-  readonly physicsBudgetMs = 6
-  readonly physicsLogCooldownMs = 1500
   readonly maxFrameDelta = 1 / 30
-  lastPhysicsWarningTs = 0
-  droppedDeltaSinceLog = 0
-  prevAdvanceMs = 0
-  prevProcessMs = 0
-  prevRenderMs = 0
 
   broadcast: (event: GameEvent) => void = () => {}
   log: (text: string) => void
@@ -95,107 +87,31 @@ export class Container {
     this.frame?.(elapsed)
 
     const stateBefore = this.table.allStationary()
-    const rawDelta = Math.max(elapsed, 0)
-    const delta = Math.min(rawDelta, this.maxFrameDelta)
-    const droppedDelta = rawDelta - delta
-    if (droppedDelta > 0) {
-      this.droppedDeltaSinceLog += droppedDelta
-    }
+    const delta = Math.min(Math.max(elapsed, 0), this.maxFrameDelta)
     this.accumulator = Math.min(this.accumulator + delta, this.maxAccumulator)
-    const backlogBeforeStep = this.accumulator
 
-    const now = typeof performance !== "undefined" && performance.now ? () => performance.now() : () => Date.now()
-    const started = now()
     let steps = 0
-    let budgetClamped = false
-    let backlogOnClamp = 0
-    let maxStepRetries = 0
-    let totalStepRetries = 0
-    let outcomesThisFrame = 0
     while (this.accumulator >= this.step && steps < this.maxSubSteps) {
-      const stepStats: AdvanceStepStats = { retries: 0, outcomeDelta: 0 }
-      this.table.advance(this.step, stepStats)
-      maxStepRetries = Math.max(maxStepRetries, stepStats.retries)
-      totalStepRetries += stepStats.retries
-      outcomesThisFrame += stepStats.outcomeDelta
+      this.table.advance(this.step)
       this.accumulator -= this.step
       steps++
-      if (now() - started >= this.physicsBudgetMs) {
-        backlogOnClamp = this.accumulator
-        this.accumulator = 0
-        budgetClamped = true
-        break
-      }
     }
-    const physicsMs = now() - started
-    const hitStepCap = steps === this.maxSubSteps && this.accumulator >= this.step
-    const backlogBeforeClamp = budgetClamped ? backlogOnClamp : this.accumulator
-    if (hitStepCap) {
+
+    if (steps === this.maxSubSteps && this.accumulator >= this.step) {
       this.accumulator = Math.min(this.accumulator, this.step)
     }
-    const backlogAfterClamp = budgetClamped ? backlogOnClamp : this.accumulator
+
     const simulated = steps * this.step
-    const { mode: meshMode, options: meshOptions } = this.selectMeshUpdate(
-      droppedDelta,
-      backlogBeforeStep,
-      budgetClamped,
-      hitStepCap,
-      steps
-    )
-    const meshStart = now()
-    this.table.updateBallMesh(simulated, meshOptions)
-    const meshEnd = now()
+    this.table.updateBallMesh(simulated)
     this.view.update(simulated, this.table.cue.aim)
-    const viewEnd = now()
     this.table.cue.update(simulated)
-    const cueEnd = now()
-    const meshMs = meshEnd - meshStart
-    const viewMs = viewEnd - meshEnd
-    const cueMs = cueEnd - viewEnd
-    const totalAdvanceMs = cueEnd - started
-    this.prevAdvanceMs = totalAdvanceMs
-    const controllerLabel = controllerName(this.controller)
-    const shouldLog = controllerLabel === "PlayShot" && (budgetClamped || hitStepCap || droppedDelta > 0 || rawDelta >= this.step * this.maxSubSteps)
-    if (shouldLog) {
-      const ts = now()
-      if (typeof console !== "undefined" && console.warn) {
-        if (ts - this.lastPhysicsWarningTs >= this.physicsLogCooldownMs) {
-          const reason = budgetClamped ? "budget" : hitStepCap ? "step" : "slow"
-          const movingBalls = this.table.balls.filter((b) => b.inMotion()).length
-          console.warn(`[physics] frame clamped (${reason})`, {
-            elapsed,
-            delta,
-            droppedDelta: this.droppedDeltaSinceLog,
-            steps,
-            backlogBefore: backlogBeforeClamp,
-            backlogAfter: backlogAfterClamp,
-            controller: controllerLabel,
-            movingBalls,
-            stateBefore,
-            maxSubSteps: this.maxSubSteps,
-            maxStepRetries,
-            totalStepRetries,
-            outcomesThisFrame,
-            physicsMs,
-            meshMode,
-            meshMs,
-            viewMs,
-            cueMs,
-            advanceMs: this.prevAdvanceMs,
-            processMs: this.prevProcessMs,
-            renderMs: this.prevRenderMs,
-          })
-          this.droppedDeltaSinceLog = 0
-          this.lastPhysicsWarningTs = ts
-        }
-      }
-    }
 
     if (!stateBefore && this.table.allStationary()) {
       this.eventQueue.push(new StationaryEvent())
     }
     this.sound.processOutcomes(this.table.outcome)
   }
+
 
   processEvents() {
     if (this.keyboard) {
@@ -226,58 +142,21 @@ export class Container {
     this.advance(dt)
     this.last = timestamp
 
-    const perfNow =
-      typeof performance !== "undefined" && performance.now
-        ? () => performance.now()
-        : () => Date.now()
-
-    const processStart = perfNow()
     this.processEvents()
-    this.prevProcessMs = perfNow() - processStart
 
     const needsRender =
       timestamp < this.lastEventTime + 12000 ||
       !this.table.allStationary() ||
       this.view.sizeChanged()
-    let renderMs = 0
     if (needsRender) {
-      const renderStart = perfNow()
       this.view.render()
-      renderMs = perfNow() - renderStart
     }
-    this.prevRenderMs = renderMs
 
     requestAnimationFrame((t) => {
       this.animate(t)
     })
   }
 
-  private selectMeshUpdate(
-    droppedDelta: number,
-    backlogBeforeStep: number,
-    budgetClamped: boolean,
-    hitStepCap: boolean,
-    stepsExecuted: number
-  ): { mode: "full" | "reduced" | "positions-only"; options?: MeshUpdateOptions } {
-    const backlogSteps = backlogBeforeStep / this.step
-    const clampActive = budgetClamped || hitStepCap
-    const heavyDrop = droppedDelta > 0.12
-    const moderateDrop = droppedDelta > 0.03
-    const heavyBacklog = backlogSteps >= this.maxSubSteps
-    if (heavyDrop || heavyBacklog || (clampActive && moderateDrop)) {
-      return {
-        mode: "positions-only",
-        options: { positionsOnly: true, skipTrace: true, skipSpinAxis: true },
-      }
-    }
-    if (moderateDrop || clampActive || backlogSteps > 8 || stepsExecuted > this.maxSubSteps / 2) {
-      return {
-        mode: "reduced",
-        options: { skipTrace: true, skipSpinAxis: true },
-      }
-    }
-    return { mode: "full" }
-  }
 
   updateController(controller) {
     if (controller !== this.controller) {

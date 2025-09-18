@@ -8,15 +8,9 @@ import { AimEvent } from "../events/aimevent"
 import { TableGeometry } from "../view/tablegeometry"
 import { Outcome } from "./outcome"
 import { PocketGeometry } from "../view/pocketgeometry"
-import type { MeshUpdateOptions } from "../view/ballmesh"
 import { bounceHanBlend } from "./physics/physics"
 import { zero } from "../utils/utils"
 import { R } from "./physics/constants"
-
-export interface AdvanceStepStats {
-  retries: number
-  outcomeDelta: number
-}
 
 interface Pair {
   a: Ball
@@ -49,15 +43,14 @@ export class Table {
     }
   }
 
-  updateBallMesh(t, options?: MeshUpdateOptions) {
+  updateBallMesh(t) {
     this.balls.forEach((a) => {
-      a.updateMesh(t, options)
+      a.updateMesh(t)
     })
   }
 
-  advance(t: number, stats?: AdvanceStepStats) {
+  advance(t: number) {
     let retries = 0
-    const outcomesBefore = this.outcome.length
     while (!this.prepareAdvanceAll(t)) {
       retries++
       if (retries > 100) {
@@ -68,11 +61,8 @@ export class Table {
       a.update(t)
       a.fround()
     })
-    if (stats) {
-      stats.retries = retries
-      stats.outcomeDelta = this.outcome.length - outcomesBefore
-    }
   }
+
 
   /**
    * Returns true if all balls can advance by t without collision
