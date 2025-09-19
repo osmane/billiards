@@ -19,6 +19,7 @@ import { RuleFactory } from "../controller/rules/rulefactory"
 import { Menu } from "../view/menu"
 import { Hud } from "../view/hud"
 import { LobbyIndicator } from "../view/lobbyindicator"
+import { ScoreButtons } from "../view/scorebuttons"
 import { endShot, recordShotFrame } from "../utils/shotstats"
 
 /**
@@ -42,6 +43,7 @@ export class Container {
   menu: Menu
   hud: Hud
   lobbyIndicator: LobbyIndicator
+  scoreButtons: ScoreButtons
   frame: (timestamp: number) => void
   private wasMoving = false
 
@@ -53,6 +55,7 @@ export class Container {
 
   constructor(element, log, assets, ruletype?, keyboard?, id?) {
     this.log = log
+    this.scoreButtons = new ScoreButtons()
     this.rules = RuleFactory.create(ruletype, this)
     this.table = this.rules.table()
     this.view = new View(element, this.table, assets)

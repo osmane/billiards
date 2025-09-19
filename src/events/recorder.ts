@@ -116,9 +116,13 @@ export class Recorder {
 
     let colourString = "#000000"
     if (balls.length > 0) {
-      balls.forEach((element) => {
-        colourString = "#" + element.ballmesh.color.getHexString()
-      })
+      const lastBall = balls[balls.length - 1]
+      colourString = "#" + lastBall.ballmesh.color.getHexString()
+    } else if (this.container.rules.rulename === "threecushion") {
+      const cueBall = this.container.rules.cueball
+      if (cueBall) {
+        colourString = "#" + cueBall.ballmesh.color.getHexString()
+      }
     }
 
     const shotIcon = "⚈".repeat(pots) + (isPartOfBreak ? "⚈" : "⚆")
@@ -186,3 +190,4 @@ export class Recorder {
       .replace(/\*/g, "%2A")
   }
 }
+

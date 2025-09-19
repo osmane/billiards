@@ -34,9 +34,12 @@ export class ThreeCushion implements Rules {
   previousBreak = 0
   score = 0
   rulename = "threecushion" as const
+  private whiteScore = 0
+  private yellowScore = 0
 
   constructor(container: Container) {
     this.container = container
+    this.resetScores()
   }
 
   startTurn() {
@@ -77,6 +80,7 @@ export class ThreeCushion implements Rules {
     this.tableGeometry()
     const table = new Table(this.rack())
     this.cueball = table.cueball
+    this.resetScores()
     return table
   }
 
@@ -89,7 +93,7 @@ export class ThreeCushion implements Rules {
       this.container.sound.playSuccess(outcomes.length / 3)
       this.container.sendEvent(new WatchEvent(this.container.table.serialise()))
       this.currentBreak++
-      this.score++
+      this.registerPointForCurrentCueBall()
       return new Aim(this.container)
     }
 
@@ -117,6 +121,33 @@ export class ThreeCushion implements Rules {
 
   isEndOfGame(_: Outcome[]) {
     return false
+  }
+
+  private registerPointForCurrentCueBall() {
+    const table = this.container?.table
+    if (table) {
+      const balls = table.balls
+      if (this.cueball === balls[0]) {
+        this.whiteScore++
+      } else if (this.cueball === balls[1]) {
+        this.yellowScore++
+      }
+    } else {
+      this.whiteScore++
+    }
+    this.score = this.whiteScore + this.yellowScore
+    this.updateScoreButtons()
+  }
+
+  private resetScores() {
+    this.whiteScore = 0
+    this.yellowScore = 0
+    this.score = 0
+    this.updateScoreButtons()
+  }
+
+  private updateScoreButtons() {
+    this.container?.scoreButtons?.setScores(this.whiteScore, this.yellowScore)
   }
 
   allowsPlaceBall() {

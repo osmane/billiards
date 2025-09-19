@@ -253,3 +253,76 @@ label {
   display: inline-block;
   width: 9ch;
 }
+
+
+
+
+.chatoutput .menuButton {
+  height: auto;
+  width: auto;
+  max-width: none;
+  aspect-ratio: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  margin-bottom: 4px;
+  padding: 0;
+}
+
+
+.scoreButton {
+  font-weight: 600;
+  position: relative;
+  z-index: 100;
+}
+
+.scoreHighlight {
+  position: absolute;
+  display: none;
+  background-color: #ffffff;
+  border: 1px solid #0b0b0e;
+  pointer-events: none;
+  z-index: 200;
+  width: 0;
+  height: 0;
+}
+
+.scoreButton--white {
+  color: #ffffff;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+.scoreButton--yellow {
+  color: #f7d23e;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+}
+.menuButton--large {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  max-width: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  line-height: 1;
+  aspect-ratio: auto;
+  padding: 0;
+}
+
+.chatoutput .menuButton--large {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+
+
+
+
+
+
+
