@@ -5,6 +5,9 @@ import {
   MathUtils,
   AudioContext,
 } from "three"
+import { Outcome } from "../model/outcome"
+
+const VOLUME_MULTIPLIER = 10
 
 export class Sound {
   listener: AudioListener
@@ -16,7 +19,9 @@ export class Sound {
   pot
   success
 
-  lastOutcomeTime = 0
+  lastOutcomeTime = Number.NEGATIVE_INFINITY
+  private lastOutcomeIndex = -1
+  private lastOutcomeArray: Outcome[] | null = null
   loadAssets
 
   constructor(loadAssets) {
@@ -79,36 +84,50 @@ export class Sound {
 
   outcomeToSound(outcome) {
     if (outcome.type === "Collision") {
-      this.play(
-        this.ballcollision,
-        outcome.incidentSpeed / 80,
+      this.play(this.ballcollision, outcome.incidentSpeed / 10 * VOLUME_MULTIPLIER,
         outcome.incidentSpeed * 5
       )
     }
     if (outcome.type === "Pot") {
-      this.play(
-        this.pot,
-        outcome.incidentSpeed / 10,
+      this.play(this.pot, outcome.incidentSpeed / 10 * VOLUME_MULTIPLIER,
         -1000 + outcome.incidentSpeed * 10
       )
     }
     if (outcome.type === "Cushion") {
-      this.play(this.cushion, outcome.incidentSpeed / 70)
+      this.play(this.cushion, outcome.incidentSpeed / 90 * VOLUME_MULTIPLIER)
     }
     if (outcome.type === "Hit") {
-      this.play(this.cue, outcome.incidentSpeed / 30)
+      this.play(this.cue, outcome.incidentSpeed / 30 * VOLUME_MULTIPLIER)
     }
   }
 
-  processOutcomes(outcomes) {
-    outcomes.every((outcome) => {
-      if (outcome.timestamp > this.lastOutcomeTime) {
+  processOutcomes(outcomes: Outcome[]) {
+    if (!outcomes || outcomes.length === 0) {
+      return
+    }
+
+    if (this.lastOutcomeArray !== outcomes) {
+      // New shot replaces the array, so reset the playback cursor.
+      this.lastOutcomeArray = outcomes
+      this.lastOutcomeTime = Number.NEGATIVE_INFINITY
+      this.lastOutcomeIndex = -1
+    } else if (this.lastOutcomeIndex >= outcomes.length) {
+      this.lastOutcomeIndex = outcomes.length - 1
+    }
+
+    // Track index alongside timestamp so simultaneous outcomes still play once.
+    for (let i = this.lastOutcomeIndex + 1; i < outcomes.length; i++) {
+      const outcome = outcomes[i]
+      if (
+        outcome.timestamp > this.lastOutcomeTime ||
+        (outcome.timestamp === this.lastOutcomeTime && i > this.lastOutcomeIndex)
+      ) {
         this.lastOutcomeTime = outcome.timestamp
+        this.lastOutcomeIndex = i
         this.outcomeToSound(outcome)
-        return false
+        break
       }
-      return true
-    })
+    }
   }
 
   playNotify() {
@@ -119,3 +138,12 @@ export class Sound {
     this.play(this.success, 0.1, pitch * 100 - 2200)
   }
 }
+
+
+
+
+
+
+
+
+
