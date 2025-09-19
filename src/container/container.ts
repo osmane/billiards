@@ -19,10 +19,12 @@ import { RuleFactory } from "../controller/rules/rulefactory"
 import { Menu } from "../view/menu"
 import { Hud } from "../view/hud"
 import { LobbyIndicator } from "../view/lobbyindicator"
+import { endShot, recordShotFrame } from "../utils/shotstats"
 
 /**
  * Model, View, Controller container.
  */
+const now = () => (typeof performance !== "undefined" ? performance.now() : Date.now())
 export class Container {
   table: Table
   view: View
@@ -41,13 +43,10 @@ export class Container {
   hud: Hud
   lobbyIndicator: LobbyIndicator
   frame: (timestamp: number) => void
+  private wasMoving = false
 
   last = performance.now()
   readonly step = 0.001953125 * 1
-  accumulator = 0
-  readonly maxSubSteps = 24
-  readonly maxAccumulator = this.step * 96
-  readonly maxFrameDelta = 1 / 30
 
   broadcast: (event: GameEvent) => void = () => {}
   log: (text: string) => void
@@ -69,6 +68,7 @@ export class Container {
     this.hud = new Hud()
     this.lobbyIndicator = new LobbyIndicator()
     this.updateController(new Init(this))
+    this.wasMoving = !this.table.allStationary()
   }
 
   sendChat = (msg) => {
@@ -86,32 +86,20 @@ export class Container {
   advance(elapsed) {
     this.frame?.(elapsed)
 
+    const steps = Math.floor(elapsed / this.step)
+    const computedElapsed = steps * this.step
     const stateBefore = this.table.allStationary()
-    const delta = Math.min(Math.max(elapsed, 0), this.maxFrameDelta)
-    this.accumulator = Math.min(this.accumulator + delta, this.maxAccumulator)
-
-    let steps = 0
-    while (this.accumulator >= this.step && steps < this.maxSubSteps) {
+    for (let i = 0; i < steps; i++) {
       this.table.advance(this.step)
-      this.accumulator -= this.step
-      steps++
     }
-
-    if (steps === this.maxSubSteps && this.accumulator >= this.step) {
-      this.accumulator = Math.min(this.accumulator, this.step)
-    }
-
-    const simulated = steps * this.step
-    this.table.updateBallMesh(simulated)
-    this.view.update(simulated, this.table.cue.aim)
-    this.table.cue.update(simulated)
-
+    this.table.updateBallMesh(computedElapsed)
+    this.view.update(computedElapsed, this.table.cue.aim)
+    this.table.cue.update(computedElapsed)
     if (!stateBefore && this.table.allStationary()) {
       this.eventQueue.push(new StationaryEvent())
     }
     this.sound.processOutcomes(this.table.outcome)
   }
-
 
   processEvents() {
     if (this.keyboard) {
@@ -138,25 +126,63 @@ export class Container {
   lastEventTime = performance.now()
 
   animate(timestamp): void {
+    const frameStart = now()
     const dt = (timestamp - this.last) / 1000
-    this.advance(dt)
+    const wasMoving = this.wasMoving
+    const clampedDt = Math.max(dt, 0)
+
+    const advanceStart = now()
+    this.advance(clampedDt)
+    const advanceTime = now() - advanceStart
     this.last = timestamp
 
+    const processStart = now()
     this.processEvents()
+    const processTime = now() - processStart
 
+    let renderTime = 0
     const needsRender =
       timestamp < this.lastEventTime + 12000 ||
       !this.table.allStationary() ||
       this.view.sizeChanged()
     if (needsRender) {
+      const renderStart = now()
       this.view.render()
+      renderTime = now() - renderStart
     }
+
+    const frameTotal = now() - frameStart
+    recordShotFrame({
+      physics: advanceTime,
+      process: processTime,
+      render: renderTime,
+      total: frameTotal,
+      dtMs: clampedDt * 1000,
+      rawElapsedMs: clampedDt * 1000,
+      deltaMs: clampedDt * 1000,
+      steps: 0,
+      simulatedMs: clampedDt * 1000,
+      accumulatorBefore: 0,
+      accumulatorAfterAdd: 0,
+      accumulatorAfter: 0,
+      backlogBefore: 0,
+      backlogAfter: 0,
+      deltaClamped: false,
+      accumulatorClamped: false,
+      hitMaxSubSteps: false,
+      accumulatorTrimmedPostStep: false,
+    })
+
+    const isMoving = !this.table.allStationary()
+    if (wasMoving && !isMoving) {
+      endShot()
+    }
+    this.wasMoving = isMoving
 
     requestAnimationFrame((t) => {
       this.animate(t)
     })
   }
-
 
   updateController(controller) {
     if (controller !== this.controller) {

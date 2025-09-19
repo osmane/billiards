@@ -11,6 +11,7 @@ import { PocketGeometry } from "../view/pocketgeometry"
 import { bounceHanBlend } from "./physics/physics"
 import { zero } from "../utils/utils"
 import { R } from "./physics/constants"
+import { beginShot } from "../utils/shotstats"
 
 interface Pair {
   a: Ball
@@ -142,6 +143,7 @@ export class Table {
   }
 
   hit() {
+    beginShot()
     this.cue.hit(this.cueball)
     this.balls.forEach((b) => {
       b.ballmesh.trace.reset()
