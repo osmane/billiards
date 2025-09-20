@@ -56,6 +56,12 @@ export class AimInputs {
   }
 
   adjustSpin(e) {
+    console.log("🎮 adjustSpin called", {
+      offsetX: e.offsetX,
+      offsetY: e.offsetY,
+      ballWidth: this.ballWidth,
+      ballHeight: this.ballHeight
+    })
     this.readDimensions()
     this.container.table.cue.setSpin(
       new Vector3(
@@ -65,6 +71,7 @@ export class AimInputs {
       this.container.table
     )
     this.container.lastEventTime = performance.now()
+    this.container.updateTrajectoryPrediction()
   }
 
   updateVisualState(x: number, y: number) {
@@ -97,7 +104,13 @@ export class AimInputs {
   }
 
   powerChanged = (_) => {
+    console.log("🎮 powerChanged called", {
+      value: this.cuePowerElement.value,
+      powerBefore: this.container.table.cue.aim.power
+    })
     this.container.table.cue.setPower(this.cuePowerElement.value)
+    console.log("  powerAfter:", this.container.table.cue.aim.power)
+    this.container.updateTrajectoryPrediction()
   }
 
   updatePowerSlider(power) {
@@ -113,9 +126,15 @@ export class AimInputs {
 
   mousewheel = (e) => {
     if (this.cuePowerElement) {
+      console.log("🎮 mousewheel called", {
+        deltaY: e.deltaY,
+        valueBefore: this.cuePowerElement.value
+      })
       this.cuePowerElement.value -= Math.sign(e.deltaY) / 10
+      console.log("  valueAfter:", this.cuePowerElement.value)
       this.container.table.cue.setPower(this.cuePowerElement.value)
       this.container.lastEventTime = performance.now()
+      this.container.updateTrajectoryPrediction()
     }
   }
 }

@@ -21,6 +21,8 @@ import { Hud } from "../view/hud"
 import { LobbyIndicator } from "../view/lobbyindicator"
 import { ScoreButtons } from "../view/scorebuttons"
 import { endShot, recordShotFrame } from "../utils/shotstats"
+import { TrajectoryPredictor } from "../model/trajectorypredictor"
+import { TrajectoryRenderer } from "../view/trajectoryrenderer"
 
 /**
  * Model, View, Controller container.
@@ -44,6 +46,8 @@ export class Container {
   hud: Hud
   lobbyIndicator: LobbyIndicator
   scoreButtons: ScoreButtons
+  trajectoryPredictor: TrajectoryPredictor
+  trajectoryRenderer: TrajectoryRenderer
   frame: (timestamp: number) => void
   private wasMoving = false
 
@@ -59,6 +63,9 @@ export class Container {
     this.rules = RuleFactory.create(ruletype, this)
     this.table = this.rules.table()
     this.view = new View(element, this.table, assets)
+    this.trajectoryPredictor = new TrajectoryPredictor()
+    this.trajectoryRenderer = new TrajectoryRenderer(this.view.scene)
+    this.table.cue.container = this // Set container reference for trajectory updates
     this.table.cue.aimInputs = new AimInputs(this)
     this.keyboard = keyboard
     this.sound = assets.sound
@@ -72,6 +79,12 @@ export class Container {
     this.lobbyIndicator = new LobbyIndicator()
     this.updateController(new Init(this))
     this.wasMoving = !this.table.allStationary()
+
+    // Initial trajectory prediction for 3 cushion mode
+    setTimeout(() => {
+      console.log("🚀 Initial trajectory prediction check")
+      this.updateTrajectoryPrediction()
+    }, 1000)
   }
 
   sendChat = (msg) => {
@@ -100,6 +113,8 @@ export class Container {
     this.table.cue.update(computedElapsed)
     if (!stateBefore && this.table.allStationary()) {
       this.eventQueue.push(new StationaryEvent())
+      // Update trajectory prediction when balls become stationary
+      this.updateTrajectoryPrediction()
     }
     this.sound.processOutcomes(this.table.outcome)
   }
@@ -192,6 +207,41 @@ export class Container {
       this.log("Transition to " + controllerName(controller))
       this.controller = controller
       this.controller.onFirst()
+    }
+  }
+
+  updateTrajectoryPrediction() {
+    console.log("🎯 updateTrajectoryPrediction called")
+    console.log("  - Rules:", this.rules?.rulename)
+    console.log("  - Should predict:", TrajectoryPredictor.shouldPredict(this))
+    console.log("  - All stationary:", this.table.allStationary())
+    console.log("  - Aim:", {
+      angle: this.table.cue.aim.angle,
+      power: this.table.cue.aim.power,
+      offset: this.table.cue.aim.offset
+    })
+
+    // Only predict trajectories for 3 cushion mode when balls are stationary
+    if (!TrajectoryPredictor.shouldPredict(this) || !this.table.allStationary()) {
+      console.log("  - Clearing trajectories (conditions not met)")
+      this.trajectoryRenderer.clearTrajectories()
+      return
+    }
+
+    try {
+      console.log("  - Running trajectory prediction...")
+      const predictions = this.trajectoryPredictor.predictTrajectory(this.table, this.table.cue.aim, this.rules)
+      console.log("  - Predictions generated:", predictions.length)
+      predictions.forEach((pred, i) => {
+        const ball = this.table.balls.find(b => b.id === pred.ballId)
+        const ballColor = ball ? ball.ballmesh.color.getHexString() : "unknown"
+        console.log(`    Ball ${pred.ballId}: ${pred.points.length} points, color: #${ballColor}`)
+      })
+      this.trajectoryRenderer.updateTrajectories(predictions, this.table)
+      console.log("  - Trajectory rendering updated")
+    } catch (error) {
+      console.warn("Failed to update trajectory prediction:", error)
+      this.trajectoryRenderer.clearTrajectories()
     }
   }
 }

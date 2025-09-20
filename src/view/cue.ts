@@ -18,10 +18,12 @@ export class Cue {
   t = 0
   aimInputs: AimInputs
   aim: AimEvent = new AimEvent()
+  container: any // Container reference for trajectory updates
 
   length = TableGeometry.tableX * 1
 
-  constructor() {
+  constructor(container?: any) {
+    this.container = container
     this.mesh = CueMesh.createCue(
       (R * 0.05) / 0.5,
       (R * 0.15) / 0.5,
@@ -32,20 +34,25 @@ export class Cue {
   }
 
   rotateAim(angle, table: Table) {
+    console.log("🎮 rotateAim called", { angle, newAngle: this.aim.angle + angle })
     this.aim.angle = this.aim.angle + angle
     this.mesh.rotation.z = this.aim.angle
     this.helperMesh.rotation.z = this.aim.angle
     this.aimInputs.showOverlap()
     this.avoidCueTouchingOtherBall(table)
+    this.container?.updateTrajectoryPrediction()
   }
 
   adjustPower(delta) {
     this.aim.power = Math.min(this.maxPower, this.aim.power + delta)
     this.updateAimInput()
+    this.container?.updateTrajectoryPrediction()
   }
 
   setPower(value: number) {
+    console.log("🎮 setPower called", { value, newPower: value * this.maxPower })
     this.aim.power = value * this.maxPower
+    this.container?.updateTrajectoryPrediction()
   }
 
   hit(ball: Ball) {
@@ -54,6 +61,8 @@ export class Cue {
     ball.state = State.Sliding
     ball.vel.copy(unitAtAngle(aim.angle).multiplyScalar(aim.power))
     ball.rvel.copy(cueToSpin(aim.offset, ball.vel))
+    // Clear trajectory predictions when shot is made
+    this.container?.trajectoryRenderer?.clearTrajectories()
   }
 
   aimAtNext(cueball, ball) {
@@ -68,15 +77,21 @@ export class Cue {
     const originalOffset = this.aim.offset.clone()
     const newOffset = originalOffset.clone().add(delta)
     this.setSpin(newOffset, table)
+    this.container?.updateTrajectoryPrediction()
   }
 
   setSpin(offset: Vector3, table: Table) {
+    console.log("🎮 setSpin called", {
+      offset: { x: offset.x, y: offset.y, z: offset.z },
+      length: offset.length()
+    })
     if (offset.length() > this.offCenterLimit) {
       offset.normalize().multiplyScalar(this.offCenterLimit)
     }
     this.aim.offset.copy(offset)
     this.avoidCueTouchingOtherBall(table)
     this.updateAimInput()
+    this.container?.updateTrajectoryPrediction()
   }
 
   avoidCueTouchingOtherBall(table: Table) {

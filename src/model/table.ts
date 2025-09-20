@@ -154,6 +154,7 @@ export class Table {
     return {
       balls: this.balls.map((b) => b.serialise()),
       aim: this.cue.aim.copy(),
+      cushionModel: this.cushionModel,
     }
   }
 
@@ -169,6 +170,9 @@ export class Table {
     }
     if (data.aim) {
       this.cue.aim = AimEvent.fromJson(data.aim)
+    }
+    if (data.cushionModel) {
+      this.cushionModel = data.cushionModel
     }
   }
 
