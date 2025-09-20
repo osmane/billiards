@@ -20,12 +20,120 @@ export class Chat {
   }
 
   showMessage(msg) {
-    this.chatoutput && (this.chatoutput.innerHTML += msg)
+    // Check if this is a score-related button (contains colored link)
+    const scoreButtonTarget = this.getScoreButtonTarget(msg)
+
+    if (scoreButtonTarget) {
+      // Additional check: Don't route score bead buttons that are just single ⚈ with no actual score
+      if (this.shouldFilterScoreButton(msg)) {
+        // Send to chatoutput instead of score highlights for invalid score buttons
+        this.chatoutput && (this.chatoutput.innerHTML += msg)
+      } else {
+        this.addToScoreHighlight(scoreButtonTarget, msg)
+      }
+    } else {
+      // Default behavior for non-score buttons
+      this.chatoutput && (this.chatoutput.innerHTML += msg)
+    }
     this.updateScroll()
+  }
+
+  private shouldFilterScoreButton(msg: string): boolean {
+    // Only filter out buttons that have no meaningful content (shouldn't happen with proper events)
+    // Let legitimate single ⚈ (break continuation) and ⚆ (replay) buttons through
+
+    // Don't filter any buttons - let the original game logic determine when to show them
+    // The issue might be elsewhere in the triggering conditions
+    return false
+  }
+
+  private getScoreButtonTarget(msg: string): string | null {
+    // Parse the color from the message to determine which score button it belongs to
+    const colorMatch = msg.match(/style="color:\s*(#[0-9a-fA-F]{6})/)
+    if (!colorMatch) return null
+
+    const color = colorMatch[1].toLowerCase()
+
+    // Check for specific ball colors
+    // White ball: #ffffff (pure white)
+    // Yellow ball: #ffd84d or similar yellow tones
+
+    const r = parseInt(color.substr(1, 2), 16)
+    const g = parseInt(color.substr(3, 2), 16)
+    const b = parseInt(color.substr(5, 2), 16)
+
+    // Check if this is a score bead button (⚈) vs replay button (⚆)
+    const isScoreBeadButton = msg.includes("⚈")
+    const isReplayButton = msg.includes("⚆")
+
+    // Determine color-based target
+    let colorTarget: string
+
+    // Check if it's pure white or very close to white
+    if (r >= 240 && g >= 240 && b >= 240) {
+      colorTarget = "scoreHighlightRight"  // White score button (RIGHT)
+    }
+    // Check if it's yellow-ish (high red and green, low blue)
+    else if (r >= 200 && g >= 180 && b <= 100) {
+      colorTarget = "scoreHighlightLeft"  // Yellow score button (LEFT)
+    }
+    // For any other colors, try to determine based on color characteristics
+    else {
+      // If it has more yellow/warm tones, send to yellow; if cooler/neutral, send to white
+      const yellowness = (r + g) / 2 - b  // Higher value indicates more yellow
+      const whiteness = Math.min(r, g, b)  // Higher value indicates more white/neutral
+
+      if (yellowness > whiteness) {
+        colorTarget = "scoreHighlightLeft"  // Yellow score button (LEFT)
+      } else {
+        colorTarget = "scoreHighlightRight"   // White score button (RIGHT)
+      }
+    }
+
+    // Apply different logic for score bead buttons vs replay buttons
+    if (isScoreBeadButton) {
+      // Score bead buttons (⚈) need to be reversed
+      return colorTarget === "scoreHighlightLeft" ? "scoreHighlightRight" : "scoreHighlightLeft"
+    } else {
+      // Replay buttons (⚆) and other buttons use normal logic
+      return colorTarget
+    }
+  }
+
+  private addToScoreHighlight(targetId: string, msg: string) {
+    const target = document.getElementById(targetId)
+    if (!target) return
+
+    // Create a button container if it doesn't exist
+    if (!target.querySelector('.score-buttons-container')) {
+      target.innerHTML = '<div class="score-buttons-container"></div>'
+    }
+
+    const container = target.querySelector('.score-buttons-container') as HTMLElement
+    if (container) {
+      // Add new button at the bottom (appendChild adds to end)
+      const buttonDiv = document.createElement('div')
+      buttonDiv.innerHTML = msg
+      container.appendChild(buttonDiv)
+    }
   }
 
   updateScroll() {
     this.chatoutput &&
       (this.chatoutput.scrollTop = this.chatoutput.scrollHeight)
+  }
+
+  clearScoreButtons(targetId?: string) {
+    if (targetId) {
+      const target = document.getElementById(targetId)
+      const container = target?.querySelector('.score-buttons-container') as HTMLElement
+      if (container) {
+        container.innerHTML = ''
+      }
+    } else {
+      // Clear both score highlight boxes
+      this.clearScoreButtons("scoreHighlightLeft")
+      this.clearScoreButtons("scoreHighlightRight")
+    }
   }
 }
