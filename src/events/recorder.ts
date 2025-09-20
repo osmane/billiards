@@ -156,7 +156,7 @@ export class Recorder {
         ? this.container.rules.previousBreak
         : this.container.rules.currentBreak
     currentBreak.score = breakScore
-    const text = `break(${breakScore})`
+    const text = this.container.rules.rulename === "threecushion" ? "⏹️" : `break(${breakScore})`
     const serialisedShot = JSON.stringify(currentBreak)
     const compressed = JSONCrush.crush(serialisedShot)
     this.generateLink(text, compressed, "black")
@@ -184,7 +184,7 @@ export class Recorder {
   }
 
   private generateHiScoreLink(state) {
-    const text = "hi score 🏆"
+    const text = this.container.rules.rulename === "threecushion" ? "🏆" : "hi score 🏆"
     const shotUri = `${this.hiScoreUrl}?ruletype=${
       this.container.rules.rulename
     }&state=${this.fullyEncodeURI(state)}`

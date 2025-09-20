@@ -58,6 +58,17 @@ export class Chat {
   }
 
   private getScoreButtonTarget(msg: string): string | null {
+    // Check for break and hiscore buttons first
+    if (msg.includes('break(') || msg.includes('hi score')) {
+      // Break and hiscore buttons go to both highlight boxes (or distribute them)
+      // For now, let's send break buttons to left and hiscore to right
+      if (msg.includes('break(')) {
+        return "scoreHighlightLeft"
+      } else if (msg.includes('hi score')) {
+        return "scoreHighlightRight"
+      }
+    }
+
     // Parse the color from the message to determine which score button it belongs to
     const colorMatch = msg.match(/style="color:\s*(#[0-9a-fA-F]{6})/)
     if (!colorMatch) return null
