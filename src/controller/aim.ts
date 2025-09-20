@@ -18,6 +18,17 @@ export class Aim extends ControllerBase {
     table.cue.moveTo(table.cueball.pos)
     this.container.view.camera.suggestMode(this.container.view.camera.aimView)
     table.cue.aimInputs.showOverlap()
+
+    // Update score buttons visibility for the current game mode
+    // This is crucial when transitioning from replay back to normal gameplay
+    this.container.scoreButtons.updateGameModeVisibility()
+
+    // Reinitialize event handlers with a slight delay to ensure DOM is ready
+    // This fixes issues where score buttons don't respond after retry from replay mode
+    setTimeout(() => {
+      this.container.scoreButtons.updateGameModeVisibility()
+      this.container.scoreButtons.reinitializeEventHandlers()
+    }, 100)
   }
 
   override handleInput(input: Input): Controller {

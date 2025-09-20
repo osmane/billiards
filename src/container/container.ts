@@ -82,7 +82,6 @@ export class Container {
 
     // Initial trajectory prediction for 3 cushion mode
     setTimeout(() => {
-      console.log("🚀 Initial trajectory prediction check")
       this.updateTrajectoryPrediction()
     }, 1000)
   }
@@ -113,7 +112,6 @@ export class Container {
     this.table.cue.update(computedElapsed)
     if (!stateBefore && this.table.allStationary()) {
       this.eventQueue.push(new StationaryEvent())
-      // Update trajectory prediction when balls become stationary
       this.updateTrajectoryPrediction()
     }
     this.sound.processOutcomes(this.table.outcome)
@@ -211,36 +209,16 @@ export class Container {
   }
 
   updateTrajectoryPrediction() {
-    console.log("🎯 updateTrajectoryPrediction called")
-    console.log("  - Rules:", this.rules?.rulename)
-    console.log("  - Should predict:", TrajectoryPredictor.shouldPredict(this))
-    console.log("  - All stationary:", this.table.allStationary())
-    console.log("  - Aim:", {
-      angle: this.table.cue.aim.angle,
-      power: this.table.cue.aim.power,
-      offset: this.table.cue.aim.offset
-    })
-
     // Only predict trajectories for 3 cushion mode when balls are stationary
     if (!TrajectoryPredictor.shouldPredict(this) || !this.table.allStationary()) {
-      console.log("  - Clearing trajectories (conditions not met)")
       this.trajectoryRenderer.clearTrajectories()
       return
     }
 
     try {
-      console.log("  - Running trajectory prediction...")
       const predictions = this.trajectoryPredictor.predictTrajectory(this.table, this.table.cue.aim, this.rules)
-      console.log("  - Predictions generated:", predictions.length)
-      predictions.forEach((pred, i) => {
-        const ball = this.table.balls.find(b => b.id === pred.ballId)
-        const ballColor = ball ? ball.ballmesh.color.getHexString() : "unknown"
-        console.log(`    Ball ${pred.ballId}: ${pred.points.length} points, color: #${ballColor}`)
-      })
       this.trajectoryRenderer.updateTrajectories(predictions, this.table)
-      console.log("  - Trajectory rendering updated")
     } catch (error) {
-      console.warn("Failed to update trajectory prediction:", error)
       this.trajectoryRenderer.clearTrajectories()
     }
   }

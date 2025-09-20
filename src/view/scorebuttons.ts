@@ -27,6 +27,12 @@ export class ScoreButtons {
     this.updateVisibilityBasedOnGameMode()
   }
 
+  // Method to reinitialize event handlers (needed after DOM state changes)
+  reinitializeEventHandlers() {
+    this.setupToggle("customBtnLeft")
+    this.setupToggle("customBtnRight")
+  }
+
   private applyScores() {
     if (typeof document === "undefined") {
       return
@@ -43,13 +49,28 @@ export class ScoreButtons {
     if (!(element instanceof HTMLButtonElement)) {
       return
     }
-    element.addEventListener("click", (event) => {
+
+    // Remove any existing click listeners by cloning the element
+    const newElement = element.cloneNode(true) as HTMLButtonElement
+    element.parentNode?.replaceChild(newElement, element)
+
+    newElement.addEventListener("click", (event) => {
       event.stopPropagation() // Prevent click from bubbling up
-      // Close any other open highlight box first
-      this.closeAllHighlights()
-      // Then open this one
-      element.classList.add(this.highlightClass)
-      this.updateHighlightPosition(id, true)
+
+      // Check if this button's highlight is currently visible
+      const isCurrentlyHighlighted = newElement.classList.contains(this.highlightClass)
+
+      if (isCurrentlyHighlighted) {
+        // If already highlighted, toggle it off (hide)
+        newElement.classList.remove(this.highlightClass)
+        this.updateHighlightPosition(id, false)
+      } else {
+        // If not highlighted, close any other open highlight box first
+        this.closeAllHighlights()
+        // Then open this one
+        newElement.classList.add(this.highlightClass)
+        this.updateHighlightPosition(id, true)
+      }
     })
   }
 
@@ -156,7 +177,6 @@ export class ScoreButtons {
     }
 
     const isThreeCushionMode = this.container?.rules?.rulename === "threecushion"
-    console.log("ScoreButtons: Game mode check - rulename:", this.container?.rules?.rulename, "isThreeCushion:", isThreeCushionMode)
 
     // Get all score-related elements
     const scoreButtons = [
@@ -176,9 +196,6 @@ export class ScoreButtons {
       if (button) {
         const display = isThreeCushionMode ? "block" : "none"
         button.style.display = display
-        console.log(`ScoreButton ${index}: display set to ${display}`)
-      } else {
-        console.log(`ScoreButton ${index}: element not found`)
       }
     })
 
@@ -191,18 +208,12 @@ export class ScoreButtons {
         } else {
           box.style.visibility = "visible"
         }
-        console.log(`HighlightBox ${index}: visibility set to ${isThreeCushionMode ? "visible" : "hidden"}`)
-      } else {
-        console.log(`HighlightBox ${index}: element not found`)
       }
     })
 
     // Show/hide target button based on game mode
     if (targetButton) {
       targetButton.style.display = isThreeCushionMode ? "block" : "none"
-      console.log(`TargetButton: display set to ${isThreeCushionMode ? "block" : "none"}`)
-    } else {
-      console.log("TargetButton: element not found")
     }
   }
 

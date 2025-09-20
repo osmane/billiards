@@ -159,9 +159,17 @@ export class Recorder {
     const text = this.container.rules.rulename === "threecushion" ? "⏹️" : `break(${breakScore})`
     const serialisedShot = JSON.stringify(currentBreak)
     const compressed = JSONCrush.crush(serialisedShot)
-    this.generateLink(text, compressed, "black")
+
+    // Get the current player's cue ball color for proper routing
+    let cueBallColor = "black"
+    const cueBall = this.container.rules.cueball
+    if (cueBall) {
+      cueBallColor = "#" + cueBall.ballmesh.color.getHexString()
+    }
+
+    this.generateLink(text, compressed, cueBallColor)
     if (breakScore >= 2) {
-      this.generateHiScoreLink(compressed)
+      this.generateHiScoreLink(compressed, cueBallColor)
     }
   }
 
@@ -183,12 +191,12 @@ export class Recorder {
     this.container.eventQueue.push(new ChatEvent(null, `${shotLink}`))
   }
 
-  private generateHiScoreLink(state) {
+  private generateHiScoreLink(state, cueBallColor = "black") {
     const text = this.container.rules.rulename === "threecushion" ? "🏆" : "hi score 🏆"
     const shotUri = `${this.hiScoreUrl}?ruletype=${
       this.container.rules.rulename
     }&state=${this.fullyEncodeURI(state)}`
-    const shotLink = `<a class="pill" target="_blank" href="${shotUri}">${text}</a>`
+    const shotLink = `<a class="pill" style="color: ${cueBallColor}" target="_blank" href="${shotUri}">${text}</a>`
     this.container.eventQueue.push(new ChatEvent(null, `${shotLink}`))
   }
 

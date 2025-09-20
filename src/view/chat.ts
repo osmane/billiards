@@ -59,12 +59,17 @@ export class Chat {
 
   private getScoreButtonTarget(msg: string): string | null {
     // Check for break and hiscore buttons first
-    if (msg.includes('break(') || msg.includes('hi score')) {
-      // Break and hiscore buttons go to both highlight boxes (or distribute them)
-      // For now, let's send break buttons to left and hiscore to right
-      if (msg.includes('break(')) {
+    if (msg.includes('break(') || msg.includes('hi score') || msg.includes('⏹️') || msg.includes('🏆')) {
+      // Break and hiscore buttons should be placed based on the cue ball color, not hardcoded positions
+      // Extract the color from the message and use the same logic as other buttons
+      const colorMatch = msg.match(/style="color:\s*(#[0-9a-fA-F]{6})/)
+      if (colorMatch) {
+        return this.getTargetFromColor(colorMatch[1])
+      }
+      // Fallback: if no color found, distribute break buttons to left and hiscore to right
+      if (msg.includes('break(') || msg.includes('⏹️')) {
         return "scoreHighlightLeft"
-      } else if (msg.includes('hi score')) {
+      } else if (msg.includes('hi score') || msg.includes('🏆')) {
         return "scoreHighlightRight"
       }
     }
@@ -73,19 +78,23 @@ export class Chat {
     const colorMatch = msg.match(/style="color:\s*(#[0-9a-fA-F]{6})/)
     if (!colorMatch) return null
 
-    const color = colorMatch[1].toLowerCase()
+    return this.getTargetFromColor(colorMatch[1], msg)
+  }
+
+  private getTargetFromColor(color: string, msg?: string): string {
+    const normalizedColor = color.toLowerCase()
 
     // Check for specific ball colors
     // White ball: #ffffff (pure white)
     // Yellow ball: #ffd84d or similar yellow tones
 
-    const r = parseInt(color.substr(1, 2), 16)
-    const g = parseInt(color.substr(3, 2), 16)
-    const b = parseInt(color.substr(5, 2), 16)
+    const r = parseInt(normalizedColor.substr(1, 2), 16)
+    const g = parseInt(normalizedColor.substr(3, 2), 16)
+    const b = parseInt(normalizedColor.substr(5, 2), 16)
 
-    // Check if this is a score button (number or ⚈) vs replay button (⚆)
-    const isScoreButton = msg.includes("⚈") || />\d+</.test(msg) // Contains ⚈ or a number
-    const isReplayButton = msg.includes("⚆")
+    // Check if this is a score button (number or ⚈) vs replay button (⚆) or break/record button
+    const isScoreButton = msg ? (msg.includes("⚈") || />\d+</.test(msg)) : false // Contains ⚈ or a number
+    const isBreakOrRecordButton = msg ? (msg.includes('break(') || msg.includes('hi score') || msg.includes('⏹️') || msg.includes('🏆')) : false
 
     // Determine color-based target
     let colorTarget: string
@@ -111,10 +120,13 @@ export class Chat {
       }
     }
 
-    // Apply different logic for score buttons vs replay buttons
+    // Apply different logic for different button types
     if (isScoreButton) {
       // Score buttons (numbers or ⚈) need to be reversed
       return colorTarget === "scoreHighlightLeft" ? "scoreHighlightRight" : "scoreHighlightLeft"
+    } else if (isBreakOrRecordButton) {
+      // Break and Record buttons use direct color mapping (same as the player who achieved them)
+      return colorTarget
     } else {
       // Replay buttons (⚆) and other buttons use normal logic
       return colorTarget

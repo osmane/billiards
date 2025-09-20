@@ -34,7 +34,6 @@ export class Cue {
   }
 
   rotateAim(angle, table: Table) {
-    console.log("🎮 rotateAim called", { angle, newAngle: this.aim.angle + angle })
     this.aim.angle = this.aim.angle + angle
     this.mesh.rotation.z = this.aim.angle
     this.helperMesh.rotation.z = this.aim.angle
@@ -50,7 +49,6 @@ export class Cue {
   }
 
   setPower(value: number) {
-    console.log("🎮 setPower called", { value, newPower: value * this.maxPower })
     this.aim.power = value * this.maxPower
     this.container?.updateTrajectoryPrediction()
   }
@@ -81,10 +79,6 @@ export class Cue {
   }
 
   setSpin(offset: Vector3, table: Table) {
-    console.log("🎮 setSpin called", {
-      offset: { x: offset.x, y: offset.y, z: offset.z },
-      length: offset.length()
-    })
     if (offset.length() > this.offCenterLimit) {
       offset.normalize().multiplyScalar(this.offCenterLimit)
     }

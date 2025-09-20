@@ -18,47 +18,31 @@ export class TrajectoryRenderer {
   }
 
   updateTrajectories(predictions: TrajectoryPrediction[], table: Table) {
-    console.log("📊 TrajectoryRenderer.updateTrajectories called")
-    console.log("  - Predictions count:", predictions.length)
-
     // Clear existing trajectory lines
     this.clearTrajectories()
 
     // Create new trajectory lines
-    predictions.forEach((prediction, index) => {
-      console.log(`  - Processing prediction ${index} for ball ${prediction.ballId}`)
+    predictions.forEach((prediction) => {
       const line = this.createTrajectoryLine(prediction, table)
       if (line) {
-        console.log(`    ✅ Line created and added to scene`)
         this.trajectoryLines.set(prediction.ballId, line)
         this.scene.add(line)
-      } else {
-        console.log(`    ❌ Failed to create line`)
       }
     })
-
-    console.log(`  - Total trajectory lines in scene: ${this.trajectoryLines.size}`)
   }
 
   private createTrajectoryLine(prediction: TrajectoryPrediction, table: Table): Line | null {
-    console.log(`    🎨 Creating trajectory line for ball ${prediction.ballId}`)
-    console.log(`      Points: ${prediction.points.length}`)
-
     if (prediction.points.length < 2) {
-      console.log("      ❌ Not enough points")
       return null
     }
 
     // Find the ball to get its color
     const ball = table.balls.find(b => b.id === prediction.ballId)
     if (!ball) {
-      console.log("      ❌ Ball not found")
       return null
     }
 
     const ballColor = ball.ballmesh.color
-    const hexColor = ballColor.getHexString()
-    console.log(`      Ball color: #${hexColor}`)
 
     // Create geometry
     const geometry = new BufferGeometry()
@@ -69,14 +53,9 @@ export class TrajectoryRenderer {
       positions[index * 3 + 1] = point.position.y
       // Slightly elevate trajectory lines above table surface for visibility
       positions[index * 3 + 2] = point.position.z + 0.01
-
-      if (index < 3) { // Log first few points for debugging
-        console.log(`        Point ${index}: x=${point.position.x.toFixed(3)}, y=${point.position.y.toFixed(3)}, z=${point.position.z.toFixed(3)}`)
-      }
     })
 
     geometry.setAttribute('position', new BufferAttribute(positions, 3))
-    console.log(`      Geometry created with ${prediction.points.length} vertices`)
 
     // Create material with enhanced visibility for trajectory prediction
     // Use brighter, more contrasting colors for better visibility
@@ -103,12 +82,10 @@ export class TrajectoryRenderer {
     // Ensure the line renders on top of other objects
     line.renderOrder = 10
 
-    console.log(`      ✅ Line created with color #${hexColor}, opacity: 0.7`)
     return line
   }
 
   clearTrajectories() {
-    console.log("🧹 Clearing trajectories", this.trajectoryLines.size, "lines")
     this.trajectoryLines.forEach((line) => {
       this.scene.remove(line)
       line.geometry.dispose()

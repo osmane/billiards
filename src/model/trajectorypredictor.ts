@@ -25,9 +25,6 @@ export class TrajectoryPredictor {
   constructor() {}
 
   predictTrajectory(table: Table, aim: AimEvent, rules?: any): TrajectoryPrediction[] {
-    console.log("🔮 TrajectoryPredictor.predictTrajectory started")
-    console.log("  - Aim:", { angle: aim.angle, power: aim.power, offset: aim.offset })
-
     // Create a copy of the table for simulation
     const serializedTable = table.serialise()
     const simulationTable = Table.fromSerialised(serializedTable)
@@ -35,10 +32,7 @@ export class TrajectoryPredictor {
     // Ensure physics constants and table geometry are properly set for three cushion mode
     if (rules && rules.tableGeometry) {
       rules.tableGeometry()
-      console.log("  - Three cushion physics constants applied")
     }
-
-    console.log("  - Table copied for simulation")
 
     // Create mapping between original and simulation ball IDs to preserve ball identity
     const ballIdMapping: Map<number, number> = new Map()
@@ -46,7 +40,6 @@ export class TrajectoryPredictor {
       const simulationBall = simulationTable.balls[index]
       if (simulationBall) {
         ballIdMapping.set(simulationBall.id, originalBall.id)
-        console.log(`  - Ball mapping: sim ${simulationBall.id} -> original ${originalBall.id}`)
       }
     })
 
@@ -59,7 +52,6 @@ export class TrajectoryPredictor {
       const aimIndex = table.cue.aim.i
       if (aimIndex >= 0 && aimIndex < simulationTable.balls.length) {
         currentCueBall = simulationTable.balls[aimIndex]
-        console.log(`  - Using ball at index ${aimIndex} as cue ball (ID: ${currentCueBall.id})`)
       }
     } else {
       // Fallback: try to get from rules if available
@@ -67,7 +59,6 @@ export class TrajectoryPredictor {
         const ruleCueballIndex = table.balls.findIndex(b => b === rules.cueball)
         if (ruleCueballIndex >= 0 && ruleCueballIndex < simulationTable.balls.length) {
           currentCueBall = simulationTable.balls[ruleCueballIndex]
-          console.log(`  - Using rules cue ball at index ${ruleCueballIndex} (ID: ${currentCueBall.id})`)
         }
       }
     }
@@ -76,11 +67,6 @@ export class TrajectoryPredictor {
     currentCueBall.state = State.Sliding
     currentCueBall.vel.copy(unitAtAngle(aim.angle).multiplyScalar(aim.power))
     currentCueBall.rvel.copy(cueToSpin(aim.offset, currentCueBall.vel))
-    console.log("  - Shot applied to current cue ball:", {
-      ballId: currentCueBall.id,
-      velocity: { x: currentCueBall.vel.x, y: currentCueBall.vel.y, z: currentCueBall.vel.z },
-      angularVel: { x: currentCueBall.rvel.x, y: currentCueBall.rvel.y, z: currentCueBall.rvel.z }
-    })
 
     // Initialize trajectory data for each ball using simulation IDs
     const trajectories: Map<number, TrajectoryPoint[]> = new Map()
@@ -117,7 +103,6 @@ export class TrajectoryPredictor {
         if (!anyInMotion) {
           stepsWithoutMotion++
           if (stepsWithoutMotion > maxStepsWithoutMotion) {
-            console.log(`  - All balls stationary (no motion for ${maxStepsWithoutMotion} steps) at ${simulationTime.toFixed(3)}s`)
             break
           }
         } else {
@@ -140,12 +125,10 @@ export class TrajectoryPredictor {
 
         // Stop if all balls are stationary (using table's method)
         if (simulationTable.allStationary()) {
-          console.log(`  - All balls stationary at ${simulationTime.toFixed(3)}s`)
           break
         }
       } catch (error) {
         // Break on simulation errors (collision depth exceeded, etc.)
-        console.warn("Trajectory prediction stopped due to simulation error:", error)
         break
       }
     }
@@ -154,7 +137,6 @@ export class TrajectoryPredictor {
     const predictions: TrajectoryPrediction[] = []
     trajectories.forEach((points, simulationBallId) => {
       const originalBallId = ballIdMapping.get(simulationBallId)
-      console.log(`  - Ball ${simulationBallId} (original: ${originalBallId}): ${points.length} trajectory points`)
       if (points.length > 1 && originalBallId !== undefined) { // Only include balls that moved and have valid mapping
         predictions.push({
           ballId: originalBallId, // Use original ball ID for rendering
@@ -163,7 +145,6 @@ export class TrajectoryPredictor {
       }
     })
 
-    console.log(`🔮 Prediction complete: ${predictions.length} ball trajectories`)
     return predictions
   }
 
