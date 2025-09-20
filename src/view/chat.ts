@@ -62,8 +62,8 @@ export class Chat {
     const g = parseInt(color.substr(3, 2), 16)
     const b = parseInt(color.substr(5, 2), 16)
 
-    // Check if this is a score bead button (⚈) vs replay button (⚆)
-    const isScoreBeadButton = msg.includes("⚈")
+    // Check if this is a score button (number or ⚈) vs replay button (⚆)
+    const isScoreButton = msg.includes("⚈") || />\d+</.test(msg) // Contains ⚈ or a number
     const isReplayButton = msg.includes("⚆")
 
     // Determine color-based target
@@ -90,9 +90,9 @@ export class Chat {
       }
     }
 
-    // Apply different logic for score bead buttons vs replay buttons
-    if (isScoreBeadButton) {
-      // Score bead buttons (⚈) need to be reversed
+    // Apply different logic for score buttons vs replay buttons
+    if (isScoreButton) {
+      // Score buttons (numbers or ⚈) need to be reversed
       return colorTarget === "scoreHighlightLeft" ? "scoreHighlightRight" : "scoreHighlightLeft"
     } else {
       // Replay buttons (⚆) and other buttons use normal logic
@@ -115,7 +115,30 @@ export class Chat {
       const buttonDiv = document.createElement('div')
       buttonDiv.innerHTML = msg
       container.appendChild(buttonDiv)
+
+      // Apply font styles from corresponding score button
+      this.applyScoreButtonFontToPills(targetId)
     }
+  }
+
+  private applyScoreButtonFontToPills(targetId: string) {
+    // Determine which score button corresponds to this highlight box
+    const scoreButtonId = targetId === "scoreHighlightLeft" ? "customBtnLeft" : "customBtnRight"
+    const scoreButton = document.getElementById(scoreButtonId)
+    const highlight = document.getElementById(targetId)
+
+    if (!scoreButton || !highlight) return
+
+    const buttonStyles = window.getComputedStyle(scoreButton)
+
+    // Apply font styles to all pills in this highlight box
+    const pills = highlight.querySelectorAll('.score-buttons-container a.pill')
+    pills.forEach((pill: HTMLElement) => {
+      pill.style.fontSize = buttonStyles.fontSize
+      pill.style.fontFamily = buttonStyles.fontFamily
+      pill.style.fontWeight = 'bold' // Make bold as requested
+      pill.style.lineHeight = buttonStyles.lineHeight
+    })
   }
 
   updateScroll() {

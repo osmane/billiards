@@ -112,8 +112,6 @@ export class Recorder {
   }
 
   lastShotLink(isPartOfBreak, potCount, balls) {
-    const pots = potCount > 1 ? potCount - 1 : 0
-
     let colourString = "#000000"
     if (balls.length > 0) {
       const lastBall = balls[balls.length - 1]
@@ -125,7 +123,19 @@ export class Recorder {
       }
     }
 
-    const shotIcon = "⚈".repeat(pots) + (isPartOfBreak ? "⚈" : "⚆")
+    // Create shot icon: show cumulative score or appropriate indicator
+    let shotIcon: string
+    if (isPartOfBreak && potCount > 0) {
+      // Show the actual points scored in this shot
+      shotIcon = potCount.toString()
+    } else if (isPartOfBreak) {
+      // Break continuation with no pots - show current break score
+      shotIcon = this.container.rules.currentBreak.toString()
+    } else {
+      // Not part of break - show replay button
+      shotIcon = "⚆"
+    }
+
     const serialisedShot = JSON.stringify(this.lastShot())
     this.generateLink(shotIcon, serialisedShot, colourString)
   }
