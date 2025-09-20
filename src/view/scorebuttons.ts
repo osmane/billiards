@@ -169,6 +169,8 @@ export class ScoreButtons {
       document.getElementById("scoreHighlightRight")
     ]
 
+    const targetButton = document.getElementById("targetButton")
+
     // Show/hide based on game mode
     scoreButtons.forEach((button, index) => {
       if (button) {
@@ -194,6 +196,14 @@ export class ScoreButtons {
         console.log(`HighlightBox ${index}: element not found`)
       }
     })
+
+    // Show/hide target button based on game mode
+    if (targetButton) {
+      targetButton.style.display = isThreeCushionMode ? "block" : "none"
+      console.log(`TargetButton: display set to ${isThreeCushionMode ? "block" : "none"}`)
+    } else {
+      console.log("TargetButton: element not found")
+    }
   }
 
   private updateButton(id: string, score: number, label: string) {
