@@ -210,6 +210,10 @@ input[type="range"].powerSlider {
   margin: 2px;
   border-radius: 5px;
   font-size: smaller;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px;
 }
 
 .chatoutput::-webkit-scrollbar {
@@ -227,6 +231,7 @@ a.pill {
   padding: 1px;
   font-size: smaller;
   border-top-style: groove;
+  display: inline-block;
 }
 
 a {

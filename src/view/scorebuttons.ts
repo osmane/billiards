@@ -2,19 +2,29 @@ export class ScoreButtons {
   private whiteScore = 0
   private yellowScore = 0
   private readonly highlightClass = "scoreButton--highlight"
+  private container: any
 
-  constructor() {
+  constructor(container = null) {
+    this.container = container
     this.setupToggle("customBtnLeft")
     this.setupToggle("customBtnRight")
     this.applyScores()
     this.setupWindowResize()
     this.setupClickOutside()
+    // Delay visibility check to ensure game rules are properly initialized
+    setTimeout(() => {
+      this.updateVisibilityBasedOnGameMode()
+    }, 100)
   }
 
   setScores(white: number, yellow: number) {
     this.whiteScore = white
     this.yellowScore = yellow
     this.applyScores()
+  }
+
+  updateGameModeVisibility() {
+    this.updateVisibilityBasedOnGameMode()
   }
 
   private applyScores() {
@@ -138,6 +148,52 @@ export class ScoreButtons {
       rightBtn.classList.remove(this.highlightClass)
       this.updateHighlightPosition("customBtnRight", false)
     }
+  }
+
+  private updateVisibilityBasedOnGameMode() {
+    if (typeof document === "undefined") {
+      return
+    }
+
+    const isThreeCushionMode = this.container?.rules?.rulename === "threecushion"
+    console.log("ScoreButtons: Game mode check - rulename:", this.container?.rules?.rulename, "isThreeCushion:", isThreeCushionMode)
+
+    // Get all score-related elements
+    const scoreButtons = [
+      document.getElementById("customBtnLeft"),
+      document.getElementById("customBtnRight")
+    ]
+
+    const highlightBoxes = [
+      document.getElementById("scoreHighlightLeft"),
+      document.getElementById("scoreHighlightRight")
+    ]
+
+    // Show/hide based on game mode
+    scoreButtons.forEach((button, index) => {
+      if (button) {
+        const display = isThreeCushionMode ? "block" : "none"
+        button.style.display = display
+        console.log(`ScoreButton ${index}: display set to ${display}`)
+      } else {
+        console.log(`ScoreButton ${index}: element not found`)
+      }
+    })
+
+    highlightBoxes.forEach((box, index) => {
+      if (box) {
+        box.style.display = "none" // Always start hidden, will be shown by toggle if needed
+        // But remove from flow in non-3cushion modes
+        if (!isThreeCushionMode) {
+          box.style.visibility = "hidden"
+        } else {
+          box.style.visibility = "visible"
+        }
+        console.log(`HighlightBox ${index}: visibility set to ${isThreeCushionMode ? "visible" : "hidden"}`)
+      } else {
+        console.log(`HighlightBox ${index}: element not found`)
+      }
+    })
   }
 
   private updateButton(id: string, score: number, label: string) {

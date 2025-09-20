@@ -4,7 +4,8 @@ export class Chat {
   chatSend: HTMLElement | null
   chatInputText: HTMLInputElement | null
   send
-  constructor(send) {
+  container: any
+  constructor(send, container = null) {
     this.chatoutput = document.getElementById("chatoutput")
     this.chatInputText = document.getElementById(
       "chatinputtext"
@@ -12,6 +13,7 @@ export class Chat {
     this.chatSend = document.getElementById("chatsend")
     this.chatSend?.addEventListener("click", this.sendClicked)
     this.send = send
+    this.container = container
   }
 
   sendClicked = (_) => {
@@ -20,19 +22,27 @@ export class Chat {
   }
 
   showMessage(msg) {
-    // Check if this is a score-related button (contains colored link)
-    const scoreButtonTarget = this.getScoreButtonTarget(msg)
+    // Check if we're in 3 cushion mode
+    const isThreeCushionMode = this.container?.rules?.rulename === "threecushion"
 
-    if (scoreButtonTarget) {
-      // Additional check: Don't route score bead buttons that are just single ⚈ with no actual score
-      if (this.shouldFilterScoreButton(msg)) {
-        // Send to chatoutput instead of score highlights for invalid score buttons
-        this.chatoutput && (this.chatoutput.innerHTML += msg)
+    if (isThreeCushionMode) {
+      // 3 cushion mode: use new score highlight system
+      const scoreButtonTarget = this.getScoreButtonTarget(msg)
+
+      if (scoreButtonTarget) {
+        // Additional check: Don't route score bead buttons that are just single ⚈ with no actual score
+        if (this.shouldFilterScoreButton(msg)) {
+          // Send to chatoutput instead of score highlights for invalid score buttons
+          this.chatoutput && (this.chatoutput.innerHTML += msg)
+        } else {
+          this.addToScoreHighlight(scoreButtonTarget, msg)
+        }
       } else {
-        this.addToScoreHighlight(scoreButtonTarget, msg)
+        // Default behavior for non-score buttons
+        this.chatoutput && (this.chatoutput.innerHTML += msg)
       }
     } else {
-      // Default behavior for non-score buttons
+      // Other game modes: use old behavior - everything goes to chatoutput
       this.chatoutput && (this.chatoutput.innerHTML += msg)
     }
     this.updateScroll()

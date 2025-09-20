@@ -55,14 +55,14 @@ export class Container {
 
   constructor(element, log, assets, ruletype?, keyboard?, id?) {
     this.log = log
-    this.scoreButtons = new ScoreButtons()
+    this.scoreButtons = new ScoreButtons(this)
     this.rules = RuleFactory.create(ruletype, this)
     this.table = this.rules.table()
     this.view = new View(element, this.table, assets)
     this.table.cue.aimInputs = new AimInputs(this)
     this.keyboard = keyboard
     this.sound = assets.sound
-    this.chat = new Chat(this.sendChat)
+    this.chat = new Chat(this.sendChat, this)
     this.sliders = new Sliders()
     this.recorder = new Recorder(this)
     this.id = id
