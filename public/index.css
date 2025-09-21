@@ -310,8 +310,14 @@ label {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
   opacity: 0.95;
   overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
   padding: 2px;
   box-sizing: border-box;
+}
+
+.scoreHighlight::-webkit-scrollbar {
+  display: none; /* WebKit */
 }
 
 .score-buttons-container {
