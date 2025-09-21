@@ -203,8 +203,17 @@ input[type="range"].powerSlider {
 
 .toggleButton:active,
 .menuButton:active,
-.hitButton:active {
+.hitButton:active,
+.targetButton:active {
   transform: scale(0.97);
+}
+
+/* Toggle state for targetButton */
+.targetButton.is-active {
+  background-color: #4a90e2;
+  border-color: #357abd;
+  color: white;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .chatarea {
@@ -310,8 +319,14 @@ label {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
   opacity: 0.95;
   overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
   padding: 2px;
   box-sizing: border-box;
+}
+
+.scoreHighlight::-webkit-scrollbar {
+  display: none; /* WebKit */
 }
 
 .score-buttons-container {
