@@ -65,6 +65,8 @@ export class Container {
     this.view = new View(element, this.table, assets)
     this.trajectoryPredictor = new TrajectoryPredictor()
     this.trajectoryRenderer = new TrajectoryRenderer(this.view.scene)
+    // Initialize trajectories as hidden by default (they will be shown only when target button is active)
+    this.trajectoryRenderer.setVisible(false)
     this.table.cue.container = this // Set container reference for trajectory updates
     this.table.cue.aimInputs = new AimInputs(this)
     this.keyboard = keyboard
@@ -209,15 +211,28 @@ export class Container {
   }
 
   updateTrajectoryPrediction() {
-    // Only predict trajectories for 3 cushion mode when balls are stationary
+    // Check if targetButton is in active state first
+    const targetButton = document.getElementById("targetButton")
+    const trajectoryVisible = targetButton?.classList.contains("is-active") ?? false
+
+    // If button is unpressed, always hide and clear trajectories
+    if (!trajectoryVisible) {
+      this.trajectoryRenderer.clearTrajectories()
+      return
+    }
+
+    // Only predict trajectories for 3 cushion mode when balls are stationary AND button is pressed
     if (!TrajectoryPredictor.shouldPredict(this) || !this.table.allStationary()) {
       this.trajectoryRenderer.clearTrajectories()
       return
     }
 
+    // Button is pressed - calculate and show trajectories
     try {
       const predictions = this.trajectoryPredictor.predictTrajectory(this.table, this.table.cue.aim, this.rules)
       this.trajectoryRenderer.updateTrajectories(predictions, this.table)
+      // Force visibility to true since button is pressed
+      this.trajectoryRenderer.setVisible(true)
     } catch (error) {
       this.trajectoryRenderer.clearTrajectories()
     }

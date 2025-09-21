@@ -29,6 +29,8 @@ export class TrajectoryRenderer {
         this.scene.add(line)
       }
     })
+
+    // Note: Visibility will be set explicitly by the container after calling this method
   }
 
   private createTrajectoryLine(prediction: TrajectoryPrediction, table: Table): Line | null {

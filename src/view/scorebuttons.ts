@@ -219,6 +219,18 @@ export class ScoreButtons {
       if (!targetButton.dataset.listenerAdded) {
         targetButton.addEventListener("click", () => {
           targetButton.classList.toggle("is-active")
+
+          // Force immediate trajectory update when toggle state changes
+          if (this.container && this.container.updateTrajectoryPrediction) {
+            // Clear trajectories first to ensure clean state
+            if (this.container.trajectoryRenderer) {
+              this.container.trajectoryRenderer.clearTrajectories()
+            }
+
+            // Then trigger update which will calculate and show if button is pressed,
+            // or keep hidden if button is unpressed
+            this.container.updateTrajectoryPrediction()
+          }
         })
         targetButton.dataset.listenerAdded = "true"
       }
