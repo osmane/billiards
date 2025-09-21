@@ -238,35 +238,6 @@ export function endShot(): ShotExport | undefined {
   if (hasWindow) {
     ;(window as ShotStatsWindow).lastShotStats = exportValue
   }
-  console.log("[ShotStats]", summary)
-  if (catapultFrames.length > 0) {
-    const tableRows = catapultFrames.map((frame) => ({
-      frame: frame.frame,
-      dtMs: round3(frame.dtMs),
-      rawElapsedMs: round3(frame.rawElapsedMs),
-      deltaMs: round3(frame.deltaMs),
-      steps: frame.steps,
-      simulatedMs: round3(frame.simulatedMs),
-      physics: round3(frame.physics),
-      process: round3(frame.process),
-      render: round3(frame.render),
-      total: round3(frame.total),
-      backlogBefore: round3(frame.backlogBefore),
-      backlogAfter: round3(frame.backlogAfter),
-      deltaClamped: frame.deltaClamped,
-      hitMaxSubSteps: frame.hitMaxSubSteps,
-      backlogClamped: frame.accumulatorClamped || frame.accumulatorTrimmedPostStep,
-      reasons: frame.reasons.join(", "),
-    }))
-    if (typeof console.groupCollapsed === "function") {
-      console.groupCollapsed(`[ShotStats][Catapult] frames=${catapultFrames.length}`)
-      console.table(tableRows)
-      console.groupEnd()
-    } else {
-      console.log(`[ShotStats][Catapult] frames=${catapultFrames.length}`)
-      console.table(tableRows)
-    }
-  }
   state.frames = []
   state.catapultFrames = []
   return exportValue

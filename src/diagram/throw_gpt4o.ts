@@ -42,21 +42,6 @@ export class CollisionThrowPlot {
       Math.min((μ * v * Math.cos(ϕ)) / vRel, 1 / 7) *
       (v * Math.sin(ϕ) - CollisionThrowPlot.R * ωz)
     const denominator = v * Math.cos(ϕ)
-    this.log(`inputs:v=${v}, ωx=${ωx}, ωz=${ωz}, ϕ=${ϕ}`)
-    this.log(`   v * Math.sin(ϕ) =${v * Math.sin(ϕ)}`)
-    this.log(`   CollisionThrow.R * ωz =${CollisionThrowPlot.R * ωz}`)
-    this.log(
-      `   Math.min((μ * v * Math.cos(ϕ)) / vRel, 1 / 7) =${Math.min((μ * v * Math.cos(ϕ)) / vRel, 1 / 7)}`
-    )
-    this.log(
-      `   (v * Math.sin(ϕ) - CollisionThrow.R * ωz) =${v * Math.sin(ϕ) - CollisionThrowPlot.R * ωz}`
-    )
-    this.log("")
-    this.log("vRel = ", vRel)
-    this.log("μ = ", μ)
-    this.log("numerator = ", numerator)
-    this.log("denominator = ", denominator)
-    this.log("throw = ", Math.atan2(numerator, denominator))
 
     return Math.atan2(numerator, denominator)
   }

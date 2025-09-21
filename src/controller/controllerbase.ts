@@ -82,7 +82,6 @@ export abstract class ControllerBase extends Controller {
     this.container.sliders.toggleVisibility()
     this.container.table.showSpin(true)
     this.container.table.showTraces(true)
-    typeof process !== "object" && console.log(this.container.table.serialise())
   }
 
   private toggleFullscreen() {

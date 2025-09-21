@@ -84,7 +84,6 @@ export class RealPosition {
   }
 
   identifyFirstMover(shotData: any) {
-    console.log(shotData)
     return shotData.balls["1"].t[1] < shotData.balls["2"].t[1] ? "1" : "2"
   }
 
@@ -118,9 +117,7 @@ export class RealPosition {
     }
 
     const estimatedDirection = this.estimateDirection(shotData)
-    console.log("estimated", estimatedDirection)
     const ball = estimatedDirection.firstMover == "1" ? 0 : 1
-    console.log(estimatedDirection)
     state.shots.push({
       type: "AIM",
       offset: { x: -0, y: 0, z: 0 },

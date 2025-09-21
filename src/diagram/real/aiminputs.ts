@@ -111,7 +111,6 @@ export class AimInputs {
     this.direction = state.angle
     this.directionSlider!.value = state.angle.toString()
 
-    console.log("set aim", state)
     this.updateDom()
   }
 }

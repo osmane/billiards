@@ -10,7 +10,6 @@ export function exportGltf(scene) {
   exporter.parse(
     scene,
     (gltf) => {
-      console.log(gltf)
       downloadObjectAsJson(gltf, "scene.gltf")
     },
     onError

@@ -33,7 +33,7 @@ export class DiagramContainer {
     const keyboard = new Keyboard(this.canvas3d)
     this.container = new Container(
       this.canvas3d,
-      console.log,
+      () => {},
       Assets.localAssets(this.ruletype),
       this.ruletype,
       keyboard,

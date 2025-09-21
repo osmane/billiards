@@ -31,7 +31,7 @@ export class ThrowPlot {
     )
 
     // test:
-    const model = new CollisionThrowPlot(console.log)
+    const model = new CollisionThrowPlot(() => {})
     model.plot(0.5, -15, -10, Math.PI / 8)
   }
 
