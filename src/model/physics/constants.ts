@@ -41,7 +41,29 @@ export const POOL_BALL_MASS = 0.17;     // 0.165–0.17 kg yaygın
 export const SNOOKER_BALL_MASS = 0.142; // ~142 g
 export const CAROM_BALL_MASS = 0.21;    // 0.205–0.215 kg
 
-// Zaten var: global parametreler ve setter’lar
+// Physics Context Interface for mode-specific physics isolation
+export interface PhysicsContext {
+  R: number;  // Ball radius
+  m: number;  // Ball mass
+}
+
+// Mode-specific physics contexts
+export const POOL_PHYSICS: PhysicsContext = {
+  R: POOL_BALL_RADIUS,
+  m: POOL_BALL_MASS
+};
+
+export const SNOOKER_PHYSICS: PhysicsContext = {
+  R: SNOOKER_BALL_RADIUS,
+  m: SNOOKER_BALL_MASS
+};
+
+export const CAROM_PHYSICS: PhysicsContext = {
+  R: CAROM_BALL_RADIUS,
+  m: CAROM_BALL_MASS
+};
+
+// Global parameters (legacy - maintained for backward compatibility)
 export let R = POOL_BALL_RADIUS;
 export let m = POOL_BALL_MASS;
 
@@ -56,6 +78,29 @@ function refresh() {
   Mz = ((mu * m * g * 2) / 3) * rho
   Mxy = (7 / (5 * Math.sqrt(2))) * R * mu * m * g
   I = (2 / 5) * m * R * R
+}
+
+// Physics context-aware refresh functions
+export function refreshWithContext(physics: PhysicsContext): { Mz: number, Mxy: number, I: number } {
+  const Mz_ctx = ((mu * physics.m * g * 2) / 3) * rho
+  const Mxy_ctx = (7 / (5 * Math.sqrt(2))) * physics.R * mu * physics.m * g
+  const I_ctx = (2 / 5) * physics.m * physics.R * physics.R
+
+  return { Mz: Mz_ctx, Mxy: Mxy_ctx, I: I_ctx }
+}
+
+// Helper function to get physics context by game mode
+export function getPhysicsContext(gameMode: string): PhysicsContext {
+  switch (gameMode) {
+    case "threecushion":
+      return CAROM_PHYSICS;
+    case "snooker":
+      return SNOOKER_PHYSICS;
+    case "nineball":
+    case "fourteenone":
+    default:
+      return POOL_PHYSICS;
+  }
 }
 
 export function setm(val: number) {

@@ -82,7 +82,8 @@ export class Table {
    *
    */
   private prepareAdvancePair(a: Ball, b: Ball, t: number) {
-    if (Collision.willCollide(a, b, t)) {
+    // Use physics context from ball a (should be same as b in a given game mode)
+    if (Collision.willCollide(a, b, t, a.physicsContext)) {
       const incidentSpeed = Collision.collide(a, b)
       this.outcome.push(Outcome.collision(a, b, incidentSpeed))
       return false
@@ -234,6 +235,6 @@ export class Table {
   overlapsAny(pos, excluding = this.cueball) {
     return this.balls
       .filter((b) => b !== excluding)
-      .some((b) => b.pos.distanceTo(pos) < 2 * R)
+      .some((b) => b.pos.distanceTo(pos) < 2 * b.radius)
   }
 }

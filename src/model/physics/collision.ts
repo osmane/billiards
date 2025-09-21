@@ -1,14 +1,15 @@
 import { Ball, State } from "../ball"
 import { CollisionThrow } from "./collisionthrow"
-import { R } from "./constants"
+import { R, PhysicsContext } from "./constants"
 
 
 // Continuous collision detection (analytical time-of-impact for two moving balls)
 // Returns the smallest t in [0, dt] where |(pa-pb) + (va-vb)*t| = 2R, or -1 if none.
-function timeOfImpactBallBall(a: Ball, b: Ball, dt: number): number {
+function timeOfImpactBallBall(a: Ball, b: Ball, dt: number, context?: PhysicsContext): number {
+  const radius = context?.R ?? R
   const dp = a.pos.clone().sub(b.pos)
   const dv = a.vel.clone().sub(b.vel)
-  const r = 2 * R
+  const r = 2 * radius
   const A = dv.dot(dv)
   const B = 2 * dp.dot(dv)
   const C = dp.dot(dp) - r * r
@@ -26,14 +27,15 @@ function timeOfImpactBallBall(a: Ball, b: Ball, dt: number): number {
 }
 
 export class Collision {
-  static willCollide(a: Ball, b: Ball, t: number): boolean {
+  static willCollide(a: Ball, b: Ball, t: number, context?: PhysicsContext): boolean {
     if (!(a.onTable() && b.onTable())) return false
     if (!(a.inMotion() || b.inMotion())) return false
+    const radius = context?.R ?? R
     // Continuous check with analytic TOI to reduce tunneling at high speeds
-    const toi = timeOfImpactBallBall(a, b, t)
+    const toi = timeOfImpactBallBall(a, b, t, context)
     if (toi >= 0) return true
     // Fallback: end-of-step proximity check (legacy behavior)
-    return a.futurePosition(t).distanceToSquared(b.futurePosition(t)) < 4 * R * R
+    return a.futurePosition(t).distanceToSquared(b.futurePosition(t)) < 4 * radius * radius
   }
 
   static collide(a: Ball, b: Ball) {

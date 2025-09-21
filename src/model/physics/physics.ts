@@ -1,6 +1,6 @@
 import { Vector3 } from "three"
 import { norm, upCross, up, sin, cos } from "../../utils/utils"
-import { muS, muC, g, m, Mz, Mxy, R, I, e, ee, μs, μw } from "./constants"
+import { muS, muC, g, m, Mz, Mxy, R, I, e, ee, μs, μw, PhysicsContext, refreshWithContext } from "./constants"
 import { Mathaven } from "./mathaven"
 
 const MU_CUSHION_MIN = 0.02
@@ -12,8 +12,8 @@ const K_THETA_3 = 0.00              // açı kuadratik terimi
 const K_V = 0.06                    // hız terimi üst sınırı (≈ +0.06'ya kadar)
 const S_REF = 0.50                  // m/s; kayma hızında doyma ölçeği
 
-export function surfaceVelocity(v, w) {
-  return surfaceVelocityFull(v, w).setZ(0)
+export function surfaceVelocity(v, w, context?: PhysicsContext) {
+  return surfaceVelocityFull(v, w, context).setZ(0)
 }
 
 function clamp(x: number, lo: number, hi: number) {
@@ -21,37 +21,47 @@ function clamp(x: number, lo: number, hi: number) {
 }
 
 const sv = new Vector3()
-export function surfaceVelocityFull(v, w) {
-  return sv.copy(v).addScaledVector(upCross(w), R)
+export function surfaceVelocityFull(v, w, context?: PhysicsContext) {
+  const radius = context?.R ?? R
+  return sv.copy(v).addScaledVector(upCross(w), radius)
 }
 
 const delta = { v: new Vector3(), w: new Vector3() }
 Object.freeze(delta)
 
-export function sliding(v, w) {
-  const va = surfaceVelocity(v, w)
+export function sliding(v, w, context?: PhysicsContext) {
+  const radius = context?.R ?? R
+  const mass = context?.m ?? m
+  const physics = context ? refreshWithContext(context) : { Mz, Mxy, I }
+
+  const va = surfaceVelocity(v, w, context)
   delta.v.copy(norm(va).multiplyScalar(-muS * g))
-  delta.w.copy(norm(upCross(va)).multiplyScalar(((5 / 2) * muS * g) / R))
-  delta.w.setZ(-(5 / 2) * (Mz / (m * R * R)) * Math.sign(w.z))
+  delta.w.copy(norm(upCross(va)).multiplyScalar(((5 / 2) * muS * g) / radius))
+  delta.w.setZ(-(5 / 2) * (physics.Mz / (mass * radius * radius)) * Math.sign(w.z))
   return delta
 }
 
-export function rollingFull(w) {
+export function rollingFull(w, context?: PhysicsContext) {
+  const radius = context?.R ?? R
+  const mass = context?.m ?? m
+  const physics = context ? refreshWithContext(context) : { Mz, Mxy, I }
+
   const mag = new Vector3(w.x, w.y, 0).length()
-  const k = ((5 / 7) * Mxy) / (m * R) / mag
-  const kw = ((5 / 7) * Mxy) / (m * R * R) / mag
+  const k = ((5 / 7) * physics.Mxy) / (mass * radius) / mag
+  const kw = ((5 / 7) * physics.Mxy) / (mass * radius * radius) / mag
   delta.v.set(-k * w.y, k * w.x, 0)
   delta.w.set(
     -kw * w.x,
     -kw * w.y,
-    -(5 / 2) * (Mz / (m * R * R)) * Math.sign(w.z)
+    -(5 / 2) * (physics.Mz / (mass * radius * radius)) * Math.sign(w.z)
   )
   return delta
 }
 
-export function forceRoll(v, w) {
+export function forceRoll(v, w, context?: PhysicsContext) {
+  const radius = context?.R ?? R
   const wz = w.z
-  w.copy(upCross(v).multiplyScalar(1 / R))
+  w.copy(upCross(v).multiplyScalar(1 / radius))
   w.setZ(wz)
 }
 

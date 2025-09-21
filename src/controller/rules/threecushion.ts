@@ -16,10 +16,8 @@ import { CameraTop } from "../../view/cameratop"
 import { TableGeometry } from "../../view/tablegeometry"
 import { Rules } from "./rules"
 
-// fizik sabitleri
+// fizik sabitleri - removed setR and setm imports to prevent global mutations
 import {
-  setR,
-  setm,
   CAROM_BALL_RADIUS,
   CAROM_BALL_MASS,
   CAROM_TABLE_LENGTH,
@@ -58,17 +56,16 @@ export class ThreeCushion implements Rules {
     this.cueball = this.container.table.balls[1]
   }
 
-  /** Mod girişinde karambol fizik ve masa kurulumu */
+  /** Mod girişinde karambol masa kurulumu (fizik artık ball-level'da) */
   tableGeometry() {
-    // 1) Fizik: karambol top ölçüsü + kütlesi
-    setR(CAROM_BALL_RADIUS)
-    setm(CAROM_BALL_MASS)
-
-    // 2) Masa geometrisi: karambol ölçülerini R'e göre kur
+    // 1) Masa geometrisi: karambol ölçülerini ayarla
     TableGeometry.setCaromDimensions(CAROM_TABLE_LENGTH, CAROM_TABLE_WIDTH, CAROM_BALL_RADIUS)
 
-    // 3) Görsel: üstten kamera yakınlığı (isteğe bağlı ayar)
+    // 2) Görsel: üstten kamera yakınlığı
     CameraTop.zoomFactor = 0.92
+
+    // NOTE: Physics context (ball size/mass) is now handled at ball level
+    // This prevents cross-mode contamination of global physics constants
   }
 
   /** GLTF yüklemiyoruz; masa dinamik oluşturuluyor */

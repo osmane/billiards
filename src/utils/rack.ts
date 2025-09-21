@@ -2,7 +2,7 @@ import { Ball, State } from "../model/ball"
 import { TableGeometry } from "../view/tablegeometry"
 import { Vector3 } from "three"
 import { roundVec, vec } from "./utils"
-import { R } from "../model/physics/constants"
+import { R, CAROM_PHYSICS, POOL_PHYSICS, SNOOKER_PHYSICS, PhysicsContext } from "../model/physics/constants"
 import { Table } from "../model/table"
 
 export class Rack {
@@ -30,38 +30,40 @@ export class Rack {
     )
   }
 
-  static cueBall(pos) {
-    return new Ball(Rack.jitter(pos), 0xfaebd7)
+  static cueBall(pos, physicsContext?: PhysicsContext) {
+    return new Ball(Rack.jitter(pos), 0xfaebd7, physicsContext)
   }
 
   static diamond() {
     const pos = new Vector3(TableGeometry.tableX / 2, 0, 0)
     const diamond: Ball[] = []
-    diamond.push(Rack.cueBall(Rack.spot))
-    diamond.push(new Ball(Rack.jitter(pos), 0xe0de36))
+    // Use POOL_PHYSICS for Nine-Ball/Pool games
+    diamond.push(Rack.cueBall(Rack.spot, POOL_PHYSICS))
+    diamond.push(new Ball(Rack.jitter(pos), 0xe0de36, POOL_PHYSICS))
     pos.add(Rack.diagonal)
-    diamond.push(new Ball(Rack.jitter(pos), 0xff9d00))
+    diamond.push(new Ball(Rack.jitter(pos), 0xff9d00, POOL_PHYSICS))
     pos.sub(Rack.across)
-    diamond.push(new Ball(Rack.jitter(pos), 0x521911))
+    diamond.push(new Ball(Rack.jitter(pos), 0x521911, POOL_PHYSICS))
     pos.add(Rack.diagonal)
-    diamond.push(new Ball(Rack.jitter(pos), 0x595200))
+    diamond.push(new Ball(Rack.jitter(pos), 0x595200, POOL_PHYSICS))
     pos.sub(Rack.across)
-    diamond.push(new Ball(Rack.jitter(pos), 0xff0000))
+    diamond.push(new Ball(Rack.jitter(pos), 0xff0000, POOL_PHYSICS))
     pos.addScaledVector(Rack.across, 2)
-    diamond.push(new Ball(Rack.jitter(pos), 0x050505))
+    diamond.push(new Ball(Rack.jitter(pos), 0x050505, POOL_PHYSICS))
     pos.add(Rack.diagonal).sub(Rack.across)
-    diamond.push(new Ball(Rack.jitter(pos), 0x0a74c2))
+    diamond.push(new Ball(Rack.jitter(pos), 0x0a74c2, POOL_PHYSICS))
     pos.sub(Rack.across)
-    diamond.push(new Ball(Rack.jitter(pos), 0x087300))
+    diamond.push(new Ball(Rack.jitter(pos), 0x087300, POOL_PHYSICS))
     pos.add(Rack.diagonal)
-    diamond.push(new Ball(Rack.jitter(pos), 0x3e009c))
+    diamond.push(new Ball(Rack.jitter(pos), 0x3e009c, POOL_PHYSICS))
     return diamond
   }
 
   static triangle() {
     const tp = Rack.trianglePositions()
-    const cueball = Rack.cueBall(Rack.spot)
-    const triangle = tp.map((p) => new Ball(Rack.jitter(p)))
+    // Use POOL_PHYSICS for Fourteen-One pool game
+    const cueball = Rack.cueBall(Rack.spot, POOL_PHYSICS)
+    const triangle = tp.map((p) => new Ball(Rack.jitter(p), undefined, POOL_PHYSICS))
     triangle.unshift(cueball)
     return triangle.slice(0, 5)
   }
@@ -128,9 +130,10 @@ export class Rack {
     const threeballs: Ball[] = []
     const dx = TableGeometry.X / 2
     const dy = TableGeometry.Y / 4
-    threeballs.push(Rack.cueBall(Rack.jitter(new Vector3(-dx, -dy, 0))))
-    threeballs.push(new Ball(Rack.jitter(new Vector3(-dx, 0, 0)), 0xe0de36))
-    threeballs.push(new Ball(Rack.jitter(new Vector3(dx, 0, 0)), 0xff0000))
+    // Use CAROM_PHYSICS for all Three-Cushion balls
+    threeballs.push(Rack.cueBall(Rack.jitter(new Vector3(-dx, -dy, 0)), CAROM_PHYSICS))
+    threeballs.push(new Ball(Rack.jitter(new Vector3(-dx, 0, 0)), 0xe0de36, CAROM_PHYSICS))
+    threeballs.push(new Ball(Rack.jitter(new Vector3(dx, 0, 0)), 0xff0000, CAROM_PHYSICS))
     return threeballs
   }
 
@@ -140,20 +143,21 @@ export class Rack {
   static snooker() {
     const balls: Ball[] = []
     const dy = TableGeometry.Y / 4
-    balls.push(Rack.cueBall(Rack.jitter(new Vector3(Rack.baulk, -dy * 0.5, 0))))
+    // Use SNOOKER_PHYSICS for Snooker game
+    balls.push(Rack.cueBall(Rack.jitter(new Vector3(Rack.baulk, -dy * 0.5, 0)), SNOOKER_PHYSICS))
 
     const colours = Rack.snookerColourPositions()
-    balls.push(new Ball(Rack.jitter(colours[0]), 0xeede36))
-    balls.push(new Ball(Rack.jitter(colours[1]), 0x0c9664))
-    balls.push(new Ball(Rack.jitter(colours[2]), 0xbd723a))
-    balls.push(new Ball(Rack.jitter(colours[3]), 0x0883ee))
-    balls.push(new Ball(Rack.jitter(colours[4]), 0xffaacc))
-    balls.push(new Ball(Rack.jitter(colours[5]), 0x010101))
+    balls.push(new Ball(Rack.jitter(colours[0]), 0xeede36, SNOOKER_PHYSICS))
+    balls.push(new Ball(Rack.jitter(colours[1]), 0x0c9664, SNOOKER_PHYSICS))
+    balls.push(new Ball(Rack.jitter(colours[2]), 0xbd723a, SNOOKER_PHYSICS))
+    balls.push(new Ball(Rack.jitter(colours[3]), 0x0883ee, SNOOKER_PHYSICS))
+    balls.push(new Ball(Rack.jitter(colours[4]), 0xffaacc, SNOOKER_PHYSICS))
+    balls.push(new Ball(Rack.jitter(colours[5]), 0x010101, SNOOKER_PHYSICS))
 
     // change to 15 red balls
     const triangle = Rack.trianglePositions().slice(0, 15)
     triangle.forEach((p) => {
-      balls.push(new Ball(Rack.jitter(p.add(Rack.down)), 0xee0000))
+      balls.push(new Ball(Rack.jitter(p.add(Rack.down)), 0xee0000, SNOOKER_PHYSICS))
     })
     return balls
   }

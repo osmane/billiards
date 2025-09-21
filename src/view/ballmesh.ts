@@ -21,8 +21,10 @@ export class BallMesh {
   spinAxisArrow: ArrowHelper
   trace: Trace
   color: Color
-  constructor(color) {
+  radius: number
+  constructor(color, radius: number = R) {
     this.color = new Color(color)
+    this.radius = radius
     this.initialiseMesh(color)
   }
 
@@ -51,7 +53,7 @@ export class BallMesh {
     if (!this.spinAxisArrow.visible) {
       return
     }
-    this.spinAxisArrow.setLength(R + (R * rvel.length()) / 2, R, R)
+    this.spinAxisArrow.setLength(this.radius + (this.radius * rvel.length()) / 2, this.radius, this.radius)
     this.spinAxisArrow.position.copy(pos)
     this.spinAxisArrow.setDirection(norm(rvel))
     if (state == State.Rolling) {
@@ -62,7 +64,7 @@ export class BallMesh {
   }
 
   initialiseMesh(color) {
-    const geometry = new IcosahedronGeometry(R, 4)
+    const geometry = new IcosahedronGeometry(this.radius, 4)
     const material = new MeshPhongMaterial({
       emissive: 0,
       flatShading: false,
@@ -76,15 +78,29 @@ export class BallMesh {
     this.mesh.name = "ball"
     this.updateRotation(new Vector3().random(), 100)
 
-    const shadowGeometry = new CircleGeometry(R * 0.9, 9)
+    const shadowGeometry = new CircleGeometry(this.radius * 0.9, 9)
     shadowGeometry.applyMatrix4(
-      new Matrix4().identity().makeTranslation(0, 0, -R * 0.99)
+      new Matrix4().identity().makeTranslation(0, 0, -this.radius * 0.99)
     )
     const shadowMaterial = new MeshBasicMaterial({ color: 0x111122 })
     this.shadow = new Mesh(shadowGeometry, shadowMaterial)
     this.spinAxisArrow = new ArrowHelper(up, zero, 2, 0x000000, 0.01, 0.01)
     this.spinAxisArrow.visible = false
     this.trace = new Trace(500, color)
+  }
+
+  // Method to update ball mesh radius if physics context changes
+  updateRadius(newRadius: number) {
+    if (this.radius !== newRadius) {
+      this.radius = newRadius
+      // Recreate mesh with new radius - dispose old geometry first
+      this.mesh.geometry.dispose()
+      this.shadow.geometry.dispose()
+
+      // Recreate with new radius
+      const color = this.color.getHex()
+      this.initialiseMesh(color)
+    }
   }
 
 addDots(geometry, baseColor) {

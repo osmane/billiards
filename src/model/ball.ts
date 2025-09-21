@@ -8,6 +8,7 @@ import {
 } from "../model/physics/physics"
 import { BallMesh } from "../view/ballmesh"
 import { Pocket } from "./physics/pocket"
+import { PhysicsContext, POOL_PHYSICS } from "./physics/constants"
 
 export enum State {
   Stationary = "Stationary",
@@ -25,15 +26,32 @@ export class Ball {
   readonly ballmesh: BallMesh
   state: State = State.Stationary
   pocket: Pocket
+  physicsContext: PhysicsContext = POOL_PHYSICS  // Default to pool physics
 
   public static id = 0
   readonly id = Ball.id++
 
   static readonly transition = 0.05
 
-  constructor(pos, color?) {
+  constructor(pos, color?, physicsContext?: PhysicsContext) {
     this.pos = pos.clone()
-    this.ballmesh = new BallMesh(color || 0xeeeeee * Math.random())
+    // Set physics context first
+    if (physicsContext) {
+      this.physicsContext = physicsContext
+    }
+    // Create BallMesh with correct radius from physics context
+    this.ballmesh = new BallMesh(color || 0xeeeeee * Math.random(), this.physicsContext.R)
+  }
+
+  get radius(): number {
+    return this.physicsContext.R
+  }
+
+  // Method to update physics context and ensure mesh matches
+  updatePhysicsContext(newContext: PhysicsContext) {
+    this.physicsContext = newContext
+    // Update ball mesh to match new physics context
+    this.ballmesh.updateRadius(newContext.R)
   }
 
   update(t) {
@@ -57,11 +75,11 @@ export class Ball {
     if (this.inMotion()) {
       if (this.isRolling()) {
         this.state = State.Rolling
-        forceRoll(this.vel, this.rvel)
-        this.addDelta(t, rollingFull(this.rvel))
+        forceRoll(this.vel, this.rvel, this.physicsContext)
+        this.addDelta(t, rollingFull(this.rvel, this.physicsContext))
       } else {
         this.state = State.Sliding
-        this.addDelta(t, sliding(this.vel, this.rvel))
+        this.addDelta(t, sliding(this.vel, this.rvel, this.physicsContext))
       }
     }
   }
@@ -135,11 +153,12 @@ export class Ball {
     return {
       pos: this.pos.clone(),
       id: this.id,
+      physicsContext: this.physicsContext,
     }
   }
 
   static fromSerialised(data) {
-    return Ball.updateFromSerialised(new Ball(vec(data.pos)), data)
+    return Ball.updateFromSerialised(new Ball(vec(data.pos), undefined, data.physicsContext), data)
   }
 
   static updateFromSerialised(b, data) {

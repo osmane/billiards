@@ -30,7 +30,7 @@ export class Overlap {
     })
 
     const inPath = projected
-      .filter((info) => info.perpendicular < 2 * R)
+      .filter((info) => info.perpendicular < 2 * info.ball.radius)
       .filter((info) => info.ball !== cueball)
 
     return inPath.reduce(
@@ -46,7 +46,7 @@ export class Overlap {
     }
     const centers = closest.ball.pos.clone().sub(cueball.pos)
     const overlap =
-      (closest.perpendicular * Math.sign(centers.cross(direction).z)) / R
+      (closest.perpendicular * Math.sign(centers.cross(direction).z)) / closest.ball.radius
     return { ball: closest.ball, overlap }
   }
 }

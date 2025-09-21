@@ -27,10 +27,10 @@ export class Respot {
   static respotBehind(targetpos, ball, table) {
     const pos = targetpos.clone()
     while (pos.x < TableGeometry.tableX && table.overlapsAny(pos, ball)) {
-      pos.x += R / 8
+      pos.x += ball.radius / 8
     }
     while (pos.x > -TableGeometry.tableX && table.overlapsAny(pos, ball)) {
-      pos.x -= R / 8
+      pos.x -= ball.radius / 8
     }
     ball.pos.copy(pos)
     ball.state = State.Stationary
