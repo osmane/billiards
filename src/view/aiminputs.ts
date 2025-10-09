@@ -165,9 +165,9 @@ export class AimInputs {
     // Vertical offset: strike above center (primary - causes curve)
     const uiX = preset.horizontalOffset / cue.offCenterLimit
 
-    // Strike in upper half of ball (negative Y = up in UI coordinates)
+    // Strike in upper half of ball (positive Y = up in this coordinate system)
     // Use 50-70% of maximum offset for upper strike point
-    const uiY = -0.6  // Strike point at 60% toward top of ball
+    const uiY = 0.6  // Strike point at 60% toward top of ball
 
     cue.setSpin(new Vector3(uiX, uiY, 0), table)
 
