@@ -1,17 +1,16 @@
-Thank you for adding the preset piqué shot dropdown menu to the UI. The feature is implemented as requested, but the resulting shots are not curving, and we believe there is a small misunderstanding of the core mechanic we would like to clarify.
+We've observed that the implementation seems to have the vertical direction inverted.
 
 Observation:
 
-Currently, when a preset is selected from the list, the visual indicator for the strike point on the cue ball only moves left or right along the horizontal center line. It never moves vertically into the upper half of the ball. Because of this, the executed shots do not curve, even with high cue elevation.
+When a piqué shot preset is selected, the visual indicator on the cue ball UI correctly moves to a vertical position, but it is positioned in the lower half of the ball instead of the upper half. Consequently, the executed shot behaves like a "draw shot" (backspin) rather than a piqué shot, and the ball does not curve.
 
-Clarification of the Physical Principle:
+Clarification:
 
-The primary action that causes a piqué or massé shot to curve is striking the cue ball above its center with an elevated cue. This high point of impact is what imparts the necessary spin for the curving effect.
-
-The left or right adjustment (side spin) is a secondary control used to influence the direction and shape of the curve, but the curve itself is initiated by the high strike point.
+It appears there might be a simple coordinate system inversion. In our aiming system, a "high" strike point corresponds to a positive vertical offset value, while a "low" strike point corresponds to a negative one. The current implementation seems to be applying a negative value, causing the low placement.
 
 Requested Correction:
 
-Could you please adjust the implementation so that when any piqué preset is selected, the visual strike point on the UI's cue ball indicator is positioned in the upper half of the ball? The preset's left or right offset should then be applied relative to this high vertical position.
+Could you please invert the sign of the vertical offset being applied in the presets? The goal is to ensure that selecting a piqué preset moves the visual strike point indicator to a fixed position in the upper half of the cue ball.
 
-This change should ensure the physics engine receives the correct parameters to produce the curved trajectories we are looking to validate.
+This should correct the issue and allow the physics engine to generate the proper top-spin needed for the piqué curve.
+
