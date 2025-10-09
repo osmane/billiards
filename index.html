@@ -20,6 +20,51 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"
     />
     <link rel="stylesheet" type="text/css" href="index.css" />
+    <style>
+      .elevationIndicator {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 14px;
+        font-family: monospace;
+        pointer-events: none;
+        z-index: 100;
+      }
+      .elevationIndicator span {
+        font-weight: bold;
+        color: #4CAF50;
+      }
+      .presetContainer {
+        position: absolute;
+        bottom: 50px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 8px;
+        border-radius: 5px;
+        z-index: 100;
+      }
+      .presetContainer label {
+        color: #fff;
+        font-size: 12px;
+        font-family: monospace;
+        display: block;
+        margin-bottom: 4px;
+      }
+      .piquePresetDropdown {
+        width: 220px;
+        padding: 4px;
+        font-size: 12px;
+        font-family: monospace;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #4CAF50;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+    </style>
   </head>
 
   <body>
@@ -47,6 +92,25 @@
         id="cuePower"
         aria-label="power slider"
       />
+      <div id="elevationIndicator" class="elevationIndicator" title="Cue Elevation (PageUp/PageDown)">
+        <span id="elevationValue">0°</span>
+      </div>
+      <div class="presetContainer">
+        <label for="piquePreset">Piqué Preset:</label>
+        <select id="piquePreset" class="piquePresetDropdown">
+          <option value="">-- Select Preset --</option>
+          <option value="T1">Piqué: 75° - Center Strike</option>
+          <option value="T2">Piqué: 75° - Slight Right Curve</option>
+          <option value="T3">Piqué: 75° - Strong Right Curve</option>
+          <option value="T4">Piqué: 75° - Slight Left Curve</option>
+          <option value="T5">Piqué: 75° - Strong Left Curve</option>
+          <option value="T6">Piqué: 65° - Center Strike</option>
+          <option value="T7">Piqué: 65° - Slight Right Curve</option>
+          <option value="T8">Piqué: 65° - Strong Right Curve</option>
+          <option value="T9">Piqué: 65° - Slight Left Curve</option>
+          <option value="T10">Piqué: 65° - Strong Left Curve</option>
+        </select>
+      </div>
       <div class="chatarea">
         <div id="chatoutput" class="chatoutput">
           <button type="button" id="customBtnLeft" class="menuButton menuButton--large scoreButton scoreButton--white" title="White Score">0</button>
