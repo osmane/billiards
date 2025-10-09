@@ -160,11 +160,15 @@ export class AimInputs {
     // Set elevation
     cue.setElevation(preset.verticalAngle)
 
-    // Set horizontal offset
-    // Preset offset is in physics units (-0.5 to +0.5)
-    // UI offset is normalized by offCenterLimit (0.3)
+    // Set strike point position for piqué/massé shots
+    // Horizontal offset: left/right control (secondary)
+    // Vertical offset: strike above center (primary - causes curve)
     const uiX = preset.horizontalOffset / cue.offCenterLimit
-    const uiY = 0  // Center vertically for piqué shots
+
+    // Strike in upper half of ball (negative Y = up in UI coordinates)
+    // Use 50-70% of maximum offset for upper strike point
+    const uiY = -0.6  // Strike point at 60% toward top of ball
+
     cue.setSpin(new Vector3(uiX, uiY, 0), table)
 
     // Set power
