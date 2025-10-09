@@ -1,27 +1,17 @@
-Before we invest effort in integrating these complex mechanics into the existing aiming system, we would like to request a straightforward and unambiguous UI feature specifically for validation.
+Thank you for adding the preset piqué shot dropdown menu to the UI. The feature is implemented as requested, but the resulting shots are not curving, and we believe there is a small misunderstanding of the core mechanic we would like to clarify.
 
-Please add a new dropdown menu to the control panel at the bottom of the interface. This dropdown should contain a list of approximately 10 preset piqué shots.
+Observation:
 
-The requirements for these presets are as follows:
+Currently, when a preset is selected from the list, the visual indicator for the strike point on the cue ball only moves left or right along the horizontal center line. It never moves vertically into the upper half of the ball. Because of this, the executed shots do not curve, even with high cue elevation.
 
-The list should feature a tiered selection of shots with varying vertical elevations and horizontal offsets.
+Clarification of the Physical Principle:
 
-It is essential to include presets that will cause the ball to curve to both the left and the right.
+The primary action that causes a piqué or massé shot to curve is striking the cue ball above its center with an elevated cue. This high point of impact is what imparts the necessary spin for the curving effect.
 
-The naming convention for each item in the list must be descriptive, clearly indicating the expected curve direction. For example:
+The left or right adjustment (side spin) is a secondary control used to influence the direction and shape of the curve, but the curve itself is initiated by the high strike point.
 
-"Piqué: 75° - Curve Right"
+Requested Correction:
 
-"Piqué: 65° - Curve Left (Medium Offset)"
+Could you please adjust the implementation so that when any piqué preset is selected, the visual strike point on the UI's cue ball indicator is positioned in the upper half of the ball? The preset's left or right offset should then be applied relative to this high vertical position.
 
-"Piqué: 85° - Center Strike"
-
-The user interaction should be as follows:
-
-When a user selects a preset shot from the dropdown menu, we want the existing cue ball indicator on the panel to immediately and visually update to show the precise strike point for that specific shot.
-
-Clicking the main "Hit" button should then execute the shot using the parameters from the selected preset, overriding any other aiming settings.
-
-The purpose of this feature is to give us a direct and reliable way to visually confirm that the behavior documented in the test reports translates perfectly to the in-game experience.
-
-Please let us know if you have any questions about this request.
+This change should ensure the physics engine receives the correct parameters to produce the curved trajectories we are looking to validate.
