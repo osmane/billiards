@@ -125,6 +125,10 @@ export class Cue {
   }
 
   adjustElevation(delta: number) {
+    // Prevent manual elevation changes when preset is locked
+    if (this.aimInputs?.presetLocked) {
+      return
+    }
     // Clamp elevation between 0 (horizontal) and 90 (vertical) degrees
     this.aim.elevation = Math.max(0, Math.min(90, this.aim.elevation + delta))
     this.updateAimInput()
@@ -162,6 +166,14 @@ export class Cue {
     this.aim.pos.copy(pos)
     this.mesh.rotation.z = this.aim.angle
     this.helperMesh.rotation.z = this.aim.angle
+
+    // Apply elevation angle to cue mesh (rotation around Y-axis for tilt)
+    // Convert elevation from degrees to radians
+    const elevationRad = (this.aim.elevation * Math.PI) / 180
+    // Rotate cue stick to show elevation angle visually
+    // Use rotation.y for tilting the cue up/down relative to aim direction
+    this.mesh.rotation.y = -elevationRad  // Negative because mesh coordinate system
+
     const offset = this.spinOffset()
     const swing =
       (sin(this.t + Math.PI / 2) - 1) * 2 * R * (this.aim.power / this.maxPower)

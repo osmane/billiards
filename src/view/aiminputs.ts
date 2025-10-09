@@ -16,6 +16,7 @@ export class AimInputs {
   readonly container: Container
   readonly overlap: Overlap
   currentPreset: PiquePreset | null = null
+  presetLocked: boolean = false
 
   ballWidth
   ballHeight
@@ -137,12 +138,16 @@ export class AimInputs {
     const presetId = selectElement.value
 
     if (!presetId) {
+      // Unlock preset mode - return to normal aiming
       this.currentPreset = null
+      this.presetLocked = false
       return
     }
 
     const preset = getPresetById(presetId)
     if (preset) {
+      // Lock preset mode - prevent manual control overrides
+      this.presetLocked = true
       this.applyPreset(preset)
     }
   }
