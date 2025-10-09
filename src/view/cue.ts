@@ -58,7 +58,43 @@ export class Cue {
     this.t = 0
     ball.state = State.Sliding
     ball.vel.copy(unitAtAngle(aim.angle).multiplyScalar(aim.power))
-    ball.rvel.copy(cueToSpin(aim.offset, ball.vel))
+
+    // Calculate spin from offset (existing English/side spin)
+    const baseSpin = cueToSpin(aim.offset, ball.vel)
+
+    // Add vertical spin component from cue elevation for massé/piqué shots
+    if (aim.elevation > 0) {
+      // Vertical spin magnitude based on elevation angle (0-90 degrees)
+      const elevationRad = (aim.elevation * Math.PI) / 180
+      const verticalSpinMagnitude = ball.vel.length() * Math.sin(elevationRad) * (5 / (2 * ball.radius))
+
+      // Spin aligned with velocity direction (for Magnus curve effect)
+      const aimAngleRad = aim.angle
+      let spinX = verticalSpinMagnitude * Math.cos(aimAngleRad)
+      let spinY = verticalSpinMagnitude * Math.sin(aimAngleRad) * 0.3
+
+      // Apply horizontal offset rotation if offset exists
+      // Converts UI offset to physics offset (-0.5 to +0.5 range)
+      const horizontalOffset = aim.offset.x * this.offCenterLimit
+      if (horizontalOffset !== 0) {
+        // Rotation angle: max ±45° at ±0.5 offset
+        const offsetAngle = horizontalOffset * Math.PI / 4
+        const cos = Math.cos(offsetAngle)
+        const sin = Math.sin(offsetAngle)
+        const originalSpinX = spinX
+        const originalSpinY = spinY
+
+        // Apply 2D rotation matrix
+        spinX = originalSpinX * cos - originalSpinY * sin
+        spinY = originalSpinX * sin + originalSpinY * cos
+      }
+
+      const verticalSpin = new Vector3(spinX, spinY, 0)
+      ball.rvel.copy(baseSpin).add(verticalSpin)
+    } else {
+      ball.rvel.copy(baseSpin)
+    }
+
     // Clear trajectory predictions when shot is made
     this.container?.trajectoryRenderer?.clearTrajectories()
   }
@@ -88,6 +124,19 @@ export class Cue {
     this.container?.updateTrajectoryPrediction()
   }
 
+  adjustElevation(delta: number) {
+    // Clamp elevation between 0 (horizontal) and 90 (vertical) degrees
+    this.aim.elevation = Math.max(0, Math.min(90, this.aim.elevation + delta))
+    this.updateAimInput()
+    this.container?.updateTrajectoryPrediction()
+  }
+
+  setElevation(degrees: number) {
+    this.aim.elevation = Math.max(0, Math.min(90, degrees))
+    this.updateAimInput()
+    this.container?.updateTrajectoryPrediction()
+  }
+
   avoidCueTouchingOtherBall(table: Table) {
     let n = 0
     while (n++ < 20 && this.intersectsAnything(table)) {
@@ -105,6 +154,7 @@ export class Cue {
   updateAimInput() {
     this.aimInputs?.updateVisualState(this.aim.offset.x, this.aim.offset.y)
     this.aimInputs?.updatePowerSlider(this.aim.power / this.maxPower)
+    this.aimInputs?.updateElevationDisplay()
     this.aimInputs?.showOverlap()
   }
 
