@@ -48,6 +48,14 @@ export abstract class ControllerBase extends Controller {
       case "ShiftArrowRight":
         cue.adjustSpin(new Vector3(-delta, 0), this.container.table)
         return true
+      case "PageUpUp":
+        // Increase cue elevation for massé shots (max 90 degrees)
+        cue.adjustElevation(delta * 50) // 5 degrees per keystroke at normal speed
+        return true
+      case "PageDownUp":
+        // Decrease cue elevation (min 0 degrees = horizontal)
+        cue.adjustElevation(-delta * 50)
+        return true
       case "KeyPUp":
         exportGltf(this.container.view.scene)
         return true

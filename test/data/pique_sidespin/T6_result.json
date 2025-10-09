@@ -1,0 +1,15 @@
+{
+  "testId": "T6",
+  "verticalAngle": 65,
+  "horizontalOffset": 0,
+  "finalPosition": {
+    "x": 2.5799538294205155,
+    "y": 0.7595421346017666
+  },
+  "apexPosition": {
+    "x": 0.9000999342251598,
+    "y": 0.5940159961680546
+  },
+  "maxLateralDeviation": 0.3156312392611454,
+  "trajectoryLength": 2.7789421260772484
+}

@@ -1,0 +1,538 @@
+================================================================================
+BILLIARDS MASSÉ (PIKE) SHOT DEVELOPMENT PLAN
+================================================================================
+
+PROJECT OVERVIEW
+----------------
+Implementation of massé (pike) shot physics - curved ball trajectories through 
+vertical spin and Magnus effect. Ball must NEVER leave table surface. Uses 
+Test-Driven Development (TDD).
+
+ENVIRONMENT
+-----------
+- Platform: Windows 11
+- Package Manager: npm (not yarn)
+- Editor: VS Code recommended
+- Node.js: Check project requirements (likely v18+)
+- Test Runner: Existing project test framework (Jest/Mocha/other)
+
+CRITICAL CONSTRAINTS
+--------------------
+1. Ball must remain on table surface always - no jumping or airborne motion
+2. Full cue angle range: 0-90 degrees (0°=horizontal, 90°=vertical)
+3. Minimum 10 test angles: 0°, 10°, 20°, 30°, 40°, 50°, 60°, 70°, 80°, 85°, 90°
+4. Both curve directions: Clockwise (right) and counter-clockwise (left) spin
+
+================================================================================
+DEVELOPMENT PHASES
+================================================================================
+
+PHASE 1: RESEARCH & ANALYSIS
+-----------------------------
+Understand the codebase structure, current physics implementation, and identify 
+what needs to be added for massé shots.
+
+Key Questions to Answer:
+- How is spin currently represented and calculated?
+- What keeps the ball on the table surface now?
+- Is there existing support for arbitrary rotation axes?
+- How are forces accumulated and applied?
+- What is the simulation time step and integration method?
+
+Success Criteria:
+- Clear mental model of current architecture
+- Identified files needing modification
+- Understanding of existing constraints
+
+WHAT NOT TO DO (Failed Attempts):
+Format: ATTEMPT | ANGLE | FAILURE | ROOT CAUSE | LESSON | DATE
+(Document your failed approaches here)
+
+RESUME POINT:
+STOPPED AT: [specific task]
+COMPLETED: [list]
+NEXT ACTION: [exact step]
+BLOCKERS: [issues]
+FILES MODIFIED: [list]
+
+--------------------------------------------------------------------------------
+
+PHASE 2: TEST INFRASTRUCTURE
+-----------------------------
+Set up the testing structure needed to validate massé physics. The goal is to 
+be able to write meaningful tests before implementing physics.
+
+Consider:
+- How to measure trajectory curvature quantitatively
+- How to assert the ball never leaves the table
+- How to generate test cases for 10+ angles systematically
+- What utilities would make tests more readable and maintainable
+
+Success Criteria:
+- Can run tests (even if they fail)
+- Can measure what matters (curvature, position, forces)
+- Test data generation is straightforward
+
+Run tests: npm test
+
+WHAT NOT TO DO:
+(Document failures)
+
+RESUME POINT:
+(Fill when stopping)
+
+--------------------------------------------------------------------------------
+
+PHASE 3: TABLE CONSTRAINT TESTS (RED PHASE)
+--------------------------------------------
+Write tests that verify the ball stays on the table under all conditions. These 
+tests should pass with current code, proving the constraint mechanism works.
+
+Core Principle:
+The ball's vertical position and velocity must remain constant. If these tests 
+fail with current code, understand why before proceeding.
+
+Test Coverage:
+- All 10+ angles
+- Various power levels
+- Edge cases
+
+Success Criteria:
+- Tests explicitly check y-position and y-velocity
+- Tests pass OR blockers clearly identified
+
+WHAT NOT TO DO:
+(Document failures)
+
+RESUME POINT:
+(Fill when stopping)
+
+--------------------------------------------------------------------------------
+
+PHASE 4: MAGNUS EFFECT TESTS (RED PHASE)
+-----------------------------------------
+Write failing tests for the Magnus effect - the physics that creates curved 
+trajectories from spin. These should fail because Magnus isn't implemented yet.
+
+Core Concept:
+Magnus force is perpendicular to both velocity and spin axis. For vertical 
+spin, this creates horizontal curvature. The force direction depends on spin 
+direction (clockwise vs counter-clockwise).
+
+Test Coverage:
+- 10+ angles × 2 spin directions = 20+ core tests
+- Verify force direction and relative magnitude
+- Check 0° produces no curve, 90° produces maximum curve
+
+Success Criteria:
+- Tests clearly express expected behavior
+- Tests fail with clear, informative messages
+- Test progression is logical (0° → 90°)
+
+WHAT NOT TO DO:
+(Document angle-specific failures)
+
+RESUME POINT:
+(Fill with angle coverage status)
+
+--------------------------------------------------------------------------------
+
+PHASE 5: IMPLEMENT MAGNUS FORCE (GREEN PHASE)
+----------------------------------------------
+Make the Phase 4 tests pass by implementing Magnus effect physics.
+
+Core Implementation:
+Magnus force is a cross product: F = k * (ω × v)
+- ω is the spin angular velocity vector
+- v is the linear velocity vector
+- k is a coefficient you'll need to determine or research
+- The force must be purely horizontal (no vertical component)
+
+Key Decisions:
+- Where in the physics pipeline does this force get added?
+- How is vertical spin derived from cue angle?
+- What value of k produces realistic curves?
+
+Success Criteria:
+- Phase 4 tests pass
+- Phase 3 tests still pass (no regression)
+- Behavior is smooth across the angle range
+
+Critical Verification:
+For every angle, confirm ball.y stays constant and ball.vy stays zero.
+
+WHAT NOT TO DO:
+(Document which angles failed and why - be specific)
+
+Example Format:
+ATTEMPT: Linear interpolation between 0° and 90°
+ANGLES TESTED: All 10
+FAILURE: Mid-range angles (30-60°) produced wrong curvature
+ROOT CAUSE: Relationship is trigonometric (sine), not linear
+LESSON: Vertical spin component must use sin(angle)
+DATE: 2025-01-15
+
+RESUME POINT:
+(Fill with passing/failing angle list)
+
+--------------------------------------------------------------------------------
+
+PHASE 6: CUE STRIKE MECHANICS
+------------------------------
+Implement how a cue strike at various angles imparts spin to the ball.
+
+Key Question:
+How does cue angle translate to ball spin? Consider impact mechanics and 
+angular momentum transfer.
+
+Test Coverage:
+- Each test angle produces appropriate spin
+- Strike location (off-center) affects spin
+- Combined vertical and horizontal spin scenarios
+
+Success Criteria:
+- Intuitive relationship between cue angle and resulting spin
+- Edge cases (0° and 90°) behave correctly
+
+WHAT NOT TO DO:
+(Document failures)
+
+RESUME POINT:
+(Fill when stopping)
+
+--------------------------------------------------------------------------------
+
+PHASE 7: FRICTION & ENERGY DISSIPATION
+---------------------------------------
+Model how spin decays over time and how the ball transitions from sliding to 
+rolling motion.
+
+Physics Concepts:
+- Sliding friction (higher) vs rolling friction (lower)
+- Spin decay is typically exponential
+- The transition point is when v = ω × r
+
+Consider:
+- How does cloth type affect friction?
+- Should decay rates vary with angle?
+- What are realistic timescales?
+
+Success Criteria:
+- Spin decays realistically
+- Trajectories straighten as spin dissipates
+- Energy accounting is consistent
+
+WHAT NOT TO DO:
+(Document failures)
+
+RESUME POINT:
+(Fill when stopping)
+
+--------------------------------------------------------------------------------
+
+PHASE 8: COMPREHENSIVE VALIDATION
+----------------------------------
+Systematically test the full angle range with various scenarios.
+
+Test Matrix:
+- 10+ angles
+- 3+ power levels per angle
+- Both spin directions
+- Total: 60+ scenario tests
+
+Analysis:
+- Create visualizations or data tables showing angle vs curvature
+- Verify smooth transitions between adjacent angles
+- Check for any anomalous behavior
+
+Success Criteria:
+- All scenarios pass
+- Behavior is predictable and smooth
+- No unexpected discontinuities
+
+WHAT NOT TO DO:
+(Document problematic angles or combinations)
+
+RESUME POINT:
+(Fill with coverage progress)
+
+--------------------------------------------------------------------------------
+
+PHASE 9: PHYSICAL VALIDATION
+-----------------------------
+Compare simulation results to published physics data or real-world observations.
+
+Sources to Consider:
+- Academic papers on billiard ball dynamics
+- High-speed video analysis of professional massé shots
+- Physics simulations from other implementations
+
+Validation Approach:
+Match published curve radii, spin decay rates, or trajectory shapes within 
+reasonable tolerance (15-20%).
+
+Success Criteria:
+- Simulation is in the right ballpark physically
+- Any discrepancies are explainable
+- Magnus coefficient is reasonable
+
+WHAT NOT TO DO:
+(Document validation failures)
+
+RESUME POINT:
+(Fill when stopping)
+
+--------------------------------------------------------------------------------
+
+PHASE 10: ANTI-JUMP VALIDATION (MANDATORY)
+-------------------------------------------
+Prove conclusively that the ball never leaves the table under any circumstances.
+
+Approach:
+Generate many random test cases (100+ per angle, 1000+ total) with various 
+combinations of angle, power, and spin. Every single one must maintain the 
+table constraint.
+
+Add Runtime Assertions:
+Consider adding checks in the physics code itself that will trigger if the 
+ball ever lifts off during development.
+
+Success Criteria:
+- 100% pass rate on randomized tests
+- No code path can create upward acceleration
+
+CRITICAL:
+Cannot proceed to Phase 11 until this passes completely.
+
+WHAT NOT TO DO:
+(Document any cases that allowed lift-off)
+
+RESUME POINT:
+(Fill with pass rate by angle)
+
+--------------------------------------------------------------------------------
+
+PHASE 11: INTEGRATION
+----------------------
+Connect the physics implementation to user controls and game systems.
+
+Implementation Areas:
+- Add cue angle control (0-90°)
+- Visual feedback (angle indicator, curve preview)
+- Integrate with existing game rules
+- Update documentation
+
+Approach:
+You decide the best way to expose this to users. Consider intuitiveness, 
+existing control schemes, and visual clarity.
+
+Success Criteria:
+- Users can create massé shots
+- Feedback is clear
+- No existing functionality broken
+
+WHAT NOT TO DO:
+(Document integration issues)
+
+RESUME POINT:
+(Fill when stopping)
+
+================================================================================
+QUICK REFERENCE
+================================================================================
+
+NPM COMMANDS
+------------
+npm install          # Install dependencies
+npm test             # Run test suite
+npm run test:watch   # Run tests in watch mode (if available)
+npm run coverage     # Generate coverage report (if available)
+
+REQUIRED TEST COVERAGE
+----------------------
+- Minimum 10 angles: 0°, 10°, 20°, 30°, 40°, 50°, 60°, 70°, 80°, 85°, 90°
+- Both spin directions: clockwise (right curve), counter-clockwise (left curve)
+- Minimum 200 explicit tests, 1000+ in anti-jump suite
+
+PHYSICS CONSTRAINTS
+-------------------
+- Ball y-coordinate must equal ball radius (typically 0.028m) always
+- Ball y-velocity must be zero always
+- Magnus force must be purely horizontal
+- Spin-to-curvature relationship follows trigonometric laws, not linear
+
+MAGNUS EFFECT FORMULA
+----------------------
+F = k * (ω × v)
+
+Where:
+- F: Magnus force vector (horizontal)
+- k: Magnus coefficient (research or empirically determine)
+- ω: Angular velocity (spin) vector
+- v: Linear velocity vector
+- ×: Cross product
+
+For massé shots:
+- Vertical spin component = total_spin * sin(cue_angle)
+- This creates horizontal curve
+- Direction: clockwise spin → rightward curve, counter-clockwise → leftward
+
+CRITICAL INVARIANTS
+-------------------
+Every implementation must preserve:
+1. ball.position.y === BALL_RADIUS (constant)
+2. ball.velocity.y === 0 (always)
+3. No forces have positive y-component
+4. Curve direction matches spin direction
+5. 0° angle → no vertical spin → no curve
+6. 90° angle → maximum vertical spin → tightest curve
+
+================================================================================
+PROGRESS TRACKING TEMPLATE
+================================================================================
+
+PHASE [N]: [NAME]
+-----------------
+Status: [NOT STARTED / IN PROGRESS / COMPLETED / BLOCKED]
+Completed: [list specific items]
+Angles Covered: [X of 10+]
+Tests Passing: [X of Y total]
+Current Focus: [what you're working on right now]
+Blockers: [any issues preventing progress]
+
+WHAT NOT TO DO:
+[Document each failed approach with format:]
+ATTEMPT: [what you tried]
+ANGLE: [which angle(s) if relevant]
+FAILURE: [what went wrong]
+ROOT CAUSE: [why it failed]
+LESSON: [what to avoid]
+DATE: [YYYY-MM-DD]
+
+RESUME POINT:
+STOPPED AT: [exact task, file, or line of thinking]
+COMPLETED: [what's done]
+NEXT ACTION: [specific next step to take]
+BLOCKERS: [problems to solve]
+FILES MODIFIED: [list]
+TEST RESULTS: [summary by angle if relevant]
+INSIGHTS: [any important realizations]
+
+================================================================================
+WORKING SESSION GUIDE
+================================================================================
+
+STARTING A SESSION
+------------------
+1. Review the last RESUME POINT
+2. Check test results - which angles pass/fail?
+3. Read WHAT NOT TO DO for current phase
+4. Understand what was learned previously
+5. Execute the NEXT ACTION
+
+DURING WORK
+-----------
+- Run tests frequently: npm test
+- Document failures immediately in WHAT NOT TO DO
+- Update RESUME POINT if switching focus
+- Commit working code with clear messages
+- If stuck, document the blocker
+
+ENDING A SESSION
+----------------
+1. Run full test suite: npm test
+2. Note pass/fail by angle if applicable
+3. Fill out complete RESUME POINT
+4. Document any new failure patterns
+5. Commit code with descriptive message
+6. Update phase status
+
+WHEN STUCK
+----------
+- Review WHAT NOT TO DO for similar attempts
+- Check if approach conflicts with constraints
+- Consider alternative formulations
+- Test smaller pieces in isolation
+- Document the blocker clearly
+
+================================================================================
+SUCCESS CRITERIA
+================================================================================
+
+MUST ACHIEVE
+------------
+✓ All 10+ angles tested with both spin directions
+✓ Ball never leaves table (proven by 1000+ randomized tests)
+✓ Curve direction always matches spin direction
+✓ Smooth behavior progression from 0° to 90°
+✓ Zero regression in existing functionality
+
+PHYSICS ACCURACY
+----------------
+- Curves match published data within acceptable tolerance
+- Magnus force magnitudes are physically plausible
+- Energy dissipation follows expected patterns
+- 0° edge case: no curvature
+- 90° edge case: maximum curvature
+- Deterministic: same input always produces same output
+
+CODE QUALITY
+------------
+- High test coverage for new code (80%+ target)
+- Clear explanatory comments where physics is complex
+- Follows existing project conventions
+- No arbitrary magic numbers
+
+USER EXPERIENCE
+---------------
+- Intuitive control scheme
+- Clear visual feedback
+- Smooth, realistic motion
+- Acceptable performance
+
+================================================================================
+IMPORTANT NOTES
+================================================================================
+
+APPROACH PHILOSOPHY
+-------------------
+This document provides structure and constraints, not a rigid recipe. You're 
+capable of finding good solutions within these boundaries. Different approaches 
+may work - the key is maintaining the physics constraints and test coverage.
+
+CONSTRAINT PRIORITY
+-------------------
+If you must choose between perfect accuracy and maintaining constraints:
+1. Ball stays on table (non-negotiable)
+2. Correct curve direction (critical for usability)
+3. Smooth angle progression (important for predictability)
+4. Exact curve magnitude (can be tuned)
+
+TESTING APPROACH
+----------------
+TDD (Test-Driven Development) is recommended but not mandatory. What matters:
+- Comprehensive test coverage exists
+- Tests verify the right things
+- Failures are informative
+
+DOCUMENTATION
+-------------
+This document is yours to modify. If you find a better way to organize phases, 
+do it. If you discover important constraints or pitfalls, add them. The goal 
+is effective development, not rigid adherence to a plan.
+
+WHEN TO DEVIATE
+---------------
+Deviate from this plan when:
+- You discover a better approach
+- Current approach isn't working
+- You find the plan is wrong about something
+
+When deviating:
+- Document why in WHAT NOT TO DO or notes
+- Ensure constraints still hold
+- Update the plan for future sessions
+
+================================================================================
+END OF DOCUMENT
+================================================================================

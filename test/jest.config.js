@@ -20,6 +20,8 @@ module.exports = {
           parser: {
             syntax: "typescript",
             tsx: true,
+            decorators: true,
+            dynamicImport: true,
           },
           target: "es2020",
         },

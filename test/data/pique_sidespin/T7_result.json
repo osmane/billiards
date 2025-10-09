@@ -1,0 +1,15 @@
+{
+  "testId": "T7",
+  "verticalAngle": 65,
+  "horizontalOffset": 0.25,
+  "finalPosition": {
+    "x": 2.8484594920023816,
+    "y": 0.8398050022849982
+  },
+  "apexPosition": {
+    "x": 0.9018780310874062,
+    "y": 0.5804709608646775
+  },
+  "maxLateralDeviation": 0.3017317050369055,
+  "trajectoryLength": 3.0484498375805305
+}

@@ -19,6 +19,11 @@ export let Mz: number
 export let Mxy: number
 export let I: number
 
+// Magnus effect coefficient for massé shots
+// This controls the strength of the Magnus force: F = k_magnus * (ω × v)
+// Value determined empirically for realistic massé curves
+export let k_magnus = 2.0
+
 // Fixed angle of cushion contact point above ball center
 export const sinθ = 2 / 5
 // Fixed angle of cushion contact point above ball center
@@ -132,4 +137,7 @@ export function setμw(val: number) {
 }
 export function setee(val: number) {
   ee = val
+}
+export function setMagnusCoefficient(val: number) {
+  k_magnus = val
 }

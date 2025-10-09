@@ -1,6 +1,6 @@
 import { Vector3 } from "three"
 import { norm, upCross, up, sin, cos } from "../../utils/utils"
-import { muS, muC, g, m, Mz, Mxy, R, I, e, ee, μs, μw, PhysicsContext, refreshWithContext } from "./constants"
+import { muS, muC, g, m, Mz, Mxy, R, I, e, ee, μs, μw, k_magnus, PhysicsContext, refreshWithContext } from "./constants"
 import { Mathaven } from "./mathaven"
 
 const MU_CUSHION_MIN = 0.02
@@ -265,4 +265,47 @@ export function cueToSpin(offset: Vector3, v: Vector3) {
     .applyAxisAngle(dir, spinAxis)
     .multiplyScalar(spinRate)
   return rvel
+}
+
+/**
+ * Magnus force for massé shots
+ * The Magnus effect creates a force perpendicular to both velocity and spin axis
+ * F = k_magnus * (ω × v)
+ *
+ * For massé shots:
+ * - Vertical spin component (ω.x or ω.y) creates horizontal curve
+ * - Force is PURELY horizontal (no z-component) to keep ball on table
+ *
+ * @param v linear velocity
+ * @param w angular velocity (spin)
+ * @param context physics context for mass
+ * @returns delta { v, w } to apply
+ */
+const magnusCross = new Vector3()
+const verticalSpinOnly = new Vector3()
+export function magnus(v: Vector3, w: Vector3, context?: PhysicsContext): { v: Vector3; w: Vector3 } {
+  const mass = context?.m ?? m
+
+  // Only vertical spin components (x, y rotation) create Magnus force
+  // Z-spin (English/side spin) doesn't create massé curve
+  verticalSpinOnly.set(w.x, w.y, 0)
+
+  // Calculate Magnus force: F = k * (ω × v)
+  // Using only vertical spin components
+  magnusCross.copy(verticalSpinOnly).cross(v)
+
+  // Force must be purely horizontal (zero z-component)
+  // This is CRITICAL to prevent ball from leaving table
+  magnusCross.setZ(0)
+
+  // Convert force to acceleration: a = F / m
+  // Then to velocity delta: Δv = a (will be multiplied by timestep in ball.update)
+  const magnusAccel = magnusCross.multiplyScalar(k_magnus / mass)
+
+  // Magnus force doesn't change angular velocity for our model
+  // (more accurate models might include gyroscopic effects, but we keep it simple)
+  return {
+    v: magnusAccel,
+    w: new Vector3(0, 0, 0)
+  }
 }

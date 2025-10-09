@@ -1,0 +1,27 @@
+Before we invest effort in integrating these complex mechanics into the existing aiming system, we would like to request a straightforward and unambiguous UI feature specifically for validation.
+
+Please add a new dropdown menu to the control panel at the bottom of the interface. This dropdown should contain a list of approximately 10 preset piqué shots.
+
+The requirements for these presets are as follows:
+
+The list should feature a tiered selection of shots with varying vertical elevations and horizontal offsets.
+
+It is essential to include presets that will cause the ball to curve to both the left and the right.
+
+The naming convention for each item in the list must be descriptive, clearly indicating the expected curve direction. For example:
+
+"Piqué: 75° - Curve Right"
+
+"Piqué: 65° - Curve Left (Medium Offset)"
+
+"Piqué: 85° - Center Strike"
+
+The user interaction should be as follows:
+
+When a user selects a preset shot from the dropdown menu, we want the existing cue ball indicator on the panel to immediately and visually update to show the precise strike point for that specific shot.
+
+Clicking the main "Hit" button should then execute the shot using the parameters from the selected preset, overriding any other aiming settings.
+
+The purpose of this feature is to give us a direct and reliable way to visually confirm that the behavior documented in the test reports translates perfectly to the in-game experience.
+
+Please let us know if you have any questions about this request.

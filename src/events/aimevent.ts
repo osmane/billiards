@@ -7,6 +7,7 @@ import { Vector3 } from "three"
 export class AimEvent extends GameEvent {
   offset = new Vector3(0, 0, 0)
   angle = 0
+  elevation = 0 // Cue elevation angle (0 = horizontal, 90 = vertical) for massé shots
   power = 0
   pos = new Vector3(0, 0, 0)
   i = 0
@@ -24,6 +25,7 @@ export class AimEvent extends GameEvent {
     const event = new AimEvent()
     event.pos = vec(json.pos)
     event.angle = json.angle
+    event.elevation = json.elevation ?? 0
     event.offset = vec(json.offset)
     event.power = json.power
     if (json.i) {

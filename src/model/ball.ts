@@ -5,6 +5,7 @@ import {
   rollingFull,
   sliding,
   surfaceVelocityFull,
+  magnus,
 } from "../model/physics/physics"
 import { BallMesh } from "../view/ballmesh"
 import { Pocket } from "./physics/pocket"
@@ -77,9 +78,13 @@ export class Ball {
         this.state = State.Rolling
         forceRoll(this.vel, this.rvel, this.physicsContext)
         this.addDelta(t, rollingFull(this.rvel, this.physicsContext))
+        // Apply Magnus force for rolling balls with spin
+        this.addDelta(t, magnus(this.vel, this.rvel, this.physicsContext))
       } else {
         this.state = State.Sliding
         this.addDelta(t, sliding(this.vel, this.rvel, this.physicsContext))
+        // Apply Magnus force for sliding balls with spin
+        this.addDelta(t, magnus(this.vel, this.rvel, this.physicsContext))
       }
     }
   }

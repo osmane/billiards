@@ -1,0 +1,24 @@
+{
+  "description": "Phase-separated curvature analysis",
+  "results": [
+    {
+      "angle": 65,
+      "slidingR2": null,
+      "rollingR2": null,
+      "overallR2": 0.3858276348406027
+    },
+    {
+      "angle": 75,
+      "slidingR2": null,
+      "rollingR2": null,
+      "overallR2": 0.3819179988010638
+    },
+    {
+      "angle": 85,
+      "slidingR2": null,
+      "rollingR2": null,
+      "overallR2": 0.38021666915006846
+    }
+  ],
+  "timestamp": "2025-10-09T19:08:33.818Z"
+}

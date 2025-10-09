@@ -1,0 +1,117 @@
+{
+  "description": "Piqué shot side spin validation - Complete results",
+  "testDate": "2025-10-09T19:32:38.611Z",
+  "totalTests": 10,
+  "results": [
+    {
+      "testId": "T1",
+      "angle": 75,
+      "offset": 0,
+      "finalX": 2.613,
+      "finalY": 0.692,
+      "apexX": 0.933,
+      "apexY": 0.601,
+      "maxDeviationMm": 341.9,
+      "trajectoryLengthM": 2.807
+    },
+    {
+      "testId": "T2",
+      "angle": 75,
+      "offset": 0.25,
+      "finalX": 2.897,
+      "finalY": 0.777,
+      "apexX": 0.938,
+      "apexY": 0.589,
+      "maxDeviationMm": 326.1,
+      "trajectoryLengthM": 3.089
+    },
+    {
+      "testId": "T3",
+      "angle": 75,
+      "offset": 0.5,
+      "finalX": 3.16,
+      "finalY": 0.914,
+      "apexX": 0.936,
+      "apexY": 0.582,
+      "maxDeviationMm": 298.9,
+      "trajectoryLengthM": 3.364
+    },
+    {
+      "testId": "T4",
+      "angle": 75,
+      "offset": -0.25,
+      "finalX": 2.319,
+      "finalY": 0.663,
+      "apexX": 0.909,
+      "apexY": 0.615,
+      "maxDeviationMm": 341.7,
+      "trajectoryLengthM": 2.522
+    },
+    {
+      "testId": "T5",
+      "angle": 75,
+      "offset": -0.5,
+      "finalX": 2.025,
+      "finalY": 0.687,
+      "apexX": 0.882,
+      "apexY": 0.636,
+      "maxDeviationMm": 319.3,
+      "trajectoryLengthM": 2.244
+    },
+    {
+      "testId": "T6",
+      "angle": 65,
+      "offset": 0,
+      "finalX": 2.58,
+      "finalY": 0.76,
+      "apexX": 0.9,
+      "apexY": 0.594,
+      "maxDeviationMm": 315.6,
+      "trajectoryLengthM": 2.779
+    },
+    {
+      "testId": "T7",
+      "angle": 65,
+      "offset": 0.25,
+      "finalX": 2.848,
+      "finalY": 0.84,
+      "apexX": 0.902,
+      "apexY": 0.58,
+      "maxDeviationMm": 301.7,
+      "trajectoryLengthM": 3.048
+    },
+    {
+      "testId": "T8",
+      "angle": 65,
+      "offset": 0.5,
+      "finalX": 3.098,
+      "finalY": 0.97,
+      "apexX": 0.897,
+      "apexY": 0.571,
+      "maxDeviationMm": 276.8,
+      "trajectoryLengthM": 3.311
+    },
+    {
+      "testId": "T9",
+      "angle": 65,
+      "offset": -0.25,
+      "finalX": 2.302,
+      "finalY": 0.731,
+      "apexX": 0.88,
+      "apexY": 0.609,
+      "maxDeviationMm": 314.1,
+      "trajectoryLengthM": 2.509
+    },
+    {
+      "testId": "T10",
+      "angle": 65,
+      "offset": -0.5,
+      "finalX": 2.023,
+      "finalY": 0.753,
+      "apexX": 0.857,
+      "apexY": 0.63,
+      "maxDeviationMm": 291.4,
+      "trajectoryLengthM": 2.246
+    }
+  ]
+}
