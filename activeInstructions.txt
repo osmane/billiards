@@ -1,16 +1,25 @@
-We've observed that the implementation seems to have the vertical direction inverted.
+Thank you for the updates. The UI indicator for the strike point is now working perfectly, which confirms that part of the preset data is being processed correctly.
 
-Observation:
+However, we are still facing the core issue: the executed shots do not curve, and there is no visual change to the cue stick's elevation angle when a preset is selected. We have analyzed the difference between the successful physics tests and the live UI, and we believe we have identified the root cause.
 
-When a piqué shot preset is selected, the visual indicator on the cue ball UI correctly moves to a vertical position, but it is positioned in the lower half of the ball instead of the upper half. Consequently, the executed shot behaves like a "draw shot" (backspin) rather than a piqué shot, and the ball does not curve.
+Problem Analysis:
 
-Clarification:
+The successful physics tests work in an isolated environment where shot parameters are set once and executed immediately. The game UI, however, is dynamic.
 
-It appears there might be a simple coordinate system inversion. In our aiming system, a "high" strike point corresponds to a positive vertical offset value, while a "low" strike point corresponds to a negative one. The current implementation seems to be applying a negative value, causing the low placement.
+We believe that after a piqué preset is selected, the game's main aiming system (which tracks mouse and keyboard inputs for normal aiming) continues to run in the background. This system appears to be overwriting or resetting the cue's vertical elevation angle back to zero before the "Hit" button is pressed.
 
-Requested Correction:
+As a result, by the time the shot is executed, the physics engine receives the correct strike point but an elevation angle of 0°, leading to a straight shot with no curve. The fact that the 3D cue model never visually tilts is a symptom of this same issue—the elevation value is being lost.
 
-Could you please invert the sign of the vertical offset being applied in the presets? The goal is to ensure that selecting a piqué preset moves the visual strike point indicator to a fixed position in the upper half of the cue ball.
+Requested Solution:
 
-This should correct the issue and allow the physics engine to generate the proper top-spin needed for the piqué curve.
+To resolve this, we need to create a "preset lock" mode. When a user selects a piqué preset from the dropdown:
 
+The system should "lock in" all parameters from that preset, especially the vertical elevation angle.
+
+While a preset is active, the standard aiming controls (like mouse movement for aiming or manual elevation changes) should be temporarily disabled to prevent them from resetting the locked-in preset values.
+
+The 3D model of the cue stick must be visually updated to reflect the locked-in elevation angle, providing clear feedback to the user.
+
+Selecting the "None" or default option in the dropdown should disable the lock and return the system to normal aiming mode.
+
+This will ensure that the exact parameters from the successful tests are passed to the physics engine, allowing us to see the expected curves in the UI.
