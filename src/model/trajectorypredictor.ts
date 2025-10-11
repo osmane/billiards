@@ -24,7 +24,7 @@ export class TrajectoryPredictor {
 
   constructor() {}
 
-  predictTrajectory(table: Table, aim: AimEvent, rules?: any): TrajectoryPrediction[] {
+  predictTrajectory(table: Table, aim: AimEvent, rules?: any, masseMode?: boolean): TrajectoryPrediction[] {
     // Create a copy of the table for simulation
     const serializedTable = table.serialise()
     const simulationTable = Table.fromSerialised(serializedTable)
@@ -67,6 +67,11 @@ export class TrajectoryPredictor {
     currentCueBall.state = State.Sliding
     currentCueBall.vel.copy(unitAtAngle(aim.angle).multiplyScalar(aim.power))
     currentCueBall.rvel.copy(cueToSpin(aim.offset, currentCueBall.vel))
+
+    // Enable Magnus effect in trajectory prediction if in massé mode
+    if (masseMode !== undefined) {
+      currentCueBall.magnusEnabled = masseMode
+    }
 
     // Initialize trajectory data for each ball using simulation IDs
     const trajectories: Map<number, TrajectoryPoint[]> = new Map()
