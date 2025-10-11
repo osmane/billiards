@@ -16,11 +16,13 @@ export class Cue {
   readonly offCenterLimit = 0.3
   readonly offCenterLimitMasse = 0.8  // Increased limit for massé shots
   readonly maxPower = 160 * R
+  readonly defaultElevation = 0.17  // Default cue elevation (radians)
   t = 0
   aimInputs: AimInputs
   aim: AimEvent = new AimEvent()
   container: any // Container reference for trajectory updates
   masseMode: boolean = false  // Toggle for massé mode
+  elevation: number = 0.17  // Current cue elevation angle in radians
 
   length = TableGeometry.tableX * 1
 
@@ -120,6 +122,10 @@ export class Cue {
     this.aim.pos.copy(pos)
     this.mesh.rotation.z = this.aim.angle
     this.helperMesh.rotation.z = this.aim.angle
+
+    // Apply elevation rotation (X-axis rotation for vertical tilt)
+    this.mesh.rotation.x = -this.elevation
+
     const offset = this.spinOffset()
     const swing =
       (sin(this.t + Math.PI / 2) - 1) * 2 * R * (this.aim.power / this.maxPower)
@@ -177,6 +183,7 @@ export class Cue {
 
   toggleMasseMode() {
     this.masseMode = !this.masseMode
+
     // Reapply current offset to ensure it's within new limits
     if (!this.masseMode) {
       const offset = this.aim.offset.clone()
@@ -185,7 +192,10 @@ export class Cue {
         this.aim.offset.copy(offset)
         this.updateAimInput()
       }
+      // Reset elevation to default when exiting massé mode
+      this.elevation = this.defaultElevation
     }
+
     this.container?.updateTrajectoryPrediction()
     return this.masseMode
   }
@@ -210,6 +220,12 @@ export class Cue {
     if (this.aim.offset.length() > this.offCenterLimitMasse) {
       this.aim.offset.normalize().multiplyScalar(this.offCenterLimitMasse)
     }
+
+    // Set cue elevation based on preset angle
+    // Convert degrees to radians and map to visual elevation
+    // 90° = vertical (π/2), 65° = ~25° from vertical
+    // Visual mapping: steeper angle = more vertical cue
+    this.elevation = angleRad
 
     // Set preset power to 35% of max for controlled massé shots
     this.aim.power = this.maxPower * 0.35
