@@ -124,6 +124,9 @@ export class Cue {
     this.helperMesh.rotation.z = this.aim.angle
 
     // Apply elevation rotation (X-axis rotation for vertical tilt)
+    // Set rotation order to ZXY so that Z (aim) is applied first, then X (elevation)
+    // This ensures elevation stays constant relative to table while aim rotates
+    this.mesh.rotation.order = 'ZXY'
     this.mesh.rotation.x = -this.elevation
 
     const offset = this.spinOffset()
