@@ -6,13 +6,14 @@ import { AimInputs } from "./aiminputs"
 import { Ball, State } from "../model/ball"
 import { cueToSpin } from "../model/physics/physics"
 import { CueMesh } from "./cuemesh"
-import { Mesh, Raycaster, Vector3 } from "three"
+import { Mesh, Raycaster, Vector3, Quaternion } from "three"
 import { R } from "../model/physics/constants"
 
 export class Cue {
   mesh: Mesh
   helperMesh: Mesh
   placerMesh: Mesh
+  hitPointMesh: Mesh  // 3D visualization of hit point on cue ball
   readonly offCenterLimit = 0.3
   readonly offCenterLimitMasse = 0.8  // Increased limit for massé shots
   readonly maxPower = 160 * R
@@ -35,6 +36,7 @@ export class Cue {
     )
     this.helperMesh = CueMesh.createHelper()
     this.placerMesh = CueMesh.createPlacer()
+    this.hitPointMesh = CueMesh.createHitPoint()
   }
 
   rotateAim(angle, table: Table) {
@@ -139,6 +141,44 @@ export class Cue {
     this.helperMesh.position.copy(pos)
     this.placerMesh.position.copy(pos)
     this.placerMesh.rotation.z = this.t
+
+    // Update hit point position on cue ball surface
+    this.updateHitPoint(pos)
+  }
+
+  updateHitPoint(ballPos: Vector3) {
+    // Calculate the position of the hit point on the ball surface
+    // offset.x and offset.y are in normalized coordinates (-0.3 to 0.3 or -0.8 to 0.8)
+    // We need to map these to actual 3D positions on the ball surface
+
+    // Use the same offset calculation as spinOffset() for consistency
+    // This combines horizontal spin (X) and vertical position (Y->Z)
+    const offsetVec = upCross(unitAtAngle(this.aim.angle))
+      .multiplyScalar(this.aim.offset.x * 2 * R)
+      .setZ(this.aim.offset.y * 2 * R)
+
+    // Get the direction where the ball will be hit (opposite of cue direction)
+    const hitDirection = unitAtAngle(this.aim.angle + Math.PI)
+
+    // Calculate the actual hit point on ball surface
+    // Method: Start at ball center, go out by R in hit direction, then add offset
+    const hitPointOnSurface = new Vector3()
+    hitPointOnSurface.copy(ballPos)
+    hitPointOnSurface.addScaledVector(hitDirection, R)  // Go to ball surface
+    hitPointOnSurface.add(offsetVec)  // Add the spin offset
+
+    // Now calculate the direction from ball center to this hit point
+    // This is the direction our sphere cap's north pole should point
+    const finalDirection = hitPointOnSurface.clone().sub(ballPos).normalize()
+
+    // Position the spherical cap decal at ball center
+    this.hitPointMesh.position.copy(ballPos)
+
+    // Orient the sphere cap so its north pole (0,0,1) points to final direction
+    const up = new Vector3(0, 0, 1)
+    const quaternion = new Quaternion()
+    quaternion.setFromUnitVectors(up, finalDirection)
+    this.hitPointMesh.setRotationFromQuaternion(quaternion)
   }
 
   update(t) {
@@ -193,30 +233,30 @@ export class Cue {
       if (offset.length() > this.offCenterLimit) {
         offset.normalize().multiplyScalar(this.offCenterLimit)
         this.aim.offset.copy(offset)
-        this.updateAimInput()
       }
       // Reset elevation to default when exiting massé mode
       this.elevation = this.defaultElevation
     }
 
+    // Always update visual state when massé mode changes
+    this.updateAimInput()
     this.container?.updateTrajectoryPrediction()
     return this.masseMode
   }
 
   setMassePreset(angleDegrees: number, direction: 'left' | 'right') {
-    // Enable massé mode
     this.masseMode = true
 
-    // Calculate offset based on angle (from HTML reference model)
     const angleRad = (angleDegrees * Math.PI) / 180
-    const offsetY = Math.sin(Math.PI / 2 - angleRad)
 
-    // Set horizontal offset for spin direction
-    // Using 0.5 for moderate side spin (reduced from 0.7 to avoid excessive spin)
-    // The cueToSpin formula is very sensitive to offset magnitude
+    // Calculate vertical offset: higher angle = hit higher on ball's top hemisphere
+    // 90° (vertical) → offsetY = 0.75 (top), 65° → offsetY ≈ 0.54 (upper-middle)
+    const normalizedAngle = angleRad / (Math.PI / 2)
+    const offsetY = normalizedAngle * 0.75
+
+    // Horizontal offset for spin direction
     const offsetX = direction === 'right' ? 0.5 : -0.5
 
-    // Set the offset
     this.aim.offset.set(offsetX, offsetY, 0)
 
     // Ensure within massé limits
@@ -224,13 +264,11 @@ export class Cue {
       this.aim.offset.normalize().multiplyScalar(this.offCenterLimitMasse)
     }
 
-    // Set cue elevation based on preset angle
-    // Convert degrees to radians and map to visual elevation
-    // 90° = vertical (π/2), 65° = ~25° from vertical
-    // Visual mapping: steeper angle = more vertical cue
-    this.elevation = angleRad
+    // Set cue elevation: invert angle since elevation is rotation from horizontal
+    // 90° → elevation = 0 (vertical), 0° → elevation = π/2 (horizontal)
+    this.elevation = (Math.PI / 2) - angleRad
 
-    // Set preset power to 35% of max for controlled massé shots
+    // Set controlled power for massé shots
     this.aim.power = this.maxPower * 0.35
 
     this.updateAimInput()

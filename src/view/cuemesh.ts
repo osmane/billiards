@@ -7,6 +7,10 @@ import {
   MeshPhongMaterial,
   Vector3,
   ShaderMaterial,
+  CircleGeometry,
+  MeshBasicMaterial,
+  DoubleSide,
+  SphereGeometry,
 } from "three"
 
 export class CueMesh {
@@ -111,6 +115,87 @@ export class CueMesh {
             (length / 2) * Math.sin(tilt) + R * 0.25
           )
       )
+    return mesh
+  }
+
+  static createHitPoint() {
+    // Create a spherical cap that conforms to ball surface
+    // Use a small portion of a sphere geometry - OUTSIDE the ball
+    // NOTE: Three.js SphereGeometry has Y-axis as the pole by default
+    const geometry = new SphereGeometry(
+      R * 1.03, // Larger than ball radius to render OUTSIDE
+      32, // width segments
+      32, // height segments
+      0, // phiStart - full circle horizontally
+      Math.PI * 2, // phiLength - full circle
+      0, // thetaStart - start from Y+ pole (Three.js default)
+      Math.PI * 0.25 // thetaLength - smaller cap (25% of sphere)
+    )
+
+    // Rotate geometry 90 degrees around X so Y+ pole becomes Z+ pole
+    // This aligns with our coordinate system where Z is up
+    geometry.rotateX(Math.PI / 2)
+
+    // Shader material to create a circular spot at the north pole
+    const material = new ShaderMaterial({
+      uniforms: {
+        hitColor: { value: new Vector3(72/255, 72/255, 206/255) }, // Blue color
+        spotSize: { value: 0.6 }, // Larger spot size to fill more of the cap
+      },
+      vertexShader: `
+        varying vec3 vPosition;
+        varying vec3 vNormal;
+
+        void main() {
+          vPosition = position;
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 hitColor;
+        uniform float spotSize;
+        varying vec3 vPosition;
+        varying vec3 vNormal;
+
+        void main() {
+          // Calculate angular distance from north pole
+          // vPosition is already in object space, normalized
+          vec3 pos = normalize(vPosition);
+          vec3 northPole = vec3(0.0, 0.0, 1.0);
+
+          // Use dot product to get angular distance (1 = same direction, -1 = opposite)
+          float dotProduct = dot(pos, northPole);
+
+          // Convert to angular distance (0 at pole, increases away from pole)
+          float angularDist = acos(clamp(dotProduct, -1.0, 1.0)) / 3.14159; // 0-1 range
+
+          // Normalize by spot size
+          float normalizedDist = angularDist / spotSize;
+
+          // Create soft circular gradient
+          float alpha = 1.0 - smoothstep(0.5, 1.0, normalizedDist);
+
+          // Add center glow
+          float glow = pow(1.0 - clamp(normalizedDist, 0.0, 1.0), 3.0) * 0.5;
+
+          vec3 finalColor = hitColor + vec3(glow);
+
+          // Discard pixels outside the spot
+          if (alpha < 0.05) discard;
+
+          gl_FragColor = vec4(finalColor, alpha * 0.8);
+        }
+      `,
+      transparent: true,
+      depthTest: false, // Always visible
+      depthWrite: false,
+      side: DoubleSide,
+    })
+
+    const mesh = new Mesh(geometry, material)
+    mesh.renderOrder = 999 // Render on top of everything
+    mesh.visible = true
     return mesh
   }
 }

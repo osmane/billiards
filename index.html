@@ -35,6 +35,7 @@
         <div id="cueBall" class="cueBall">
           <div id="cueTip" class="cueTip"></div>
         </div>
+        <div id="masseHitArea" class="masseHitArea"></div>
       </div>
       <input
         class="powerSlider"
@@ -87,14 +88,19 @@
             🌀
           </button>
         </div>
-        <div class="massePresets" id="massePresets" style="display: none;">
-          <button class="presetButton" data-angle="85" data-dir="left" title="85° Left">85°⬅</button>
-          <button class="presetButton" data-angle="85" data-dir="right" title="85° Right">85°➡</button>
-          <button class="presetButton" data-angle="75" data-dir="left" title="75° Left">75°⬅</button>
-          <button class="presetButton" data-angle="75" data-dir="right" title="75° Right">75°➡</button>
-          <button class="presetButton" data-angle="65" data-dir="left" title="65° Left">65°⬅</button>
-          <button class="presetButton" data-angle="65" data-dir="right" title="65° Right">65°➡</button>
-        </div>
+        <select class="massePresets" id="massePresets" style="display: none;">
+          <option value="" disabled selected>Massé Preset</option>
+          <option value="85-left">85° ⬅ Left</option>
+          <option value="85-right">85° ➡ Right</option>
+          <option value="75-left">75° ⬅ Left</option>
+          <option value="75-right">75° ➡ Right</option>
+          <option value="65-left">65° ⬅ Left</option>
+          <option value="65-right">65° ➡ Right</option>
+          <option value="45-left">45° ⬅ Left</option>
+          <option value="45-right">45° ➡ Right</option>
+          <option value="0-left">0° ⬅ Left</option>
+          <option value="0-right">0° ➡ Right</option>
+        </select>
       </div>
     </div>
     <div class="constants" id="constants">

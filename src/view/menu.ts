@@ -11,7 +11,7 @@ export class Menu {
   replay: HTMLButtonElement
   camera: HTMLButtonElement
   masseButton: HTMLButtonElement
-  massePresets: HTMLElement
+  massePresets: HTMLSelectElement
 
   disabled = true
 
@@ -39,16 +39,18 @@ export class Menu {
       }
     }
 
-    // Setup massé preset buttons
+    // Setup massé preset dropdown
     if (this.massePresets) {
-      const presetButtons = this.massePresets.querySelectorAll('.presetButton')
-      presetButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-          const target = e.target as HTMLElement
-          const angle = parseInt(target.dataset.angle || '75')
-          const direction = target.dataset.dir as 'left' | 'right'
-          this.setMassePreset(angle, direction)
-        })
+      this.massePresets.addEventListener('change', (e) => {
+        const target = e.target as HTMLSelectElement
+        const value = target.value
+        if (value) {
+          const [angleStr, direction] = value.split('-')
+          const angle = parseInt(angleStr)
+          this.setMassePreset(angle, direction as 'left' | 'right')
+          // Reset dropdown to default option
+          target.selectedIndex = 0
+        }
       })
     }
   }
@@ -105,7 +107,7 @@ export class Menu {
     // Update button visual state
     if (isActive) {
       this.masseButton.classList.add('is-active')
-      this.massePresets.style.display = 'flex'
+      this.massePresets.style.display = 'block'
     } else {
       this.masseButton.classList.remove('is-active')
       this.massePresets.style.display = 'none'

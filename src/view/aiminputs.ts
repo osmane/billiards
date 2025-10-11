@@ -9,6 +9,7 @@ export class AimInputs {
   readonly cueTipElement
   readonly cuePowerElement
   readonly cueHitElement
+  readonly masseHitAreaElement
   readonly objectBallStyle: CSSStyleDeclaration | undefined
   readonly container: Container
   readonly overlap: Overlap
@@ -23,6 +24,7 @@ export class AimInputs {
     this.cueTipElement = document.getElementById("cueTip")
     this.cuePowerElement = document.getElementById("cuePower")
     this.cueHitElement = document.getElementById("cueHit")
+    this.masseHitAreaElement = document.getElementById("masseHitArea")
     this.objectBallStyle = document.getElementById("objectBall")?.style
     this.overlap = new Overlap(this.container.table.balls)
     this.addListeners()
@@ -57,10 +59,18 @@ export class AimInputs {
 
   adjustSpin(e) {
     this.readDimensions()
+
+    // Get current massé mode state
+    const masseMode = this.container.table.cue.masseMode
+
+    // Scale factor: In massé mode, expand hit area to allow full 0.8 range
+    // Normal mode: 0.3 limit, Massé mode: 0.8 limit (2.67x larger)
+    const scaleFactor = masseMode ? (0.8 / 0.3) : 1.0
+
     this.container.table.cue.setSpin(
       new Vector3(
-        -(e.offsetX - this.ballWidth / 2) / this.ballWidth,
-        -(e.offsetY - this.ballHeight / 2) / this.ballHeight
+        -(e.offsetX - this.ballWidth / 2) / this.ballWidth * scaleFactor,
+        -(e.offsetY - this.ballHeight / 2) / this.ballHeight * scaleFactor
       ),
       this.container.table
     )
@@ -72,8 +82,29 @@ export class AimInputs {
     this.readDimensions()
     const elt = this.cueTipElement?.style
     if (elt) {
-      elt.left = (-x + 0.5) * this.ballWidth - this.tipRadius + "px"
-      elt.top = (-y + 0.5) * this.ballHeight - this.tipRadius + "px"
+      // Get current massé mode state
+      const masseMode = this.container.table.cue.masseMode
+
+      // Toggle massé hit area visibility
+      if (this.masseHitAreaElement) {
+        if (masseMode) {
+          this.masseHitAreaElement.classList.add("active")
+        } else {
+          this.masseHitAreaElement.classList.remove("active")
+        }
+      }
+
+      // Normalize the offset for visual display
+      // In massé mode, offset can be up to 0.8, but we display it within the same visual area
+      // Scale factor: compress the visual representation to fit within the ball
+      const normalizeScale = masseMode ? (0.3 / 0.8) : 1.0
+
+      // Apply normalized positioning - offsets are scaled down for display
+      const visualX = -x * normalizeScale
+      const visualY = -y * normalizeScale
+
+      elt.left = (visualX + 0.5) * this.ballWidth - this.tipRadius + "px"
+      elt.top = (visualY + 0.5) * this.ballHeight - this.tipRadius + "px"
     }
     this.showOverlap()
   }
