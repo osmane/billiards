@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerçekçi Bilardo Massé Vuruşu - Han Modeli</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 2rem 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #a8d0ff;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .physics-info {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        
+        .physics-info h2 {
+            color: #1e3c72;
+            margin-top: 0;
+            font-size: 1.5rem;
+        }
+        
+        .physics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .physics-box {
+            background: #f8f9fa;
+            border-left: 4px solid #2a5298;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+        
+        .physics-box h3 {
+            margin-top: 0;
+            color: #1e3c72;
+            font-size: 1.1rem;
+        }
+        
+        .physics-box ul {
+            margin: 0.5rem 0;
+            padding-left: 1.5rem;
+        }
+        
+        .physics-box li {
+            margin: 0.3rem 0;
+        }
+        
+        .formula {
+            background: #e3f2fd;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            margin: 0.5rem 0;
+            font-size: 0.9rem;
+        }
+        
+        .simulation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .simulation-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        
+        .simulation-card h3 {
+            margin-top: 0;
+            color: #1e3c72;
+            font-size: 1.3rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        .canvas-container {
+            background: #0a4d2e;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            border: 3px solid #8b4513;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+        
+        .shot-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2a5298;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .shot-info h4 {
+            margin-top: 0;
+            color: #1e3c72;
+        }
+        
+        .shot-info p {
+            margin: 0.5rem 0;
+        }
+        
+        .param {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        
+        .phase {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+        
+        .phase-slide {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .phase-roll {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .legend-color {
+            width: 30px;
+            height: 4px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎱 Gerçekçi Bilardo Massé Vuruşu Simülasyonu</h1>
+        <div class="subtitle">Han Fizik Modeli - Oyun Geliştirme Rehberi</div>
+        
+        <div class="physics-info">
+            <h2>🔬 Fizik Modeli: Han Yaklaşımı</h2>
+            <p>Bu simülasyon, bilardo fiziğinde yaygın kullanılan <strong>Han modelini</strong> temel alır ve gerçek dünya dinamiklerini 2D'ye uyarlar.</p>
+            
+            <div class="physics-grid">
+                <div class="physics-box">
+                    <h3>Temel Parametreler</h3>
+                    <ul>
+                        <li>Kütle (m): <strong>210 g</strong></li>
+                        <li>Yarıçap (r): <strong>30.75 mm</strong></li>
+                        <li>Atalet Momenti: <strong>I = (2/5)mr²</strong></li>
+                        <li>Kayma Sürtünmesi: <strong>μ<sub>s</sub> = 0.21</strong></li>
+                        <li>Yuvarlanma Sürtünmesi: <strong>μ<sub>r</sub> = 0.012</strong></li>
+                    </ul>
+                </div>
+                
+                <div class="physics-box">
+                    <h3>Kayma Fazı</h3>
+                    <div class="formula">
+                        v'(t) = v₀ - μ<sub>s</sub>·g·t<br>
+                        ω'(t) = ω₀ - (5μ<sub>s</sub>·g)/(2r)·t
+                    </div>
+                    <p><small>Top kayarken hem hız hem spin azalır.</small></p>
+                </div>
+                
+                <div class="physics-box">
+                    <h3>Yuvarlanma Fazı</h3>
+                    <div class="formula">
+                        v = ω·r (kayma yok)<br>
+                        v'(t) = -(5/7)·μ<sub>r</sub>·g·t
+                    </div>
+                    <p><small>Kayma bittiğinde daha az sürtünme.</small></p>
+                </div>
+                
+                <div class="physics-box">
+                    <h3>Magnus Etkisi (2D)</h3>
+                    <div class="formula">
+                        F<sub>Magnus</sub> = C<sub>L</sub>·ω·v<br>
+                        C<sub>L</sub> ≈ 0.065 (ampirik)
+                    </div>
+                    <p><small>Spin, yanal kuvvet üretir ve topu kavisli yolda tutar.</small></p>
+                </div>
+            </div>
+            
+            <div style="margin-top: 1.5rem; padding: 1rem; background: #fff3cd; border-radius: 4px;">
+                <strong>⚠️ Önemli:</strong> Tüm vuruşlar <strong>2.4 m/s</strong> sabit hızla başlar. Farklılıklar sadece <strong>istaka açısından</strong> kaynaklanan spin değişikliklerinden gelir.
+            </div>
+        </div>
+        
+        <div class="simulation-grid" id="simulationGrid"></div>
+        
+        <div class="physics-info">
+            <h2>📊 Simülasyon Detayları ve Oyun Geliştirme Notları</h2>
+            
+            <h3>Açı-Spin İlişkisi (Fiziksel Model)</h3>
+            <p>İstaka açısı spin miktarını belirler. Model:</p>
+            <div class="formula">
+                offset = r × sin(90° - açı)<br>
+                spin_faktör = sin(açı) × cos(açı)<br>
+                ω = (v × spin_faktör) / r
+            </div>
+            
+            <ul>
+                <li><strong>85° (Çok Dik):</strong> Maksimum dikey itme, en yüksek spin (~485 rad/s)</li>
+                <li><strong>75° (Orta):</strong> Dengeli spin/hız (~368 rad/s)</li>
+                <li><strong>65° (Yatık):</strong> Daha az spin, daha uzun yol (~265 rad/s)</li>
+            </ul>
+            
+            <h3>Oyununuzda Kullanım Önerileri</h3>
+            <ul>
+                <li>✅ Kayma-yuvarlanma geçişini mutlaka modelleyin (kritik fizik!)</li>
+                <li>✅ Magnus katsayısını (0.065) ayarlanabilir yapın - farklı masalar için</li>
+                <li>✅ Sürtünme katsayılarını (μ<sub>s</sub>, μ<sub>r</sub>) çuha kalitesine göre değiştirin</li>
+                <li>✅ dt = 0.001s adımlarla simüle edin (hassasiyet için)</li>
+                <li>⚠️ Gerçek oyunda: vuruş gücü kullanıcı kontrolünde olmalı (bu simülasyon sabit 2.4 m/s)</li>
+                <li>💡 Görsel feedback: kayma fazını farklı renk/efektle gösterin</li>
+            </ul>
+            
+            <h3>Performans Optimizasyonu</h3>
+            <ul>
+                <li>Yörüngeyi önceden hesaplayıp cache'leyin</li>
+                <li>Görsel frame rate (60 FPS) ve fizik step (1000 Hz) ayrı tutun</li>
+                <li>Top durduğunda (v < 0.01 m/s) simülasyonu durdurun</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // ===========================================
+        // FİZİKSEL SABİTLER (3 Bant Bilardo)
+        // ===========================================
+        const PHYSICS = {
+            mass: 0.210,              // kg
+            radius: 0.03075,          // m (61.5 mm çap)
+            g: 9.81,                  // m/s²
+            mu_slide: 0.21,           // Kayma sürtünmesi (çuha)
+            mu_roll: 0.012,           // Yuvarlanma sürtünmesi
+            magnus_coeff: 0.065,      // Magnus katsayısı (ampirik, 2D)
+            
+            // Atalet momenti (homojen küre)
+            get inertia() {
+                return (2/5) * this.mass * this.radius * this.radius;
+            }
+        };
+        
+        const SIMULATION = {
+            initial_velocity: 2.4,    // m/s - TÜM VURUŞLAR İÇİN SABİT
+            dt: 0.001,                // Zaman adımı (1 ms)
+            max_time: 5.0,            // Maksimum simülasyon süresi (s)
+        };
+        
+        // ===========================================
+        // VURUŞ KONFİGÜRASYONLARI
+        // ===========================================
+        const shots = [
+            {
+                angle: 85,
+                color: '#e53935',
+                name: 'Çok Dik Massé'
+            },
+            {
+                angle: 75,
+                color: '#1e88e5',
+                name: 'Standart Massé'
+            },
+            {
+                angle: 65,
+                color: '#43a047',
+                name: 'Yumuşak Massé'
+            }
+        ];
+        
+        // ===========================================
+        // AÇIDAN SPİN HESAPLAMA (Fiziksel Model)
+        // ===========================================
+        function calculateInitialSpin(angle_degrees) {
+            // İstaka açısından başlangıç spin'ini hesapla
+            const angle_rad = angle_degrees * Math.PI / 180;
+            
+            // Vuruş noktasının offset'i
+            const offset_factor = Math.sin(Math.PI/2 - angle_rad);
+            
+            // Spin üretim faktörü (açı ile değişir)
+            const spin_efficiency = Math.sin(angle_rad) * Math.cos(angle_rad);
+            
+            // Başlangıç spin (rad/s)
+            // Daha dik açı -> daha fazla spin
+            const omega = (SIMULATION.initial_velocity * spin_efficiency * 2.5) / PHYSICS.radius;
+            
+            return omega;
+        }
+        
+        // ===========================================
+        // HAN MODELİ: KOORDİNAT SİSTEMİ
+        // ===========================================
+        class BallState {
+            constructor(vx, vy, omega) {
+                this.vx = vx;      // İleri hız (m/s)
+                this.vy = vy;      // Yanal hız (m/s)
+                this.omega = omega; // Spin (rad/s, pozitif = sağa kavis)
+                this.x = 0;        // Konum X
+                this.y = 0;        // Konum Y
+                this.isSliding = true;
+            }
+            
+            get speed() {
+                return Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+            }
+            
+            get slipVelocity() {
+                // Kayma hızı: v_slip = v - ω×r
+                return this.speed - Math.abs(this.omega) * PHYSICS.radius;
+            }
+        }
+        
+        // ===========================================
+        // HAN MODELİ: FİZİK GÜNCELLEME
+        // ===========================================
+        function updatePhysics(state, dt) {
+            const speed = state.speed;
+            
+            if (speed < 0.01) {
+                // Top durdu
+                state.vx = 0;
+                state.vy = 0;
+                state.omega = 0;
+                return false; // Simülasyonu durdur
+            }
+            
+            // Kayma kontrolü
+            const slip = state.slipVelocity;
+            state.isSliding = Math.abs(slip) > 0.001;
+            
+            if (state.isSliding) {
+                // ==================
+                // KAYMA FAZI
+                // ==================
+                
+                // Sürtünme kuvveti
+                const friction_force = PHYSICS.mu_slide * PHYSICS.mass * PHYSICS.g;
+                
+                // Hız azalması (sürtünme yönünde)
+                const decel = PHYSICS.mu_slide * PHYSICS.g;
+                const speed_reduction = decel * dt;
+                
+                if (speed > 0) {
+                    const factor = Math.max(0, (speed - speed_reduction) / speed);
+                    state.vx *= factor;
+                    state.vy *= factor;
+                }
+                
+                // Spin azalması (tork'tan)
+                const alpha = (5 * PHYSICS.mu_slide * PHYSICS.g) / (2 * PHYSICS.radius);
+                const omega_sign = Math.sign(state.omega);
+                state.omega -= omega_sign * alpha * dt;
+                
+                // Spin yön değiştirmemeli
+                if (Math.sign(state.omega) !== omega_sign) {
+                    state.omega = 0;
+                }
+                
+            } else {
+                // ==================
+                // YUVARLANMA FAZI
+                // ==================
+                
+                // Yuvarlanma sürtünmesi (çok daha az)
+                const decel = (5/7) * PHYSICS.mu_roll * PHYSICS.g;
+                const speed_reduction = decel * dt;
+                
+                if (speed > 0) {
+                    const factor = Math.max(0, (speed - speed_reduction) / speed);
+                    state.vx *= factor;
+                    state.vy *= factor;
+                }
+                
+                // Yuvarlanma koşulu: ω = v/r
+                state.omega = state.speed / PHYSICS.radius * Math.sign(state.omega);
+            }
+            
+            // ==================
+            // MAGNUS ETKİSİ (2D)
+            // ==================
+            if (Math.abs(state.omega) > 0.1 && speed > 0.1) {
+                // Magnus kuvveti: F = C_L × ω × v (perpendicular)
+                const magnus_force = PHYSICS.magnus_coeff * state.omega * speed;
+                const magnus_accel = magnus_force / PHYSICS.mass;
+                
+                // Hız vektörüne dik yönde
+                const vx_norm = state.vx / speed;
+                const vy_norm = state.vy / speed;
+                
+                // 90° döndür (sağa spin -> sağa kuvvet)
+                const lateral_ax = -vy_norm * magnus_accel;
+                const lateral_ay = vx_norm * magnus_accel;
+                
+                state.vx += lateral_ax * dt;
+                state.vy += lateral_ay * dt;
+            }
+            
+            // ==================
+            // KONUM GÜNCELLEME
+            // ==================
+            state.x += state.vx * dt;
+            state.y += state.vy * dt;
+            
+            return true; // Devam et
+        }
+        
+        // ===========================================
+        // YÖRÜNGE SİMÜLASYONU
+        // ===========================================
+        function simulateTrajectory(angle_degrees, direction) {
+            const omega_magnitude = calculateInitialSpin(angle_degrees);
+            const omega = direction === 'right' ? omega_magnitude : -omega_magnitude;
+            
+            const state = new BallState(
+                0,                            // İleri hız (başlangıçta 0)
+                SIMULATION.initial_velocity,  // Yukarı hız
+                omega                         // Spin
+            );
+            
+            const trajectory = [];
+            let time = 0;
+            let sliding_time = 0;
+            let transition_time = null;
+            
+            while (time < SIMULATION.max_time) {
+                trajectory.push({
+                    x: state.x,
+                    y: state.y,
+                    vx: state.vx,
+                    vy: state.vy,
+                    omega: state.omega,
+                    speed: state.speed,
+                    isSliding: state.isSliding,
+                    time: time
+                });
+                
+                // Kayma-yuvarlanma geçişini yakala
+                if (state.isSliding) {
+                    sliding_time = time;
+                } else if (transition_time === null) {
+                    transition_time = time;
+                }
+                
+                const continue_sim = updatePhysics(state, SIMULATION.dt);
+                if (!continue_sim) break;
+                
+                time += SIMULATION.dt;
+            }
+            
+            return {
+                points: trajectory,
+                transition_time: transition_time,
+                sliding_time: sliding_time,
+                final_distance: Math.sqrt(state.x**2 + state.y**2),
+                initial_spin: omega
+            };
+        }
+        
+        // ===========================================
+        // GÖRSEL ÇİZİM
+        // ===========================================
+        const CANVAS_WIDTH = 700;
+        const CANVAS_HEIGHT = 600;
+        const PIXELS_PER_METER = 180;
+        
+        function drawSimulation(canvas, angle_degrees, color, name) {
+            const ctx = canvas.getContext('2d');
+            
+            // Arka plan (çuha rengi)
+            ctx.fillStyle = '#0a4d2e';
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            
+            const originX = CANVAS_WIDTH / 2;
+            const originY = CANVAS_HEIGHT - 80;
+            
+            // Izgara (hafif)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= CANVAS_WIDTH; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, CANVAS_HEIGHT);
+                ctx.stroke();
+            }
+            for (let i = 0; i <= CANVAS_HEIGHT; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(CANVAS_WIDTH, i);
+                ctx.stroke();
+            }
+            
+            // Eksenler
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(originX, 0);
+            ctx.lineTo(originX, CANVAS_HEIGHT);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, originY);
+            ctx.lineTo(CANVAS_WIDTH, originY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Simülasyon
+            const trajLeft = simulateTrajectory(angle_degrees, 'left');
+            const trajRight = simulateTrajectory(angle_degrees, 'right');
+            
+            // Yörüngeleri çiz
+            drawTrajectory(ctx, trajLeft, originX, originY, '#ff1744', 'Sol');
+            drawTrajectory(ctx, trajRight, originX, originY, '#2196f3', 'Sağ');
+            
+            // Başlangıç topu
+            const ballRadius = PHYSICS.radius * PIXELS_PER_METER;
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(originX, originY, ballRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Nişan çizgileri
+            ctx.strokeStyle = 'rgba(255, 105, 180, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 4]);
+            ctx.beginPath();
+            ctx.moveTo(originX + ballRadius * 0.7, originY + 60);
+            ctx.lineTo(originX + ballRadius * 0.7, originY);
+            ctx.stroke();
+            
+            ctx.strokeStyle = 'rgba(135, 206, 235, 0.6)';
+            ctx.beginPath();
+            ctx.moveTo(originX - ballRadius * 0.7, originY + 60);
+            ctx.lineTo(originX - ballRadius * 0.7, originY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Ölçek çubuğu
+            const scaleLength = 0.5 * PIXELS_PER_METER;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(40, CANVAS_HEIGHT - 30);
+            ctx.lineTo(40 + scaleLength, CANVAS_HEIGHT - 30);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(40, CANVAS_HEIGHT - 35);
+            ctx.lineTo(40, CANVAS_HEIGHT - 25);
+            ctx.moveTo(40 + scaleLength, CANVAS_HEIGHT - 35);
+            ctx.lineTo(40 + scaleLength, CANVAS_HEIGHT - 25);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('50 cm', 40 + scaleLength / 2, CANVAS_HEIGHT - 10);
+            
+            return { trajLeft, trajRight };
+        }
+        
+        function drawTrajectory(ctx, traj, originX, originY, color, label) {
+            const points = traj.points;
+            if (points.length === 0) return;
+            
+            // Kayma ve yuvarlanma fazlarını farklı renklerde çiz
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            for (let i = 0; i < points.length - 1; i++) {
+                const p1 = points[i];
+                const p2 = points[i + 1];
+                
+                const x1 = originX + p1.x * PIXELS_PER_METER;
+                const y1 = originY - p1.y * PIXELS_PER_METER;
+                const x2 = originX + p2.x * PIXELS_PER_METER;
+                const y2 = originY - p2.y * PIXELS_PER_METER;
+                
+                // Kayma fazı: Daha koyu renk
+                // Yuvarlanma fazı: Daha açık renk
+                if (p1.isSliding) {
+                    ctx.strokeStyle = color;
+                } else {
+                    ctx.strokeStyle = color + '80'; // Transparanlık
+                }
+                
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+            
+            // Son nokta
+            const last = points[points.length - 1];
+            const lastX = originX + last.x * PIXELS_PER_METER;
+            const lastY = originY - last.y * PIXELS_PER_METER;
+            
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(lastX, lastY, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Geçiş noktası (kayma -> yuvarlanma)
+            if (traj.transition_time !== null) {
+                const trans_idx = Math.floor(traj.transition_time / SIMULATION.dt);
+                if (trans_idx < points.length) {
+                    const trans = points[trans_idx];
+                    const tx = originX + trans.x * PIXELS_PER_METER;
+                    const ty = originY - trans.y * PIXELS_PER_METER;
+                    
+                    ctx.strokeStyle = '#ffd700';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(tx, ty, 8, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+        }
+        
+        // ===========================================
+        // KART OLUŞTURMA
+        // ===========================================
+        function createSimulationCard(config) {
+            const card = document.createElement('div');
+            card.className = 'simulation-card';
+            
+            const title = document.createElement('h3');
+            title.textContent = `${config.name} - ${config.angle}°`;
+            card.appendChild(title);
+            
+            const canvasContainer = document.createElement('div');
+            canvasContainer.className = 'canvas-container';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = CANVAS_WIDTH;
+            canvas.height = CANVAS_HEIGHT;
+            canvasContainer.appendChild(canvas);
+            card.appendChild(canvasContainer);
+            
+            // Simülasyonu çalıştır
+            const results = drawSimulation(canvas, config.angle, config.color, config.name);
+            
+            // Legend
+            const legend = document.createElement('div');
+            legend.className = 'legend';
+            legend.innerHTML = `
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff1744;"></div>
+                    <span>Sol Kavis</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #2196f3;"></div>
+                    <span>Sağ Kavis</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffd700; height: 8px; width: 8px; border-radius: 50%;"></div>
+                    <span>Geçiş Noktası</span>
+                </div>
+            `;
+            card.appendChild(legend);
+            
+            // Shot info
+            const info = document.createElement('div');
+            info.className = 'shot-info';
+            
+            const omega_right = Math.abs(results.trajRight.initial_spin);
+            const rpm_right = Math.round(omega_right * 60 / (2 * Math.PI));
+            
+            const trans_time_right = results.trajRight.transition_time;
+            const slide_time_right = results.trajRight.sliding_time;
+            
+            info.innerHTML = `
+                <h4>Fiziksel Parametreler</h4>
+                <p><span class="param">İstaka Açısı:</span> ${config.angle}°</p>
+                <p><span class="param">Başlangıç Hızı:</span> ${SIMULATION.initial_velocity} m/s <em>(sabit)</em></p>
+                <p><span class="param">Başlangıç Spin:</span> ${omega_right.toFixed(1)} rad/s (~${rpm_right} RPM)</p>
+                <p><span class="param">Maksimum Mesafe:</span> ~${(results.trajRight.final_distance * 100).toFixed(0)} cm</p>
+                <p><span class="param">Kayma Süresi:</span> ${(slide_time_right * 1000).toFixed(0)} ms <span class="phase phase-slide">KAYMA</span></p>
+                ${trans_time_right ? `<p><span class="param">Geçiş Zamanı:</span> ${(trans_time_right * 1000).toFixed(0)} ms <span class="phase phase-roll">YUVARLANMA</span></p>` : ''}
+                <p style="margin-top: 1rem; font-size: 0.85rem; color: #666;">
+                    <strong>Not:</strong> Koyu renk = kayma fazı, açık renk = yuvarlanma fazı. 
+                    Sarı nokta kayma-yuvarlanma geçişini gösterir.
+                </p>
+            `;
+            card.appendChild(info);
+            
+            return card;
+        }
+        
+        // ===========================================
+        // SAYFA YÜKLENME
+        // ===========================================
+        window.onload = function() {
+            const grid = document.getElementById('simulationGrid');
+            
+            shots.forEach(config => {
+                const card = createSimulationCard(config);
+                grid.appendChild(card);
+            });
+        };
+    </script>
+</body>
+</html>
