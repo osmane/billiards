@@ -1,6 +1,6 @@
 import { Vector3 } from "three"
 import { norm, upCross, up, sin, cos } from "../../utils/utils"
-import { muS, muC, g, m, Mz, Mxy, R, I, e, ee, μs, μw, PhysicsContext, refreshWithContext } from "./constants"
+import { muS, muC, g, m, Mz, Mxy, R, I, e, ee, μs, μw, magnusCoeff, PhysicsContext, refreshWithContext } from "./constants"
 import { Mathaven } from "./mathaven"
 
 const MU_CUSHION_MIN = 0.02
@@ -63,6 +63,38 @@ export function forceRoll(v, w, context?: PhysicsContext) {
   const wz = w.z
   w.copy(upCross(v).multiplyScalar(1 / radius))
   w.setZ(wz)
+}
+
+const magnusForce = new Vector3()
+/**
+ * Calculate Magnus force acceleration for massé shots
+ * F_magnus = C_L × ω × v (perpendicular to velocity)
+ * Based on Han model for billiards physics
+ *
+ * @param v velocity vector
+ * @param w angular velocity vector
+ * @param context optional physics context for ball properties
+ * @returns acceleration vector perpendicular to velocity
+ */
+export function magnus(v: Vector3, w: Vector3, context?: PhysicsContext): Vector3 {
+  const speed = v.length()
+  const mass = context?.m ?? m
+
+  // Only apply Magnus force when ball has significant speed and spin
+  if (speed < 0.1 || Math.abs(w.z) < 0.1) {
+    return magnusForce.set(0, 0, 0)
+  }
+
+  // Magnus force magnitude: F = C_L × ω × v
+  const forceMagnitude = magnusCoeff * w.z * speed
+  const accel = forceMagnitude / mass
+
+  // Force perpendicular to velocity (90° rotation in XY plane)
+  // Positive spin (w.z > 0) creates force to the right of velocity
+  const vNorm = v.clone().normalize()
+  magnusForce.set(-vNorm.y * accel, vNorm.x * accel, 0)
+
+  return magnusForce
 }
 
 export function rotateApplyUnrotate(theta, v, w, model) {

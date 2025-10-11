@@ -15,6 +15,12 @@ export let μs = 0.212
 // Coefficient of sliding friction (cushion)
 export let μw = 0.14
 
+// Magnus effect coefficient (for massé shots)
+// Adjusted for 2D billiards physics - much lower than 3D aerodynamic coefficient
+// Original Han model value (0.065) was too strong for our implementation
+// This coefficient is empirically tuned for gentle, realistic curves
+export let magnusCoeff = 0.004
+
 export let Mz: number
 export let Mxy: number
 export let I: number
@@ -132,4 +138,7 @@ export function setμw(val: number) {
 }
 export function setee(val: number) {
   ee = val
+}
+export function setMagnusCoeff(val: number) {
+  magnusCoeff = val
 }

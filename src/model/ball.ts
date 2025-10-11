@@ -5,6 +5,7 @@ import {
   rollingFull,
   sliding,
   surfaceVelocityFull,
+  magnus,
 } from "../model/physics/physics"
 import { BallMesh } from "../view/ballmesh"
 import { Pocket } from "./physics/pocket"
@@ -27,6 +28,7 @@ export class Ball {
   state: State = State.Stationary
   pocket: Pocket
   physicsContext: PhysicsContext = POOL_PHYSICS  // Default to pool physics
+  magnusEnabled: boolean = false  // Flag to enable Magnus effect for this ball
 
   public static id = 0
   readonly id = Ball.id++
@@ -80,6 +82,12 @@ export class Ball {
       } else {
         this.state = State.Sliding
         this.addDelta(t, sliding(this.vel, this.rvel, this.physicsContext))
+      }
+
+      // Apply Magnus effect only if enabled (massé mode)
+      if (this.magnusEnabled) {
+        const magnusAccel = magnus(this.vel, this.rvel, this.physicsContext)
+        this.vel.addScaledVector(magnusAccel, t)
       }
     }
   }

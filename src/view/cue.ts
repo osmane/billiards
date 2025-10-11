@@ -14,11 +14,13 @@ export class Cue {
   helperMesh: Mesh
   placerMesh: Mesh
   readonly offCenterLimit = 0.3
+  readonly offCenterLimitMasse = 0.8  // Increased limit for massé shots
   readonly maxPower = 160 * R
   t = 0
   aimInputs: AimInputs
   aim: AimEvent = new AimEvent()
   container: any // Container reference for trajectory updates
+  masseMode: boolean = false  // Toggle for massé mode
 
   length = TableGeometry.tableX * 1
 
@@ -59,6 +61,10 @@ export class Cue {
     ball.state = State.Sliding
     ball.vel.copy(unitAtAngle(aim.angle).multiplyScalar(aim.power))
     ball.rvel.copy(cueToSpin(aim.offset, ball.vel))
+
+    // Enable Magnus effect only when in massé mode
+    ball.magnusEnabled = this.masseMode
+
     // Clear trajectory predictions when shot is made
     this.container?.trajectoryRenderer?.clearTrajectories()
   }
@@ -79,8 +85,9 @@ export class Cue {
   }
 
   setSpin(offset: Vector3, table: Table) {
-    if (offset.length() > this.offCenterLimit) {
-      offset.normalize().multiplyScalar(this.offCenterLimit)
+    const limit = this.masseMode ? this.offCenterLimitMasse : this.offCenterLimit
+    if (offset.length() > limit) {
+      offset.normalize().multiplyScalar(limit)
     }
     this.aim.offset.copy(offset)
     this.avoidCueTouchingOtherBall(table)
@@ -89,11 +96,12 @@ export class Cue {
   }
 
   avoidCueTouchingOtherBall(table: Table) {
+    const limit = this.masseMode ? this.offCenterLimitMasse : this.offCenterLimit
     let n = 0
     while (n++ < 20 && this.intersectsAnything(table)) {
       this.aim.offset.y += 0.1
-      if (this.aim.offset.length() > this.offCenterLimit) {
-        this.aim.offset.normalize().multiplyScalar(this.offCenterLimit)
+      if (this.aim.offset.length() > limit) {
+        this.aim.offset.normalize().multiplyScalar(limit)
       }
     }
 
@@ -165,5 +173,48 @@ export class Cue {
 
   toggleHelper() {
     this.showHelper(!this.helperMesh.visible)
+  }
+
+  toggleMasseMode() {
+    this.masseMode = !this.masseMode
+    // Reapply current offset to ensure it's within new limits
+    if (!this.masseMode) {
+      const offset = this.aim.offset.clone()
+      if (offset.length() > this.offCenterLimit) {
+        offset.normalize().multiplyScalar(this.offCenterLimit)
+        this.aim.offset.copy(offset)
+        this.updateAimInput()
+      }
+    }
+    this.container?.updateTrajectoryPrediction()
+    return this.masseMode
+  }
+
+  setMassePreset(angleDegrees: number, direction: 'left' | 'right') {
+    // Enable massé mode
+    this.masseMode = true
+
+    // Calculate offset based on angle (from HTML reference model)
+    const angleRad = (angleDegrees * Math.PI) / 180
+    const offsetY = Math.sin(Math.PI / 2 - angleRad)
+
+    // Set horizontal offset for spin direction
+    // Using 0.5 for moderate side spin (reduced from 0.7 to avoid excessive spin)
+    // The cueToSpin formula is very sensitive to offset magnitude
+    const offsetX = direction === 'right' ? 0.5 : -0.5
+
+    // Set the offset
+    this.aim.offset.set(offsetX, offsetY, 0)
+
+    // Ensure within massé limits
+    if (this.aim.offset.length() > this.offCenterLimitMasse) {
+      this.aim.offset.normalize().multiplyScalar(this.offCenterLimitMasse)
+    }
+
+    // Set preset power to 35% of max for controlled massé shots
+    this.aim.power = this.maxPower * 0.35
+
+    this.updateAimInput()
+    this.container?.updateTrajectoryPrediction()
   }
 }

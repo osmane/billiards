@@ -10,6 +10,8 @@ export class Menu {
   share: HTMLButtonElement
   replay: HTMLButtonElement
   camera: HTMLButtonElement
+  masseButton: HTMLButtonElement
+  massePresets: HTMLElement
 
   disabled = true
 
@@ -20,11 +22,34 @@ export class Menu {
     this.redo = this.getElement("redo")
     this.share = this.getElement("share")
     this.camera = this.getElement("camera")
+    this.masseButton = this.getElement("masseButton")
+    this.massePresets = document.getElementById("massePresets")!
+
     if (this.camera) {
       this.setMenu(true)
       this.camera.onclick = (_) => {
         this.adjustCamera()
       }
+    }
+
+    // Setup massé button
+    if (this.masseButton) {
+      this.masseButton.onclick = (_) => {
+        this.toggleMasseMode()
+      }
+    }
+
+    // Setup massé preset buttons
+    if (this.massePresets) {
+      const presetButtons = this.massePresets.querySelectorAll('.presetButton')
+      presetButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+          const target = e.target as HTMLElement
+          const angle = parseInt(target.dataset.angle || '75')
+          const direction = target.dataset.dir as 'left' | 'right'
+          this.setMassePreset(angle, direction)
+        })
+      })
     }
   }
 
@@ -72,5 +97,25 @@ export class Menu {
 
   getElement(id): HTMLButtonElement {
     return document.getElementById(id)! as HTMLButtonElement
+  }
+
+  toggleMasseMode() {
+    const isActive = this.container.table.cue.toggleMasseMode()
+
+    // Update button visual state
+    if (isActive) {
+      this.masseButton.classList.add('is-active')
+      this.massePresets.style.display = 'flex'
+    } else {
+      this.masseButton.classList.remove('is-active')
+      this.massePresets.style.display = 'none'
+    }
+
+    this.container.lastEventTime = performance.now()
+  }
+
+  setMassePreset(angle: number, direction: 'left' | 'right') {
+    this.container.table.cue.setMassePreset(angle, direction)
+    this.container.lastEventTime = performance.now()
   }
 }
