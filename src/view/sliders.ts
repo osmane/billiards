@@ -24,9 +24,11 @@ import {
 export class Sliders {
   style
   notify
+  container: any
 
-  constructor(notify?) {
+  constructor(notify?, container?) {
     this.notify = notify ?? (() => {})
+    this.container = container
     this.style =
       (document.getElementById("constants") as HTMLElement)?.style ?? {}
 

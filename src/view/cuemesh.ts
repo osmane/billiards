@@ -120,16 +120,14 @@ export class CueMesh {
 
   static createHitPoint() {
     // Create a spherical cap that conforms to ball surface
-    // Use a small portion of a sphere geometry - OUTSIDE the ball
-    // NOTE: Three.js SphereGeometry has Y-axis as the pole by default
     const geometry = new SphereGeometry(
-      R * 1.03, // Larger than ball radius to render OUTSIDE
+      R * 1.03, // Slightly larger than ball radius to render outside
       32, // width segments
       32, // height segments
       0, // phiStart - full circle horizontally
       Math.PI * 2, // phiLength - full circle
-      0, // thetaStart - start from Y+ pole (Three.js default)
-      Math.PI * 0.25 // thetaLength - smaller cap (25% of sphere)
+      0, // thetaStart - start from Y+ pole
+      Math.PI * 0.125 // thetaLength - smaller cap (half the original size)
     )
 
     // Rotate geometry 90 degrees around X so Y+ pole becomes Z+ pole
@@ -139,8 +137,8 @@ export class CueMesh {
     // Shader material to create a circular spot at the north pole
     const material = new ShaderMaterial({
       uniforms: {
-        hitColor: { value: new Vector3(72/255, 72/255, 206/255) }, // Blue color
-        spotSize: { value: 0.6 }, // Larger spot size to fill more of the cap
+        hitColor: { value: new Vector3(72/255, 72/255, 206/255) },
+        spotSize: { value: 0.5 },
       },
       vertexShader: `
         varying vec3 vPosition;
@@ -196,6 +194,55 @@ export class CueMesh {
     const mesh = new Mesh(geometry, material)
     mesh.renderOrder = 999 // Render on top of everything
     mesh.visible = true
+    return mesh
+  }
+
+  static createVirtualCue() {
+    // Convert physical dimensions to game units
+    // Carom ball diameter = 61.5mm, so R (radius) = 30.75mm
+    // Virtual cue: 15mm diameter, 100mm length
+    const radiusInMM = 30.75
+    const virtualCueDiameterInMM = 15
+    const virtualCueLengthInMM = 100
+
+    // Scale to game units (R in game units represents 30.75mm)
+    const virtualCueRadius = (virtualCueDiameterInMM / 2) / radiusInMM * R
+    const virtualCueLength = virtualCueLengthInMM / radiusInMM * R
+
+    // Create cylinder geometry along Y-axis (Three.js default)
+    // We'll handle rotation via mesh rotation, not geometry pre-rotation
+    const geometry = new CylinderGeometry(
+      virtualCueRadius, // radiusTop
+      virtualCueRadius, // radiusBottom
+      virtualCueLength, // height (along Y-axis)
+      16 // radialSegments
+    )
+
+    // Translate along NEGATIVE Y so one end is at origin and extends downward
+    // Cylinder extends from (0,0,0) to (0, -virtualCueLength, 0)
+    // This way when we rotate it, it points away from the ball surface
+    geometry.translate(0, -virtualCueLength / 2, 0)
+
+    // Bright green emissive material
+    const material = new MeshPhongMaterial({
+      color: 0x00ff00,
+      emissive: 0x00ff00,
+      emissiveIntensity: 0.5,
+      transparent: true,
+      opacity: 0.85,
+      shininess: 100
+    })
+
+    const mesh = new Mesh(geometry, material)
+    mesh.renderOrder = 998 // Render just below hit point
+    mesh.visible = true
+
+    console.log('Virtual cue created:')
+    console.log('  - Length (game units):', virtualCueLength)
+    console.log('  - Radius (game units):', virtualCueRadius)
+    console.log('  - R (ball radius):', R)
+    console.log('  - Length/R ratio:', (virtualCueLength / R).toFixed(2))
+
     return mesh
   }
 }

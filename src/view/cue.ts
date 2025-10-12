@@ -14,6 +14,7 @@ export class Cue {
   helperMesh: Mesh
   placerMesh: Mesh
   hitPointMesh: Mesh  // 3D visualization of hit point on cue ball
+  virtualCueMesh: Mesh  // Virtual cue stick showing exact hit direction and angle
   readonly offCenterLimit = 0.3
   readonly offCenterLimitMasse = 0.8  // Increased limit for massé shots
   readonly maxPower = 160 * R
@@ -37,6 +38,7 @@ export class Cue {
     this.helperMesh = CueMesh.createHelper()
     this.placerMesh = CueMesh.createPlacer()
     this.hitPointMesh = CueMesh.createHitPoint()
+    this.virtualCueMesh = CueMesh.createVirtualCue()
   }
 
   rotateAim(angle, table: Table) {
@@ -144,41 +146,63 @@ export class Cue {
 
     // Update hit point position on cue ball surface
     this.updateHitPoint(pos)
+
+    // Update virtual cue position and orientation
+    this.updateVirtualCue(pos)
   }
 
   updateHitPoint(ballPos: Vector3) {
-    // Calculate the position of the hit point on the ball surface
-    // offset.x and offset.y are in normalized coordinates (-0.3 to 0.3 or -0.8 to 0.8)
-    // We need to map these to actual 3D positions on the ball surface
+    const baseDirection = unitAtAngle(this.aim.angle + Math.PI)
+    let direction = new Vector3(baseDirection.x, baseDirection.y, 0)
 
-    // Use the same offset calculation as spinOffset() for consistency
-    // This combines horizontal spin (X) and vertical position (Y->Z)
-    const offsetVec = upCross(unitAtAngle(this.aim.angle))
-      .multiplyScalar(this.aim.offset.x * 2 * R)
-      .setZ(this.aim.offset.y * 2 * R)
+    const horizontalAngle = -this.aim.offset.x * Math.PI / 2
+    direction.applyAxisAngle(new Vector3(0, 0, 1), horizontalAngle)
 
-    // Get the direction where the ball will be hit (opposite of cue direction)
-    const hitDirection = unitAtAngle(this.aim.angle + Math.PI)
+    const verticalAngle = -this.aim.offset.y * Math.PI / 2
+    const perpendicularAxis = upCross(baseDirection).normalize()
+    direction.applyAxisAngle(perpendicularAxis, verticalAngle)
 
-    // Calculate the actual hit point on ball surface
-    // Method: Start at ball center, go out by R in hit direction, then add offset
-    const hitPointOnSurface = new Vector3()
-    hitPointOnSurface.copy(ballPos)
-    hitPointOnSurface.addScaledVector(hitDirection, R)  // Go to ball surface
-    hitPointOnSurface.add(offsetVec)  // Add the spin offset
+    const finalDirection = direction.normalize()
 
-    // Now calculate the direction from ball center to this hit point
-    // This is the direction our sphere cap's north pole should point
-    const finalDirection = hitPointOnSurface.clone().sub(ballPos).normalize()
-
-    // Position the spherical cap decal at ball center
     this.hitPointMesh.position.copy(ballPos)
 
-    // Orient the sphere cap so its north pole (0,0,1) points to final direction
     const up = new Vector3(0, 0, 1)
     const quaternion = new Quaternion()
     quaternion.setFromUnitVectors(up, finalDirection)
     this.hitPointMesh.setRotationFromQuaternion(quaternion)
+  }
+
+  updateVirtualCue(ballPos: Vector3) {
+    const baseDirection = unitAtAngle(this.aim.angle + Math.PI)
+    let direction = new Vector3(baseDirection.x, baseDirection.y, 0)
+
+    const horizontalAngle = -this.aim.offset.x * Math.PI / 2
+    direction.applyAxisAngle(new Vector3(0, 0, 1), horizontalAngle)
+
+    const verticalAngle = -this.aim.offset.y * Math.PI / 2
+    const perpendicularAxis = upCross(baseDirection).normalize()
+    direction.applyAxisAngle(perpendicularAxis, verticalAngle)
+
+    const finalDirection = direction.normalize()
+    const hitPointOnSurface = ballPos.clone().addScaledVector(finalDirection, R)
+
+    this.virtualCueMesh.position.copy(hitPointOnSurface)
+
+    const cueDirection = unitAtAngle(this.aim.angle + Math.PI)
+    const cueDirection3D = new Vector3(
+      cueDirection.x * Math.cos(this.elevation),
+      cueDirection.y * Math.cos(this.elevation),
+      Math.sin(this.elevation)
+    ).normalize()
+
+    const negativeYAxis = new Vector3(0, -1, 0)
+    const quaternion = new Quaternion()
+    quaternion.setFromUnitVectors(negativeYAxis, cueDirection3D)
+    this.virtualCueMesh.setRotationFromQuaternion(quaternion)
+  }
+
+  toggleVirtualCue() {
+    this.virtualCueMesh.visible = !this.virtualCueMesh.visible
   }
 
   update(t) {
@@ -189,16 +213,19 @@ export class Cue {
   placeBallMode() {
     this.mesh.visible = false
     this.placerMesh.visible = true
+    this.virtualCueMesh.visible = false
     this.aim.angle = 0
   }
 
   aimMode() {
     this.mesh.visible = true
     this.placerMesh.visible = false
+    this.virtualCueMesh.visible = false
   }
 
   spinOffset() {
-    return upCross(unitAtAngle(this.aim.angle))
+    // IMPORTANT: Clone upCross result since it returns a singleton object!
+    return upCross(unitAtAngle(this.aim.angle)).clone()
       .multiplyScalar(this.aim.offset.x * 2 * R)
       .setZ(this.aim.offset.y * 2 * R)
   }
@@ -264,9 +291,11 @@ export class Cue {
       this.aim.offset.normalize().multiplyScalar(this.offCenterLimitMasse)
     }
 
-    // Set cue elevation: invert angle since elevation is rotation from horizontal
-    // 90° → elevation = 0 (vertical), 0° → elevation = π/2 (horizontal)
-    this.elevation = (Math.PI / 2) - angleRad
+    // Set cue elevation: preset angle IS the elevation angle
+    // In billiards terminology: angle is measured from horizontal (table surface)
+    // 0° = horizontal (parallel to table), 90° = vertical (perpendicular to table)
+    // Our elevation also measures from horizontal, so use angleRad directly
+    this.elevation = angleRad
 
     // Set controlled power for massé shots
     this.aim.power = this.maxPower * 0.35

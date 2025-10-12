@@ -72,7 +72,7 @@ export class Container {
     this.keyboard = keyboard
     this.sound = assets.sound
     this.chat = new Chat(this.sendChat, this)
-    this.sliders = new Sliders()
+    this.sliders = new Sliders(undefined, this)
     this.recorder = new Recorder(this)
     this.id = id
     this.menu = new Menu(this)
