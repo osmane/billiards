@@ -107,22 +107,17 @@ export class CueMesh {
   }
 
   static createHitPoint() {
-    // Create a spherical cap that conforms to ball surface
     const geometry = new SphereGeometry(
-      R * 1.05, // Slightly larger than ball radius to render outside
-      32, // width segments
-      32, // height segments
-      0, // phiStart - full circle horizontally
-      Math.PI * 2, // phiLength - full circle
-      0, // thetaStart - start from Y+ pole
-      Math.PI * 0.125 // thetaLength - smaller cap (half the original size)
+      R * 1.05,
+      32,
+      32,
+      0,
+      Math.PI * 2,
+      0,
+      Math.PI * 0.125
     )
-
-    // Rotate geometry 90 degrees around X so Y+ pole becomes Z+ pole
-    // This aligns with our coordinate system where Z is up
     geometry.rotateX(Math.PI / 2)
 
-    // Shader material to create a circular spot at the north pole
     const material = new ShaderMaterial({
       uniforms: {
         hitColor: { value: new Vector3(72/255, 72/255, 206/255) },
@@ -145,42 +140,26 @@ export class CueMesh {
         varying vec3 vNormal;
 
         void main() {
-          // Calculate angular distance from north pole
-          // vPosition is already in object space, normalized
           vec3 pos = normalize(vPosition);
           vec3 northPole = vec3(0.0, 0.0, 1.0);
-
-          // Use dot product to get angular distance (1 = same direction, -1 = opposite)
           float dotProduct = dot(pos, northPole);
-
-          // Convert to angular distance (0 at pole, increases away from pole)
-          float angularDist = acos(clamp(dotProduct, -1.0, 1.0)) / 3.14159; // 0-1 range
-
-          // Normalize by spot size
+          float angularDist = acos(clamp(dotProduct, -1.0, 1.0)) / 3.14159;
           float normalizedDist = angularDist / spotSize;
-
-          // Create soft circular gradient with more uniform center
           float alpha = 1.0 - smoothstep(0.7, 1.0, normalizedDist);
-
-          // Add stronger center glow like canvas version
           float glow = pow(1.0 - clamp(normalizedDist, 0.0, 1.0), 2.0) * 0.8;
-
           vec3 finalColor = hitColor + vec3(glow);
-
-          // Discard pixels outside the spot
           if (alpha < 0.05) discard;
-
           gl_FragColor = vec4(finalColor, alpha * 0.9);
         }
       `,
       transparent: true,
-      depthTest: true, // Enable depth testing for proper occlusion
+      depthTest: true,
       depthWrite: false,
       side: DoubleSide,
     })
 
     const mesh = new Mesh(geometry, material)
-    mesh.renderOrder = 10 // Render after ball but respect depth
+    mesh.renderOrder = 10
     mesh.visible = true
     return mesh
   }

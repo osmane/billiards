@@ -66,14 +66,8 @@ export class Cue {
     ball.state = State.Sliding
     ball.vel.copy(unitAtAngle(aim.angle).multiplyScalar(aim.power))
     ball.rvel.copy(cueToSpin(aim.offset, ball.vel))
-
-    // Enable Magnus effect only when in massé mode
     ball.magnusEnabled = this.masseMode
-
-    // Hide hit point mesh after shot
     this.hitPointMesh.visible = false
-
-    // Clear trajectory predictions when shot is made
     this.container?.trajectoryRenderer?.clearTrajectories()
   }
 
@@ -93,11 +87,6 @@ export class Cue {
   }
 
   setSpin(offset: Vector3, table: Table) {
-    // No limit check here - limits are enforced by the 3D sphere UI (white/grey areas)
-    // const limit = this.masseMode ? this.offCenterLimitMasse : this.offCenterLimit
-    // if (offset.length() > limit) {
-    //   offset.normalize().multiplyScalar(limit)
-    // }
     this.aim.offset.copy(offset)
     this.avoidCueTouchingOtherBall(table)
     this.updateAimInput()
@@ -128,7 +117,6 @@ export class Cue {
   moveTo(pos) {
     this.aim.pos.copy(pos)
 
-    // Calculate hit point on ball surface using spherical coordinates
     const baseDirection = unitAtAngle(this.aim.angle + Math.PI)
     let direction = new Vector3(baseDirection.x, baseDirection.y, 0)
 
@@ -142,7 +130,6 @@ export class Cue {
     const finalDirection = direction.normalize()
     const hitPointOnSurface = pos.clone().addScaledVector(finalDirection, R)
 
-    // Calculate cue direction with elevation
     const cueDirection = unitAtAngle(this.aim.angle + Math.PI)
     const cueDirection3D = new Vector3(
       cueDirection.x * Math.cos(this.elevation),
@@ -150,37 +137,28 @@ export class Cue {
       Math.sin(this.elevation)
     ).normalize()
 
-    // Position cue stick: start at hit point, pull back to align tip properly
-    // Virtual cue length is ~100mm = ~3.25*R, pull back by half + 10mm extra
-    // Additional offset: 10mm = (10 / 30.75) * R
     const radiusInMM = 30.75
     const virtualCueHalfLength = (100 / radiusInMM) * R / 2
     const additionalOffset = (10 / radiusInMM) * R
     const totalOffset = virtualCueHalfLength + additionalOffset
     const swing = (sin(this.t + Math.PI / 2) - 1) * 2 * R * (this.aim.power / this.maxPower)
     const cuePosition = hitPointOnSurface.clone()
-      .addScaledVector(cueDirection3D, totalOffset)  // Pull back to align cue tip
-      .addScaledVector(cueDirection3D, swing)  // Add swing motion
+      .addScaledVector(cueDirection3D, totalOffset)
+      .addScaledVector(cueDirection3D, swing)
     this.mesh.position.copy(cuePosition)
 
-    // Orient cue stick to point in cue direction
     const negativeYAxis = new Vector3(0, -1, 0)
     const quaternion = new Quaternion()
     quaternion.setFromUnitVectors(negativeYAxis, cueDirection3D)
     this.mesh.setRotationFromQuaternion(quaternion)
 
-    // Update helper mesh
     this.helperMesh.position.copy(pos)
     this.helperMesh.rotation.z = this.aim.angle
 
-    // Update placer mesh
     this.placerMesh.position.copy(pos)
     this.placerMesh.rotation.z = this.t
 
-    // Update hit point visualization
     this.updateHitPoint(pos)
-
-    // Update virtual cue (debug visualization)
     this.updateVirtualCue(pos)
   }
 
@@ -196,15 +174,11 @@ export class Cue {
     direction.applyAxisAngle(perpendicularAxis, verticalAngle)
 
     const finalDirection = direction.normalize()
-
-    // Position hit point mesh slightly outside ball surface to avoid z-fighting
     const hitPointPosition = ballPos.clone().addScaledVector(finalDirection, R * 0.05)
     this.hitPointMesh.position.copy(hitPointPosition)
 
-    // Orient the spherical cap to point in the hit direction
-    const up = new Vector3(0, 0, 1)
     const quaternion = new Quaternion()
-    quaternion.setFromUnitVectors(up, finalDirection)
+    quaternion.setFromUnitVectors(new Vector3(0, 0, 1), finalDirection)
     this.hitPointMesh.setRotationFromQuaternion(quaternion)
   }
 
@@ -262,7 +236,6 @@ export class Cue {
   }
 
   spinOffset() {
-    // IMPORTANT: Clone upCross result since it returns a singleton object!
     return upCross(unitAtAngle(this.aim.angle)).clone()
       .multiplyScalar(this.aim.offset.x * 2 * R)
       .setZ(this.aim.offset.y * 2 * R)
@@ -291,19 +264,14 @@ export class Cue {
 
   toggleMasseMode() {
     this.masseMode = !this.masseMode
-
-    // Reapply current offset to ensure it's within new limits
     if (!this.masseMode) {
       const offset = this.aim.offset.clone()
       if (offset.length() > this.offCenterLimit) {
         offset.normalize().multiplyScalar(this.offCenterLimit)
         this.aim.offset.copy(offset)
       }
-      // Reset elevation to default when exiting massé mode
       this.elevation = this.defaultElevation
     }
-
-    // Always update visual state when massé mode changes
     this.updateAimInput()
     this.container?.updateTrajectoryPrediction()
     return this.masseMode
@@ -311,33 +279,18 @@ export class Cue {
 
   setMassePreset(angleDegrees: number, direction: 'left' | 'right') {
     this.masseMode = true
-
     const angleRad = (angleDegrees * Math.PI) / 180
-
-    // Calculate vertical offset: higher angle = hit higher on ball's top hemisphere
-    // 90° (vertical) → offsetY = 0.75 (top), 65° → offsetY ≈ 0.54 (upper-middle)
     const normalizedAngle = angleRad / (Math.PI / 2)
     const offsetY = normalizedAngle * 0.75
-
-    // Horizontal offset for spin direction
     const offsetX = direction === 'right' ? 0.5 : -0.5
 
     this.aim.offset.set(offsetX, offsetY, 0)
-
-    // Ensure within massé limits
     if (this.aim.offset.length() > this.offCenterLimitMasse) {
       this.aim.offset.normalize().multiplyScalar(this.offCenterLimitMasse)
     }
 
-    // Set cue elevation: preset angle IS the elevation angle
-    // In billiards terminology: angle is measured from horizontal (table surface)
-    // 0° = horizontal (parallel to table), 90° = vertical (perpendicular to table)
-    // Our elevation also measures from horizontal, so use angleRad directly
     this.elevation = angleRad
-
-    // Set controlled power for massé shots
     this.aim.power = this.maxPower * 0.35
-
     this.updateAimInput()
     this.container?.updateTrajectoryPrediction()
   }
