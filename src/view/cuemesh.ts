@@ -98,30 +98,18 @@ export class CueMesh {
     const geometry = new CylinderGeometry(tip, but, length, 11)
     const mesh = new Mesh(geometry, CueMesh.material)
     mesh.castShadow = false
-    const tilt = 0.17
-    mesh.geometry
-      .applyMatrix4(
-        new Matrix4()
-          .identity()
-          .makeRotationAxis(new Vector3(1.0, 0.0, 0.0), -tilt)
-      )
-      .applyMatrix4(new Matrix4().identity().makeRotationAxis(up, -Math.PI / 2))
-      .applyMatrix4(
-        new Matrix4()
-          .identity()
-          .makeTranslation(
-            -length / 2 - R,
-            0,
-            (length / 2) * Math.sin(tilt) + R * 0.25
-          )
-      )
+
+    // Translate along NEGATIVE Y so one end is at origin and extends downward
+    // This matches the virtual cue approach - cue extends from (0,0,0) to (0, -length, 0)
+    geometry.translate(0, -length / 2, 0)
+
     return mesh
   }
 
   static createHitPoint() {
     // Create a spherical cap that conforms to ball surface
     const geometry = new SphereGeometry(
-      R * 1.03, // Slightly larger than ball radius to render outside
+      R * 1.05, // Slightly larger than ball radius to render outside
       32, // width segments
       32, // height segments
       0, // phiStart - full circle horizontally
@@ -138,7 +126,7 @@ export class CueMesh {
     const material = new ShaderMaterial({
       uniforms: {
         hitColor: { value: new Vector3(72/255, 72/255, 206/255) },
-        spotSize: { value: 0.5 },
+        spotSize: { value: 0.3 },
       },
       vertexShader: `
         varying vec3 vPosition;
@@ -171,28 +159,28 @@ export class CueMesh {
           // Normalize by spot size
           float normalizedDist = angularDist / spotSize;
 
-          // Create soft circular gradient
-          float alpha = 1.0 - smoothstep(0.5, 1.0, normalizedDist);
+          // Create soft circular gradient with more uniform center
+          float alpha = 1.0 - smoothstep(0.7, 1.0, normalizedDist);
 
-          // Add center glow
-          float glow = pow(1.0 - clamp(normalizedDist, 0.0, 1.0), 3.0) * 0.5;
+          // Add stronger center glow like canvas version
+          float glow = pow(1.0 - clamp(normalizedDist, 0.0, 1.0), 2.0) * 0.8;
 
           vec3 finalColor = hitColor + vec3(glow);
 
           // Discard pixels outside the spot
           if (alpha < 0.05) discard;
 
-          gl_FragColor = vec4(finalColor, alpha * 0.8);
+          gl_FragColor = vec4(finalColor, alpha * 0.9);
         }
       `,
       transparent: true,
-      depthTest: false, // Always visible
+      depthTest: true, // Enable depth testing for proper occlusion
       depthWrite: false,
       side: DoubleSide,
     })
 
     const mesh = new Mesh(geometry, material)
-    mesh.renderOrder = 999 // Render on top of everything
+    mesh.renderOrder = 10 // Render after ball but respect depth
     mesh.visible = true
     return mesh
   }

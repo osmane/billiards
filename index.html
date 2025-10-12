@@ -33,10 +33,20 @@
       <div class="ballContainer">
         <div id="objectBall" class="objectBall"></div>
         <div id="cueBall" class="cueBall">
-          <div id="cueTip" class="cueTip"></div>
+          <canvas id="cueBallCanvas"></canvas>
         </div>
-        <div id="masseHitArea" class="masseHitArea"></div>
       </div>
+      <input
+        class="elevationSlider"
+        type="range"
+        orient="vertical"
+        min="0"
+        max="90"
+        step="1"
+        value="10"
+        id="cueElevation"
+        aria-label="elevation slider"
+      />
       <input
         class="powerSlider"
         type="range"

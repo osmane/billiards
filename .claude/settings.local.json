@@ -10,7 +10,8 @@
       "Bash(git log:*)",
       "Bash(npx jest:*)",
       "Bash(node:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Read(//d/**)"
     ],
     "deny": [],
     "ask": []

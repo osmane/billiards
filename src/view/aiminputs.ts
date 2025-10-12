@@ -5,127 +5,417 @@ import { Overlap } from "../utils/overlap"
 import { unitAtAngle } from "../utils/utils"
 
 export class AimInputs {
-  readonly cueBallElement
-  readonly cueTipElement
-  readonly cuePowerElement
-  readonly cueHitElement
-  readonly masseHitAreaElement
+  readonly cueBallElement: HTMLElement
+  readonly cueBallCanvas: HTMLCanvasElement
+  readonly ctx: CanvasRenderingContext2D
+  readonly cueElevationElement: HTMLInputElement
+  readonly cuePowerElement: HTMLInputElement
+  readonly cueHitElement: HTMLElement
   readonly objectBallStyle: CSSStyleDeclaration | undefined
   readonly container: Container
   readonly overlap: Overlap
 
-  ballWidth
-  ballHeight
-  tipRadius
+  // Sphere rendering properties
+  radius: number = 0
+  cx: number = 0
+  cy: number = 0
+  pitch: number = Math.PI / 2 // Cue elevation angle (rotated from horizontal)
+  hitPoint: [number, number, number] = [0, 0, 1] // Current hit point in 3D space
+  targetPoint: [number, number, number] = [0, 0, 1] // Target ball indicator (if visible)
+
+  // Visual constants from sphereProjectionAreaformSide.html
+  readonly hitPointRatio = 0.021 // Hit point visual size
+  readonly targetPointRatio = 0.003 // Target point size
+  readonly greyRatio = 0.75 // Grey area threshold
+  readonly blendWidth = this.hitPointRatio * 2 * 1.2
+
+  // Lighting
+  readonly lightDir = [0.6, -0.7, 0.4]
+  readonly lightNorm: [number, number, number]
+  readonly ambientLight = 0.35
+  readonly diffuseLight = 0.65
 
   constructor(container) {
     this.container = container
-    this.cueBallElement = document.getElementById("cueBall")
-    this.cueTipElement = document.getElementById("cueTip")
-    this.cuePowerElement = document.getElementById("cuePower")
-    this.cueHitElement = document.getElementById("cueHit")
-    this.masseHitAreaElement = document.getElementById("masseHitArea")
+    this.cueBallElement = document.getElementById("cueBall")!
+    this.cueBallCanvas = document.getElementById("cueBallCanvas") as HTMLCanvasElement
+    this.ctx = this.cueBallCanvas.getContext("2d", { alpha: false })!
+    this.cueElevationElement = document.getElementById("cueElevation") as HTMLInputElement
+    this.cuePowerElement = document.getElementById("cuePower") as HTMLInputElement
+    this.cueHitElement = document.getElementById("cueHit")!
     this.objectBallStyle = document.getElementById("objectBall")?.style
     this.overlap = new Overlap(this.container.table.balls)
+
+    // Normalize light direction
+    const lightLen = Math.sqrt(this.lightDir[0]**2 + this.lightDir[1]**2 + this.lightDir[2]**2)
+    this.lightNorm = [
+      this.lightDir[0]/lightLen,
+      this.lightDir[1]/lightLen,
+      this.lightDir[2]/lightLen
+    ]
+
+    this.initializeCanvas()
     this.addListeners()
   }
 
+  initializeCanvas() {
+    // Set canvas size to match element size
+    const rect = this.cueBallElement.getBoundingClientRect()
+    const size = Math.min(rect.width, rect.height)
+    this.cueBallCanvas.width = size
+    this.cueBallCanvas.height = size
+    this.cx = size / 2 - .5 // Shift sphere right by 1.5px to align with objectBall
+    this.cy = size / 2 + 1 // Shift sphere down by 1.5px to align with objectBall
+    // Use 0.49 instead of 0.5 to avoid edge artifacts with border-radius
+    this.radius = Math.floor(size * 0.51)
+
+    // Initialize with default elevation (convert from cue.elevation to degrees)
+    const elevationDegrees = (this.container.table.cue.elevation * 180) / Math.PI
+    this.cueElevationElement.value = elevationDegrees.toString()
+    this.pitch = Math.PI / 2 - this.container.table.cue.elevation
+
+    this.drawSphere()
+  }
+
   addListeners() {
-    this.cueBallElement?.addEventListener("pointermove", this.mousemove)
-    this.cueBallElement?.addEventListener("click", (e) => {
-      this.adjustSpin(e)
-    })
+    this.cueBallCanvas?.addEventListener("mousedown", this.onMouseDown)
+    this.cueBallCanvas?.addEventListener("mouseup", this.onMouseUp)
+    this.cueBallCanvas?.addEventListener("mouseleave", this.onMouseLeave)
+    this.cueBallCanvas?.addEventListener("mousemove", this.onMouseMove)
+    this.cueBallCanvas?.addEventListener("click", this.onClick)
+
+    this.cueElevationElement?.addEventListener("input", this.elevationChanged)
     this.cueHitElement?.addEventListener("click", this.hit)
     this.cuePowerElement?.addEventListener("change", this.powerChanged)
+
     if (!("ontouchstart" in window)) {
       document.getElementById("viewP1")?.addEventListener("dblclick", this.hit)
     }
     document.addEventListener("wheel", this.mousewheel)
   }
 
-  setButtonText(text) {
-    this.cueHitElement && (this.cueHitElement.innerText = text)
+  isDragging = false
+
+  onMouseDown = (e: MouseEvent) => {
+    this.isDragging = true
+    this.updateHitPoint(e)
   }
 
-  mousemove = (e) => {
-    e.buttons === 1 && this.adjustSpin(e)
+  onMouseUp = () => {
+    this.isDragging = false
   }
 
-  readDimensions() {
-    this.ballWidth = this.cueBallElement?.offsetWidth
-    this.ballHeight = this.cueBallElement?.offsetHeight
-    this.tipRadius = this.cueTipElement?.offsetWidth / 2
+  onMouseLeave = () => {
+    this.isDragging = false
   }
 
-  adjustSpin(e) {
-    this.readDimensions()
+  onMouseMove = (e: MouseEvent) => {
+    if (this.isDragging) {
+      this.updateHitPoint(e)
+    }
+  }
 
-    // Get current massé mode state
-    const masseMode = this.container.table.cue.masseMode
+  onClick = (e: MouseEvent) => {
+    this.updateHitPoint(e)
+  }
 
-    // Scale factor: In massé mode, expand hit area to allow full 0.8 range
-    // Normal mode: 0.3 limit, Massé mode: 0.8 limit (2.67x larger)
-    const scaleFactor = masseMode ? (0.8 / 0.3) : 1.0
+  updateHitPoint(e: MouseEvent) {
+    const rect = this.cueBallCanvas.getBoundingClientRect()
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
 
-    this.container.table.cue.setSpin(
-      new Vector3(
-        -(e.offsetX - this.ballWidth / 2) / this.ballWidth * scaleFactor,
-        -(e.offsetY - this.ballHeight / 2) / this.ballHeight * scaleFactor
-      ),
-      this.container.table
-    )
+    const px = mouseX - this.cx
+    const py = mouseY - this.cy
+    const r2 = this.radius * this.radius
+
+    if (px*px + py*py <= r2) {
+      const z = Math.sqrt(Math.max(0, r2 - px*px - py*py))
+      const nx = px / this.radius
+      const ny = py / this.radius
+      const nz = z / this.radius
+
+      const clickedPoint: [number, number, number] = [nx, ny, nz]
+
+      // Only accept if in white area
+      if (this.isInWhiteArea(clickedPoint)) {
+        this.hitPoint = clickedPoint
+
+        // Direct normalized coordinates from sphere surface
+        // nx, ny are already in range [-1, 1] representing the ball surface
+        const offsetX = -nx
+        const offsetY = -ny
+
+        this.container.table.cue.setSpin(
+          new Vector3(offsetX, offsetY, 0),
+          this.container.table
+        )
+
+        this.drawSphere()
+        this.container.lastEventTime = performance.now()
+        this.container.updateTrajectoryPrediction()
+      }
+    }
+  }
+
+  elevationChanged = (e: Event) => {
+    const target = e.target as HTMLInputElement
+    const degrees = parseFloat(target.value)
+    const angleRad = (degrees * Math.PI) / 180
+
+    // Update cue elevation
+    this.container.table.cue.elevation = angleRad
+
+    // Update pitch for sphere rendering (pitch = π/2 - elevation)
+    this.pitch = Math.PI / 2 - angleRad
+
+    // Push hit point to white area if needed
+    this.hitPoint = this.pushToWhiteArea(this.hitPoint)
+
+    // Update cue spin offset based on adjusted hit point
+    this.syncHitPointToCue()
+
+    this.drawSphere()
     this.container.lastEventTime = performance.now()
     this.container.updateTrajectoryPrediction()
   }
 
-  updateVisualState(x: number, y: number) {
-    this.readDimensions()
-    const elt = this.cueTipElement?.style
-    if (elt) {
-      // Get current massé mode state
-      const masseMode = this.container.table.cue.masseMode
+  syncHitPointToCue() {
+    // Direct normalized coordinates
+    const offsetX = -this.hitPoint[0]
+    const offsetY = -this.hitPoint[1]
 
-      // Toggle massé hit area visibility
-      if (this.masseHitAreaElement) {
-        if (masseMode) {
-          this.masseHitAreaElement.classList.add("active")
-        } else {
-          this.masseHitAreaElement.classList.remove("active")
-        }
-      }
-
-      // Normalize the offset for visual display
-      // In massé mode, offset can be up to 0.8, but we display it within the same visual area
-      // Scale factor: compress the visual representation to fit within the ball
-      const normalizeScale = masseMode ? (0.3 / 0.8) : 1.0
-
-      // Apply normalized positioning - offsets are scaled down for display
-      const visualX = -x * normalizeScale
-      const visualY = -y * normalizeScale
-
-      elt.left = (visualX + 0.5) * this.ballWidth - this.tipRadius + "px"
-      elt.top = (visualY + 0.5) * this.ballHeight - this.tipRadius + "px"
-    }
-    this.showOverlap()
+    this.container.table.cue.setSpin(
+      new Vector3(offsetX, offsetY, 0),
+      this.container.table
+    )
   }
 
-  showOverlap() {
-    if (this.objectBallStyle) {
-      const table = this.container.table
-      const dir = unitAtAngle(table.cue.aim.angle)
-      const closest = this.overlap.getOverlapOffset(table.cueball, dir)
-      if (closest) {
-        this.readDimensions()
+  rotateX(v: [number, number, number], pitch: number): [number, number, number] {
+    const sx = Math.sin(pitch), cx = Math.cos(pitch)
+    const x = v[0]
+    const y = cx*v[1] - sx*v[2]
+    const z = sx*v[1] + cx*v[2]
+    return [x, y, z]
+  }
+
+  smoothstep(edge0: number, edge1: number, x: number): number {
+    let t = (x - edge0) / (edge1 - edge0)
+    t = Math.max(0, Math.min(1, t))
+    return t * t * (3 - 2 * t)
+  }
+
+  isInWhiteArea(point: [number, number, number]): boolean {
+    const [rx, ry, rz] = this.rotateX(point, this.pitch)
+    const tRaw = (ry + 1) * 0.5
+    const threshold = 1 - this.greyRatio
+    return tRaw < threshold
+  }
+
+  pushToWhiteArea(point: [number, number, number]): [number, number, number] {
+    const [rx, ry, rz] = this.rotateX(point, this.pitch)
+    const tRaw = (ry + 1) * 0.5
+    const threshold = 1 - this.greyRatio
+
+    if (tRaw >= threshold) {
+      // In grey area, push to white area
+      const targetTRaw = threshold - 0.02
+      const targetRY = targetTRaw * 2 - 1
+
+      // Apply inverse rotation
+      const sx = Math.sin(this.pitch), cx = Math.cos(this.pitch)
+      const newY = cx * targetRY + sx * rz
+      const newZ = -sx * targetRY + cx * rz
+
+      // Normalize (keep on sphere surface)
+      const len = Math.sqrt(rx*rx + newY*newY + newZ*newZ)
+      return [rx/len, newY/len, newZ/len]
+    }
+
+    return point
+  }
+
+  applyLighting(color: [number, number, number], normal: [number, number, number]): [number, number, number] {
+    const dotProduct = Math.max(0,
+      normal[0] * this.lightNorm[0] +
+      normal[1] * this.lightNorm[1] +
+      normal[2] * this.lightNorm[2]
+    )
+
+    const intensity = this.ambientLight + this.diffuseLight * dotProduct
+
+    return [
+      Math.min(255, color[0] * intensity),
+      Math.min(255, color[1] * intensity),
+      Math.min(255, color[2] * intensity)
+    ]
+  }
+
+  drawSphere() {
+    if (!this.ctx) return
+
+    const W = this.cueBallCanvas.width
+    const H = this.cueBallCanvas.height
+
+    // Background gradient
+    const gradient = this.ctx.createLinearGradient(0, 0, 0, H)
+    gradient.addColorStop(0, 'rgb(0, 64, 94)')
+    gradient.addColorStop(1, '#000214')
+    this.ctx.fillStyle = gradient
+    this.ctx.fillRect(0, 0, W, H)
+
+    const img = this.ctx.createImageData(W, H)
+    const data = img.data
+    const r2 = this.radius * this.radius
+
+    // Fill background
+    const bgColor: [number, number, number] = [0, 64, 94]
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = bgColor[0]
+      data[i + 1] = bgColor[1]
+      data[i + 2] = bgColor[2]
+      data[i + 3] = 255
+    }
+
+    for (let py = -this.radius; py <= this.radius; py++) {
+      const y = py
+      const scanY = this.cy + y | 0
+      if (scanY < 0 || scanY >= H) continue
+
+      const maxX = Math.floor(Math.sqrt(Math.max(0, r2 - y*y)))
+      for (let px = -maxX; px <= maxX; px++) {
+        const x = px
+        const scanX = this.cx + x | 0
+        const z = Math.sqrt(Math.max(0, r2 - x*x - y*y))
+
+        let nx = x / this.radius
+        let ny = y / this.radius
+        let nz = z / this.radius
+
+        // Apply rotation for white-grey pattern
+        const [rx, ry, rz] = this.rotateX([nx, ny, nz], this.pitch)
+
+        // Calculate distances for hit point and target point
+        const dotHit = nx * this.hitPoint[0] + ny * this.hitPoint[1] + nz * this.hitPoint[2]
+        const hitThreshold = 1 - this.hitPointRatio * 2
+
+        const dotTarget = nx * this.targetPoint[0] + ny * this.targetPoint[1] + nz * this.targetPoint[2]
+        const targetThreshold = 1 - this.targetPointRatio * 2
+
+        let r, g, b
+
+        if (dotHit >= hitThreshold) {
+          // Blue hit point with gradient
+          const hitColor: [number, number, number] = [0, 64, 94]
+          const edgeFade = (dotHit - hitThreshold) / (1 - hitThreshold)
+          const t = this.smoothstep(0, 0.3, edgeFade)
+
+          // Get base color
+          let tRaw = (ry + 1) * 0.5
+          const threshold = 1 - this.greyRatio
+          const whiteColor: [number, number, number] = [217, 217, 217]
+          const greyColor: [number, number, number] = [144, 144, 144]
+          const tBlend = this.smoothstep(threshold - this.blendWidth, threshold, tRaw)
+          const baseR = whiteColor[0]*(1-tBlend) + greyColor[0]*tBlend
+          const baseG = whiteColor[1]*(1-tBlend) + greyColor[1]*tBlend
+          const baseB = whiteColor[2]*(1-tBlend) + greyColor[2]*tBlend
+
+          // Gradient blend
+          r = baseR * (1-t) + hitColor[0] * t
+          g = baseG * (1-t) + hitColor[1] * t
+          b = baseB * (1-t) + hitColor[2] * t
+        } else {
+          // Normal painting: rotated height-based
+          let tRaw = (ry + 1) * 0.5
+          const threshold = 1 - this.greyRatio
+
+          const whiteColor: [number, number, number] = [217, 217, 217]
+          const greyColor: [number, number, number] = [144, 144, 144]
+
+          const t = this.smoothstep(threshold - this.blendWidth, threshold, tRaw)
+          r = whiteColor[0]*(1-t) + greyColor[0]*t
+          g = whiteColor[1]*(1-t) + greyColor[1]*t
+          b = whiteColor[2]*(1-t) + greyColor[2]*t
+        }
+
+        // Red target point with gradient and transparency
+        if (dotTarget >= targetThreshold) {
+          const targetColor: [number, number, number] = [255, 0, 0]
+          const edgeFade = (dotTarget - targetThreshold) / (1 - targetThreshold)
+          const t = this.smoothstep(0, 0.3, edgeFade) * 0.3
+
+          r = r * (1-t) + targetColor[0] * t
+          g = g * (1-t) + targetColor[1] * t
+          b = b * (1-t) + targetColor[2] * t
+        }
+
+        // Apply lighting
+        const litColor = this.applyLighting([r, g, b], [nx, ny, nz])
+        r = litColor[0]
+        g = litColor[1]
+        b = litColor[2]
+
+        const idx = (scanY * W + scanX) * 4
+        data[idx] = r|0
+        data[idx+1] = g|0
+        data[idx+2] = b|0
+        data[idx+3] = 255
+      }
+    }
+
+    this.ctx.putImageData(img, 0, 0)
+
+    // Update target point for object ball overlap
+    this.updateTargetPoint()
+  }
+
+  updateTargetPoint() {
+    const table = this.container.table
+    const dir = unitAtAngle(table.cue.aim.angle)
+    const closest = this.overlap.getOverlapOffset(table.cueball, dir)
+
+    if (closest) {
+      // Calculate target point position in 3D sphere space
+      // This should show where the object ball is relative to aim direction
+      // For now, keep it at north pole (can be enhanced later)
+      this.targetPoint = [0, 0, 1]
+
+      // Also update HTML object ball indicator (preserve existing feature)
+      if (this.objectBallStyle) {
+        const ballWidth = this.cueBallElement.offsetWidth
         this.objectBallStyle.visibility = "visible"
-        this.objectBallStyle.left =
-          5 + (closest.overlap * this.ballWidth) / 2 + "px"
+        this.objectBallStyle.left = 5 + (closest.overlap * ballWidth) / 2 + "px"
         this.objectBallStyle.backgroundColor = new Color(0, 0, 0)
           .lerp(closest.ball.ballmesh.color, 0.5)
           .getStyle()
-      } else {
+      }
+    } else {
+      if (this.objectBallStyle) {
         this.objectBallStyle.visibility = "hidden"
       }
     }
+  }
+
+  updateVisualState(x: number, y: number) {
+    // Direct mapping: offset values are already normalized [-1, 1]
+    const nx = -x
+    const ny = -y
+
+    // Calculate nz to keep point on sphere surface
+    const nxy2 = nx*nx + ny*ny
+    if (nxy2 <= 1) {
+      const nz = Math.sqrt(1 - nxy2)
+      this.hitPoint = [nx, ny, nz]
+    }
+
+    this.drawSphere()
+  }
+
+  showOverlap() {
+    this.drawSphere()
+  }
+
+  setButtonText(text) {
+    this.cueHitElement && (this.cueHitElement.innerText = text)
   }
 
   powerChanged = (_) => {

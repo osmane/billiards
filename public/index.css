@@ -91,23 +91,28 @@ canvas {
   border-radius: 5px;
   aspect-ratio: 1;
   padding: 0 5px;
+  z-index: 1;
 }
 
 .cueBall {
   height: 100%;
   margin: auto;
   aspect-ratio: 1;
-  background: radial-gradient(
-    circle at 65% 15%,
-    rgb(255, 255, 255) 2px,
-    rgb(255, 254, 254) 5%,
-    rgb(63, 63, 63) 60%,
-    rgb(24, 26, 26) 100%
-  );
   border-radius: 50%;
   position: absolute;
   top: 0;
   z-index: 5;
+  overflow: hidden;
+}
+
+#cueBallCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .objectBall {
@@ -116,7 +121,7 @@ canvas {
   aspect-ratio: 1;
   border: 0.5px solid rgb(0, 44, 64);
   border-radius: 50%;
-  z-index: 3;
+  z-index: 1;
   position: absolute;
   top: 0;
   pointer-events: none;
@@ -162,11 +167,27 @@ canvas {
   box-sizing: border-box;
 }
 
+.elevationSlider {
+  width: 20px;
+  height: 70%;
+  margin: auto;
+  margin-right: 5px;
+  margin-left: 5px;
+  position: relative;
+  z-index: 10;
+}
+
+input[type="range"].elevationSlider {
+  appearance: slider-vertical;
+}
+
 .powerSlider {
   width: 20px;
   height: 70%;
   margin: auto;
   margin-right: 10px;
+  position: relative;
+  z-index: 10;
 }
 
 input[type="range"].powerSlider {
@@ -183,12 +204,15 @@ input[type="range"].powerSlider {
   font-size: large;
   min-width: 80px;
   user-select: none;
+  position: relative;
+  z-index: 10;
 }
 
 .outerMenu {
   display: flex;
   height: 50%;
   justify-content: flex-start;
+  z-index: 10;
 }
 
 .menuButton {
@@ -284,7 +308,7 @@ input[type="range"].powerSlider {
   width: 0px;
   min-width: 100%;
   overflow-y: scroll;
-  background-color: rgba(47, 79, 79, 0.486);
+  background-color: rgba(47, 79, 79);
   padding: 5px;
   margin: 2px;
   border-radius: 5px;
@@ -293,6 +317,7 @@ input[type="range"].powerSlider {
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 4px;
+  z-index: 10;
 }
 
 .chatoutput::-webkit-scrollbar {
