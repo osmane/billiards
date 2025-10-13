@@ -23,6 +23,7 @@ import { ScoreButtons } from "../view/scorebuttons"
 import { endShot, recordShotFrame } from "../utils/shotstats"
 import { TrajectoryPredictor } from "../model/trajectorypredictor"
 import { TrajectoryRenderer } from "../view/trajectoryrenderer"
+import { Vector3 } from "three"
 
 /**
  * Model, View, Controller container.
@@ -211,33 +212,63 @@ export class Container {
   }
 
   updateTrajectoryPrediction() {
-    // Check if targetButton is in active state first
+    // Check if targetButton is in active state
     const targetButton = document.getElementById("targetButton")
     const trajectoryVisible = targetButton?.classList.contains("is-active") ?? false
 
-    // If button is unpressed, always hide and clear trajectories
-    if (!trajectoryVisible) {
-      this.trajectoryRenderer.clearTrajectories()
-      return
-    }
-
-    // Only predict trajectories for 3 cushion mode when balls are stationary AND button is pressed
+    // Only predict trajectories for 3 cushion mode when balls are stationary
     if (!TrajectoryPredictor.shouldPredict(this) || !this.table.allStationary()) {
       this.trajectoryRenderer.clearTrajectories()
+      this.table.cue.updateHelperCurve(null)
       return
     }
 
-    // Button is pressed - calculate and show trajectories
+    // Always calculate trajectories (for helper curve), but control visibility separately
     try {
       // Pass massé mode state and elevation to trajectory predictor
       const masseMode = this.table.cue.masseMode
       const elevation = this.table.cue.elevation
-      const predictions = this.trajectoryPredictor.predictTrajectory(this.table, this.table.cue.aim, this.rules, masseMode, elevation)
-      this.trajectoryRenderer.updateTrajectories(predictions, this.table)
-      // Force visibility to true since button is pressed
-      this.trajectoryRenderer.setVisible(true)
+
+      // Optimize: If trajectory lines are hidden, only predict short distance for helper
+      const limitToHelper = !trajectoryVisible
+      const predictions = this.trajectoryPredictor.predictTrajectory(
+        this.table,
+        this.table.cue.aim,
+        this.rules,
+        masseMode,
+        elevation,
+        limitToHelper
+      )
+
+      // Update helper curve to match trajectory prediction (always)
+      if (predictions && predictions.length > 0) {
+        // Find cue ball trajectory by matching ball ID
+        const cueBallId = this.table.cueball.id
+        const cueBallTrajectory = predictions.find(p => p.ballId === cueBallId)
+
+        if (cueBallTrajectory && cueBallTrajectory.points.length > 2) {
+          const trajectoryPoints = cueBallTrajectory.points.map(p =>
+            new Vector3(p.position.x, p.position.y, p.position.z)
+          )
+          this.table.cue.updateHelperCurve(trajectoryPoints)
+        } else {
+          this.table.cue.updateHelperCurve(null)
+        }
+      } else {
+        this.table.cue.updateHelperCurve(null)
+      }
+
+      // Control trajectory lines visibility based on button state
+      if (trajectoryVisible) {
+        this.trajectoryRenderer.updateTrajectories(predictions, this.table)
+        this.trajectoryRenderer.setVisible(true)
+      } else {
+        // Hide trajectory lines but keep helper curve working
+        this.trajectoryRenderer.setVisible(false)
+      }
     } catch (error) {
       this.trajectoryRenderer.clearTrajectories()
+      this.table.cue.updateHelperCurve(null)
     }
   }
 }

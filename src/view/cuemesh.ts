@@ -11,6 +11,9 @@ import {
   MeshBasicMaterial,
   DoubleSide,
   SphereGeometry,
+  TubeGeometry,
+  CatmullRomCurve3,
+  BufferGeometry,
 } from "three"
 
 export class CueMesh {
@@ -76,6 +79,68 @@ export class CueMesh {
     mesh.renderOrder = -1
     mesh.material.depthTest = false
     return mesh
+  }
+
+  static updateHelperGeometry(mesh: Mesh, trajectoryPoints: Vector3[] | null) {
+    // If no trajectory points or too few, use straight helper
+    if (!trajectoryPoints || trajectoryPoints.length < 2) {
+      // Revert to straight cylinder if needed
+      if (!(mesh.geometry instanceof CylinderGeometry)) {
+        mesh.geometry.dispose()
+        mesh.geometry = new CylinderGeometry(R, R, (R * 30) / 0.5, 12, 1, true)
+        mesh.geometry
+          .applyMatrix4(new Matrix4().identity().makeRotationAxis(up, -Math.PI / 2))
+          .applyMatrix4(
+            new Matrix4()
+              .identity()
+              .makeTranslation((R * 15) / 0.5, 0, (-R * 0.01) / 0.5)
+          )
+      }
+      return
+    }
+
+    // Create curved tube geometry from trajectory points
+    // Limit points to reasonable length for aiming guide (similar to straight helper)
+    const maxHelperLength = (R * 30) / 0.5 // Same as straight helper length
+    const filteredPoints: Vector3[] = []
+    let accumulatedLength = 0
+
+    // Start from first point (cue ball position at hit)
+    filteredPoints.push(trajectoryPoints[0].clone())
+
+    for (let i = 1; i < trajectoryPoints.length; i++) {
+      const segmentLength = trajectoryPoints[i].distanceTo(trajectoryPoints[i - 1])
+
+      if (accumulatedLength + segmentLength > maxHelperLength) {
+        // Interpolate final point to reach exact max length
+        const remainingLength = maxHelperLength - accumulatedLength
+        const ratio = remainingLength / segmentLength
+        const finalPoint = trajectoryPoints[i - 1].clone().lerp(trajectoryPoints[i], ratio)
+        filteredPoints.push(finalPoint)
+        break
+      }
+
+      filteredPoints.push(trajectoryPoints[i].clone())
+      accumulatedLength += segmentLength
+    }
+
+    // Need at least 2 points for curve
+    if (filteredPoints.length < 2) {
+      return
+    }
+
+    // Create smooth curve through points
+    const curve = new CatmullRomCurve3(filteredPoints, false, 'centripetal', 0.3)
+
+    // Create tube geometry along curve
+    const tubeRadius = R * 0.95 // Slightly smaller than ball radius for visibility
+    const tubularSegments = Math.max(30, filteredPoints.length * 8)
+    const radialSegments = 12
+    const newGeometry = new TubeGeometry(curve, tubularSegments, tubeRadius, radialSegments, false)
+
+    // Replace geometry
+    mesh.geometry.dispose()
+    mesh.geometry = newGeometry
   }
 
   static createPlacer() {

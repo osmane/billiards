@@ -24,7 +24,7 @@ export class TrajectoryPredictor {
 
   constructor() {}
 
-  predictTrajectory(table: Table, aim: AimEvent, rules?: any, masseMode?: boolean, elevation?: number): TrajectoryPrediction[] {
+  predictTrajectory(table: Table, aim: AimEvent, rules?: any, masseMode?: boolean, elevation?: number, limitToHelper?: boolean): TrajectoryPrediction[] {
     // Create a copy of the table for simulation
     const serializedTable = table.serialise()
     const simulationTable = Table.fromSerialised(serializedTable)
@@ -111,11 +111,15 @@ export class TrajectoryPredictor {
       }
     })
 
+    // Optimize simulation time when only helper is needed
+    // Helper length is approximately (R * 30) / 0.5, estimate time to travel this distance
+    const maxSimTime = limitToHelper ? 0.5 : this.maxSimulationTime // 0.5s is enough for helper distance
+
     // Run simulation with improved error handling
     let stepsWithoutMotion = 0
     const maxStepsWithoutMotion = 100 // Stop if balls haven't moved for 100 steps
 
-    while (simulationTime < this.maxSimulationTime) {
+    while (simulationTime < maxSimTime) {
       // Advance simulation
       try {
         simulationTable.advance(this.timeStep)

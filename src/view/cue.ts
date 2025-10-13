@@ -43,7 +43,10 @@ export class Cue {
 
   rotateAim(angle, table: Table) {
     this.aim.angle = this.aim.angle + angle
-    this.helperMesh.rotation.z = this.aim.angle
+    // Only update helper rotation if using straight cylinder (not curved tube)
+    if (!this.masseMode) {
+      this.helperMesh.rotation.z = this.aim.angle
+    }
     this.aimInputs.showOverlap()
     this.avoidCueTouchingOtherBall(table)
     this.container?.updateTrajectoryPrediction()
@@ -168,8 +171,11 @@ export class Cue {
     quaternion.setFromUnitVectors(negativeYAxis, cueDirection3D)
     this.mesh.setRotationFromQuaternion(quaternion)
 
-    this.helperMesh.position.copy(pos)
-    this.helperMesh.rotation.z = this.aim.angle
+    // Only update helper position/rotation if using straight cylinder (not curved tube)
+    if (!this.masseMode) {
+      this.helperMesh.position.copy(pos)
+      this.helperMesh.rotation.z = this.aim.angle
+    }
 
     this.placerMesh.position.copy(pos)
     this.placerMesh.rotation.z = this.t
@@ -278,6 +284,22 @@ export class Cue {
     this.showHelper(!this.helperMesh.visible)
   }
 
+  updateHelperCurve(trajectoryPoints: Vector3[] | null) {
+    if (this.masseMode && trajectoryPoints && trajectoryPoints.length > 2) {
+      // Update helper to follow curved trajectory
+      CueMesh.updateHelperGeometry(this.helperMesh, trajectoryPoints)
+      // Reset position/rotation for tube geometry (it's already positioned by points)
+      this.helperMesh.position.set(0, 0, 0)
+      this.helperMesh.rotation.set(0, 0, 0)
+    } else {
+      // Revert to straight helper
+      CueMesh.updateHelperGeometry(this.helperMesh, null)
+      // Restore normal position/rotation for straight helper
+      this.helperMesh.position.copy(this.aim.pos)
+      this.helperMesh.rotation.z = this.aim.angle
+    }
+  }
+
   toggleMasseMode() {
     this.masseMode = !this.masseMode
     if (!this.masseMode) {
@@ -287,6 +309,11 @@ export class Cue {
         this.aim.offset.copy(offset)
       }
       this.elevation = this.defaultElevation
+      // Reset to straight helper
+      this.updateHelperCurve(null)
+    } else {
+      // Show helper when entering massé mode
+      this.helperMesh.visible = true
     }
     this.updateAimInput()
     this.container?.updateTrajectoryPrediction()
@@ -307,6 +334,10 @@ export class Cue {
 
     this.elevation = angleRad
     this.aim.power = this.maxPower * 0.35
+
+    // Show helper when preset is selected
+    this.helperMesh.visible = true
+
     this.updateAimInput()
     this.container?.updateTrajectoryPrediction()
   }
