@@ -296,13 +296,7 @@ export class Container {
             new Vector3(p.position.x, p.position.y, p.position.z)
           )
           let helperPoints = trajectoryVectors
-          if (cueBallTrajectory.firstImpactDistance !== undefined) {
-            const maxDistance = Math.min(
-              cueBallTrajectory.firstImpactDistance,
-              helperMaxDistance
-            )
-            helperPoints = trimPointsByDistance(trajectoryVectors, maxDistance)
-          } else if (
+          if (
             cueBallTrajectory.firstImpactIndex !== undefined &&
             cueBallTrajectory.firstImpactIndex >= 0
           ) {
@@ -311,6 +305,12 @@ export class Container {
               trajectoryVectors.length
             )
             helperPoints = trajectoryVectors.slice(0, clampIndex)
+          } else if (cueBallTrajectory.firstImpactDistance !== undefined) {
+            const maxDistance = Math.min(
+              cueBallTrajectory.firstImpactDistance,
+              helperMaxDistance
+            )
+            helperPoints = trimPointsByDistance(trajectoryVectors, maxDistance)
           } else if (limitToHelper) {
             helperPoints = trimPointsByDistance(trajectoryVectors, helperMaxDistance)
           }

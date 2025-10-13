@@ -105,7 +105,6 @@ export class TrajectoryPredictor {
     })
     const firstImpactIndices: Map<number, number> = new Map()
     const firstImpactDistances: Map<number, number> = new Map()
-    const lastSampledPositions: Map<number, { x: number; y: number; z: number }> = new Map()
     const cueBallSimId = currentCueBall.id
     let cueBallTravelDistance = 0
     let cueBallImpactRecorded = false
@@ -161,7 +160,7 @@ export class TrajectoryPredictor {
       return best
     }
 
-    const directImpactDistance = computeDirectImpactDistance()
+    const directImpactDistance = masseMode ? null : computeDirectImpactDistance()
 
     const recordPoint = (ball: Ball, time: number): number | null => {
       const trajectory = trajectories.get(ball.id)
@@ -175,18 +174,19 @@ export class TrajectoryPredictor {
         z: ball.pos.z
       }
 
-      const previous = lastSampledPositions.get(ball.id)
-      if (previous) {
-        const dx = position.x - previous.x
-        const dy = position.y - previous.y
-        const dz = position.z - previous.z
-        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz)
+      if (trajectory.length > 0) {
+        const lastPoint = trajectory[trajectory.length - 1]
+        const dx = position.x - lastPoint.position.x
+        const dy = position.y - lastPoint.position.y
+        const dz = position.z - lastPoint.position.z
+        const distanceSq = dx * dx + dy * dy + dz * dz
+        if (distanceSq < 1e-12) {
+          return trajectory.length - 1
+        }
         if (ball.id === cueBallSimId) {
-          cueBallTravelDistance += distance
+          cueBallTravelDistance += Math.sqrt(distanceSq)
         }
       }
-
-      lastSampledPositions.set(ball.id, position)
 
       trajectory.push({
         position,
@@ -221,6 +221,11 @@ export class TrajectoryPredictor {
       try {
         simulationTable.advance(this.timeStep)
         simulationTime += this.timeStep
+
+        // Fine-grained cue ball sampling ensures curved helper accuracy
+        if (currentCueBall.inMotion() && !cueBallImpactRecorded) {
+          recordPoint(currentCueBall, simulationTime)
+        }
 
         // Track new collision/cushion outcomes to capture first impact points
         const newOutcomes = simulationTable.outcome.slice(processedOutcomes)
@@ -318,8 +323,8 @@ export class TrajectoryPredictor {
             ballId: cueBallSimId,
             time: fallbackTime
           })
+          firstImpactDistances.set(cueBallSimId, clampedDistance)
         }
-        firstImpactDistances.set(cueBallSimId, clampedDistance)
       }
     }
 
