@@ -24,6 +24,7 @@ import { endShot, recordShotFrame } from "../utils/shotstats"
 import { TrajectoryPredictor } from "../model/trajectorypredictor"
 import { TrajectoryRenderer } from "../view/trajectoryrenderer"
 import { Vector3 } from "three"
+import { R } from "../model/physics/constants"
 
 /**
  * Model, View, Controller container.
@@ -240,17 +241,80 @@ export class Container {
         limitToHelper
       )
 
+      const helperMaxDistance = (R * 30) / 0.5
+      const trimPointsByDistance = (points: Vector3[], maxDistance: number): Vector3[] => {
+        if (points.length === 0) {
+          return []
+        }
+        if (maxDistance <= 0) {
+          return [points[0].clone()]
+        }
+
+        const trimmed: Vector3[] = [points[0].clone()]
+        let accumulated = 0
+
+        for (let i = 1; i < points.length; i++) {
+          const prev = points[i - 1]
+          const current = points[i]
+          const segment = current.clone().sub(prev)
+          const segmentLength = segment.length()
+          if (segmentLength === 0) {
+            continue
+          }
+
+          if (accumulated + segmentLength <= maxDistance) {
+            trimmed.push(current.clone())
+            accumulated += segmentLength
+            continue
+          }
+
+          const remaining = maxDistance - accumulated
+          if (remaining >= 0) {
+            const interpolated = prev.clone().add(
+              segment.multiplyScalar(remaining / segmentLength)
+            )
+            trimmed.push(interpolated)
+          }
+          break
+        }
+
+        if (trimmed.length < 2 && points.length >= 2) {
+          trimmed.push(points[1].clone())
+        }
+
+        return trimmed
+      }
+
       // Update helper curve to match trajectory prediction (always)
       if (predictions && predictions.length > 0) {
         // Find cue ball trajectory by matching ball ID
         const cueBallId = this.table.cueball.id
         const cueBallTrajectory = predictions.find(p => p.ballId === cueBallId)
 
-        if (cueBallTrajectory && cueBallTrajectory.points.length > 2) {
-          const trajectoryPoints = cueBallTrajectory.points.map(p =>
+        if (cueBallTrajectory && cueBallTrajectory.points.length >= 2) {
+          const trajectoryVectors = cueBallTrajectory.points.map(p =>
             new Vector3(p.position.x, p.position.y, p.position.z)
           )
-          this.table.cue.updateHelperCurve(trajectoryPoints)
+          let helperPoints = trajectoryVectors
+          if (cueBallTrajectory.firstImpactDistance !== undefined) {
+            const maxDistance = Math.min(
+              cueBallTrajectory.firstImpactDistance,
+              helperMaxDistance
+            )
+            helperPoints = trimPointsByDistance(trajectoryVectors, maxDistance)
+          } else if (
+            cueBallTrajectory.firstImpactIndex !== undefined &&
+            cueBallTrajectory.firstImpactIndex >= 0
+          ) {
+            const clampIndex = Math.min(
+              cueBallTrajectory.firstImpactIndex + 1,
+              trajectoryVectors.length
+            )
+            helperPoints = trajectoryVectors.slice(0, clampIndex)
+          } else if (limitToHelper) {
+            helperPoints = trimPointsByDistance(trajectoryVectors, helperMaxDistance)
+          }
+          this.table.cue.updateHelperCurve(helperPoints)
         } else {
           this.table.cue.updateHelperCurve(null)
         }

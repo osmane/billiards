@@ -4,6 +4,9 @@ import { AimEvent } from "../events/aimevent"
 import { unitAtAngle } from "../utils/utils"
 import { cueToSpin } from "./physics/physics"
 import { State } from "./ball"
+import { OutcomeType } from "./outcome"
+import { R } from "./physics/constants"
+import { Vector3 } from "three"
 
 export interface TrajectoryPoint {
   position: { x: number; y: number; z: number }
@@ -14,6 +17,8 @@ export interface TrajectoryPoint {
 export interface TrajectoryPrediction {
   points: TrajectoryPoint[]
   ballId: number
+  firstImpactIndex?: number
+  firstImpactDistance?: number
 }
 
 export class TrajectoryPredictor {
@@ -65,6 +70,7 @@ export class TrajectoryPredictor {
 
     // Apply the shot to the current player's cue ball
     currentCueBall.state = State.Sliding
+    const cueBallStartPos = currentCueBall.pos.clone()
 
     // Calculate velocity with elevation angle (same as in cue.ts hit method)
     const horizontalVel = unitAtAngle(aim.angle).multiplyScalar(aim.power)
@@ -82,6 +88,7 @@ export class TrajectoryPredictor {
     }
 
     currentCueBall.rvel.copy(cueToSpin(aim.offset, currentCueBall.vel))
+    const initialSpeed = currentCueBall.vel.length()
 
     // Enable Magnus effect in trajectory prediction if in massé mode
     if (masseMode !== undefined) {
@@ -96,24 +103,114 @@ export class TrajectoryPredictor {
     simulationTable.balls.forEach(ball => {
       trajectories.set(ball.id, [])
     })
+    const firstImpactIndices: Map<number, number> = new Map()
+    const firstImpactDistances: Map<number, number> = new Map()
+    const lastSampledPositions: Map<number, { x: number; y: number; z: number }> = new Map()
+    const cueBallSimId = currentCueBall.id
+    let cueBallTravelDistance = 0
+    let cueBallImpactRecorded = false
+    let cueBallFirstImpactDistance: number | null = null
+    const helperDistanceLimit = (R * 30) / 0.5
+    const horizontalDirection = unitAtAngle(aim.angle).clone()
+    horizontalDirection.z = 0
+    if (horizontalDirection.lengthSq() > 0) {
+      horizontalDirection.normalize()
+    }
+
+    const computeDirectImpactDistance = (): number | null => {
+      if (horizontalDirection.lengthSq() === 0) {
+        return null
+      }
+
+      let best: number | null = null
+      simulationTable.balls.forEach(ball => {
+        if (ball.id === cueBallSimId || !ball.onTable()) {
+          return
+        }
+
+        const combinedRadius = currentCueBall.radius + ball.radius
+        const start2D = new Vector3(cueBallStartPos.x, cueBallStartPos.y, 0)
+        const toBall = new Vector3(ball.pos.x, ball.pos.y, 0).sub(start2D)
+        const forward = toBall.dot(horizontalDirection)
+        if (forward <= 0) {
+          return
+        }
+
+        const along = horizontalDirection.clone().multiplyScalar(forward)
+        const lateral = toBall.clone().sub(along)
+        const radiusSq = combinedRadius * combinedRadius
+        const lateralDistSq = lateral.lengthSq()
+        if (lateralDistSq > radiusSq) {
+          return
+        }
+
+        const offset = Math.sqrt(Math.max(0, radiusSq - lateralDistSq))
+        const distanceToContact = forward - offset
+        if (distanceToContact < 0) {
+          if (best === null || 0 < best) {
+            best = 0
+          }
+          return
+        }
+
+        if (best === null || distanceToContact < best) {
+          best = distanceToContact
+        }
+      })
+
+      return best
+    }
+
+    const directImpactDistance = computeDirectImpactDistance()
+
+    const recordPoint = (ball: Ball, time: number): number | null => {
+      const trajectory = trajectories.get(ball.id)
+      if (!trajectory) {
+        return null
+      }
+
+      const position = {
+        x: ball.pos.x,
+        y: ball.pos.y,
+        z: ball.pos.z
+      }
+
+      const previous = lastSampledPositions.get(ball.id)
+      if (previous) {
+        const dx = position.x - previous.x
+        const dy = position.y - previous.y
+        const dz = position.z - previous.z
+        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz)
+        if (ball.id === cueBallSimId) {
+          cueBallTravelDistance += distance
+        }
+      }
+
+      lastSampledPositions.set(ball.id, position)
+
+      trajectory.push({
+        position,
+        ballId: ball.id,
+        time
+      })
+      return trajectory.length - 1
+    }
 
     let simulationTime = 0
     let lastSampleTime = 0
+    let processedOutcomes = 0
 
     // Record initial positions
     simulationTable.balls.forEach(ball => {
       if (ball.inMotion() || ball === currentCueBall) {
-        trajectories.get(ball.id)!.push({
-          position: { x: ball.pos.x, y: ball.pos.y, z: ball.pos.z },
-          ballId: ball.id,
-          time: 0
-        })
+        recordPoint(ball, 0)
       }
     })
 
     // Optimize simulation time when only helper is needed
-    // Helper length is approximately (R * 30) / 0.5, estimate time to travel this distance
-    const maxSimTime = limitToHelper ? 0.5 : this.maxSimulationTime // 0.5s is enough for helper distance
+    // Helper length is approximately (R * 30) / 0.5. When trajectory lines are hidden
+    // we still simulate until the cue ball has travelled at least this much or hits something.
+    const maxSimTime = limitToHelper ? Math.min(this.maxSimulationTime, 3.0) : this.maxSimulationTime
 
     // Run simulation with improved error handling
     let stepsWithoutMotion = 0
@@ -124,6 +221,48 @@ export class TrajectoryPredictor {
       try {
         simulationTable.advance(this.timeStep)
         simulationTime += this.timeStep
+
+        // Track new collision/cushion outcomes to capture first impact points
+        const newOutcomes = simulationTable.outcome.slice(processedOutcomes)
+        processedOutcomes = simulationTable.outcome.length
+
+        newOutcomes.forEach(outcome => {
+          if (
+            outcome.type !== OutcomeType.Collision &&
+            outcome.type !== OutcomeType.Cushion
+          ) {
+            return
+          }
+
+          const impactedBalls: Ball[] = []
+          if (outcome.ballA) {
+            impactedBalls.push(outcome.ballA)
+          }
+          if (
+            outcome.type === OutcomeType.Collision &&
+            outcome.ballB &&
+            outcome.ballB !== outcome.ballA
+          ) {
+            impactedBalls.push(outcome.ballB)
+          }
+
+          impactedBalls.forEach(ball => {
+            if (!ball || firstImpactIndices.has(ball.id)) {
+              return
+            }
+            const newIndex = recordPoint(ball, simulationTime)
+            if (newIndex !== null) {
+              firstImpactIndices.set(ball.id, newIndex)
+              if (ball.id === cueBallSimId) {
+                cueBallImpactRecorded = true
+                if (cueBallFirstImpactDistance === null) {
+                  cueBallFirstImpactDistance = cueBallTravelDistance
+                  firstImpactDistances.set(ball.id, cueBallFirstImpactDistance)
+                }
+              }
+            }
+          })
+        })
 
         // Check for motion to avoid infinite loops with very slow balls
         const anyInMotion = simulationTable.balls.some(ball => ball.inMotion())
@@ -140,14 +279,14 @@ export class TrajectoryPredictor {
         if (simulationTime - lastSampleTime >= this.sampleInterval) {
           simulationTable.balls.forEach(ball => {
             if (ball.inMotion()) {
-              trajectories.get(ball.id)!.push({
-                position: { x: ball.pos.x, y: ball.pos.y, z: ball.pos.z },
-                ballId: ball.id,
-                time: simulationTime
-              })
+              recordPoint(ball, simulationTime)
             }
           })
           lastSampleTime = simulationTime
+        }
+
+        if (limitToHelper && cueBallImpactRecorded) {
+          break
         }
 
         // Stop if all balls are stationary (using table's method)
@@ -160,14 +299,46 @@ export class TrajectoryPredictor {
       }
     }
 
+    if (cueBallFirstImpactDistance === null && directImpactDistance !== null) {
+      const clampedDistance = Math.min(directImpactDistance, helperDistanceLimit)
+      cueBallFirstImpactDistance = clampedDistance
+      const cueBallTrajectory = trajectories.get(cueBallSimId)
+      if (cueBallTrajectory && cueBallTrajectory.length > 0) {
+        if (cueBallTrajectory.length < 2 && horizontalDirection.lengthSq() > 0) {
+          const startPoint = cueBallTrajectory[0]
+          const fallbackPosition = {
+            x: startPoint.position.x + horizontalDirection.x * clampedDistance,
+            y: startPoint.position.y + horizontalDirection.y * clampedDistance,
+            z: startPoint.position.z
+          }
+          const fallbackTime =
+            initialSpeed > 1e-6 ? clampedDistance / initialSpeed : 0
+          cueBallTrajectory.push({
+            position: fallbackPosition,
+            ballId: cueBallSimId,
+            time: fallbackTime
+          })
+        }
+        firstImpactDistances.set(cueBallSimId, clampedDistance)
+      }
+    }
+
+    if (cueBallFirstImpactDistance !== null && !firstImpactDistances.has(cueBallSimId)) {
+      firstImpactDistances.set(cueBallSimId, cueBallFirstImpactDistance)
+    }
+
     // Convert to return format using original ball IDs
     const predictions: TrajectoryPrediction[] = []
     trajectories.forEach((points, simulationBallId) => {
       const originalBallId = ballIdMapping.get(simulationBallId)
       if (points.length > 1 && originalBallId !== undefined) { // Only include balls that moved and have valid mapping
+        const firstImpactIndex = firstImpactIndices.get(simulationBallId)
+        const firstImpactDistance = firstImpactDistances.get(simulationBallId)
         predictions.push({
           ballId: originalBallId, // Use original ball ID for rendering
-          points
+          points,
+          firstImpactIndex,
+          firstImpactDistance
         })
       }
     })

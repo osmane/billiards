@@ -23,7 +23,12 @@ export class Menu {
     this.share = this.getElement("share")
     this.camera = this.getElement("camera")
     this.masseButton = this.getElement("masseButton")
-    this.massePresets = document.getElementById("massePresets")!
+
+    const massePresetsEl = document.getElementById("massePresets")
+    if (!(massePresetsEl instanceof HTMLSelectElement)) {
+      throw new Error("Masse presets dropdown element with id 'massePresets' not found or is not a select element.")
+    }
+    this.massePresets = massePresetsEl
 
     if (this.camera) {
       this.setMenu(true)
