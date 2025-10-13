@@ -68,6 +68,9 @@ export abstract class ControllerBase extends Controller {
         this.container.view.camera.toggleMode()
         return true
       case "KeyDUp":
+        this.togglePanel()
+        return true
+      case "KeyVUp":
         this.container.table.cue.toggleVirtualCue()
         return true
       case "KeyFUp":

@@ -9,6 +9,10 @@ import {
   μs,
   μw,
   ee,
+  magnusCoeff,
+  tableRestitution,
+  magnusAirborneMultiplier,
+  magnusTableMultiplier,
   setR,
   sete,
   setm,
@@ -19,6 +23,10 @@ import {
   setμs,
   setμw,
   setee,
+  setMagnusCoeff,
+  setTableRestitution,
+  setMagnusAirborneMultiplier,
+  setMagnusTableMultiplier,
 } from "../model/physics/constants"
 
 export class Sliders {
@@ -42,11 +50,18 @@ export class Sliders {
     this.initialiseSlider("μs", μs, setμs)
     this.initialiseSlider("μw", μw, setμw)
     this.initialiseSlider("ee", ee, setee)
+
+    // Massé physics parameters
+    this.initialiseSlider("magnusCoeff", magnusCoeff, setMagnusCoeff, 0.02)
+    this.initialiseSlider("tableRestitution", tableRestitution, setTableRestitution, 1)
+    this.initialiseSlider("magnusAirborne", magnusAirborneMultiplier, setMagnusAirborneMultiplier, 10)
+    this.initialiseSlider("magnusTable", magnusTableMultiplier, setMagnusTableMultiplier, 2)
   }
 
   toggleVisibility() {
-    this.style.visibility =
-      this.style.visibility === "visible" ? "hidden" : "visible"
+    const newVisibility = this.style.visibility === "visible" ? "hidden" : "visible"
+    this.style.visibility = newVisibility
+    console.log(`Constants panel visibility: ${newVisibility}`)
   }
 
   getInputElement(id) {
@@ -55,7 +70,8 @@ export class Sliders {
 
   initialiseSlider(id, initialValue, setter, max = 1) {
     const slider = this.getInputElement(id)
-    if (!slider) {
+    if (!slider || !slider.id) {
+      console.warn(`Slider not found: ${id}`)
       return
     }
     slider.step = "0.001"

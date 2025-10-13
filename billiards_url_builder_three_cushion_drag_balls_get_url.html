@@ -393,7 +393,7 @@
           start: 0, now: Date.now(), score: 0, wholeGame: false, v: 1
         };
 
-        const url = `https://osmane.github.io/billiards/?ruletype=threecushion&state=${encodeURIComponent(JSON.stringify(state))}`;
+        const url = `http://localhost:8080/?ruletype=threecushion&state=${encodeURIComponent(JSON.stringify(state))}`;
         document.getElementById('url').value = url;
         document.getElementById('open').href = url;
 

@@ -11,7 +11,12 @@
       "Bash(npx jest:*)",
       "Bash(node:*)",
       "Bash(git push:*)",
-      "Read(//d/**)"
+      "Read(//d/**)",
+      "Bash(npm run build:dev:*)",
+      "Bash(npm run:*)",
+      "Bash(cat:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)"
     ],
     "deny": [],
     "ask": []

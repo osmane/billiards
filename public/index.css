@@ -352,19 +352,46 @@ a {
   right: 0px;
   top: 0px;
   visibility: hidden;
-  padding: 5px;
+  padding: 10px;
   border: double;
-  max-width: 50%;
+  max-width: 400px;
+  min-width: 300px;
+  max-height: 90vh;
+  overflow-y: auto;
   font-size: small;
+  z-index: 1000;
+  color: #fff;
+}
+
+.constants p {
+  color: #4CAF50;
+  margin: 5px 0;
+  font-weight: bold;
 }
 
 .nw {
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  margin: 5px 0;
+  gap: 10px;
+}
+
+.nw input[type="range"] {
+  flex: 1;
+  min-width: 120px;
 }
 
 label {
   display: inline-block;
-  width: 9ch;
+  min-width: 120px;
+  color: #ccc;
+  font-size: 13px;
+}
+
+.constants button {
+  margin-top: 10px;
+  padding: 8px 16px;
+  width: 100%;
 }
 
 

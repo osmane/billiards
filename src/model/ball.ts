@@ -9,7 +9,7 @@ import {
 } from "../model/physics/physics"
 import { BallMesh } from "../view/ballmesh"
 import { Pocket } from "./physics/pocket"
-import { PhysicsContext, POOL_PHYSICS } from "./physics/constants"
+import { PhysicsContext, POOL_PHYSICS, g, tableRestitution } from "./physics/constants"
 
 export enum State {
   Stationary = "Stationary",
@@ -27,8 +27,9 @@ export class Ball {
   readonly ballmesh: BallMesh
   state: State = State.Stationary
   pocket: Pocket
-  physicsContext: PhysicsContext = POOL_PHYSICS  // Default to pool physics
-  magnusEnabled: boolean = false  // Flag to enable Magnus effect for this ball
+  physicsContext: PhysicsContext = POOL_PHYSICS
+  magnusEnabled: boolean = false
+  magnusElevation: number = 0
 
   public static id = 0
   readonly id = Ball.id++
@@ -84,10 +85,47 @@ export class Ball {
         this.addDelta(t, sliding(this.vel, this.rvel, this.physicsContext))
       }
 
-      // Apply Magnus effect only if enabled (massé mode)
       if (this.magnusEnabled) {
-        const magnusAccel = magnus(this.vel, this.rvel, this.physicsContext)
+        const magnusAccel = magnus(
+          this.vel,
+          this.rvel,
+          this.magnusElevation,
+          this.pos.z,
+          this.physicsContext
+        )
         this.vel.addScaledVector(magnusAccel, t)
+      }
+
+      const tableThreshold = this.physicsContext.R * 0.01
+      if (this.pos.z > tableThreshold) {
+        // Ball is airborne - apply gravity
+        this.vel.z -= g * t
+      } else {
+        // Ball hit or is on table
+        if (this.pos.z < 0) {
+          this.pos.z = 0
+        }
+
+        if (this.vel.z < 0) {
+          // Ball is falling and hits table - apply bounce with restitution
+          const restitution = tableRestitution // Table bounce coefficient (adjustable via sliders)
+          const minBounceVelocity = 0.1 // Minimum velocity to bounce (m/s)
+
+          if (Math.abs(this.vel.z) > minBounceVelocity) {
+            // Significant impact - bounce
+            this.vel.z = -this.vel.z * restitution
+            this.pos.z = tableThreshold * 0.5 // Small lift to prevent immediate re-collision
+
+            // Table contact also dampens horizontal velocity and spin (friction)
+            const tableFriction = 0.95 // Horizontal velocity retention on bounce
+            this.vel.x *= tableFriction
+            this.vel.y *= tableFriction
+          } else {
+            // Low impact - just stop vertical motion
+            this.vel.z = 0
+            this.pos.z = 0
+          }
+        }
       }
     }
   }

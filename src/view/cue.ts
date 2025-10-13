@@ -64,9 +64,25 @@ export class Cue {
     const aim = this.aim
     this.t = 0
     ball.state = State.Sliding
-    ball.vel.copy(unitAtAngle(aim.angle).multiplyScalar(aim.power))
+
+    // Calculate velocity with elevation angle
+    const horizontalVel = unitAtAngle(aim.angle).multiplyScalar(aim.power)
+
+    if (this.masseMode && this.elevation > 0.2) {
+      // In masse mode with high elevation, apply vertical component
+      const horizontalMagnitude = aim.power * Math.cos(this.elevation)
+      const verticalMagnitude = aim.power * Math.sin(this.elevation)
+      ball.vel.copy(unitAtAngle(aim.angle).multiplyScalar(horizontalMagnitude))
+      ball.vel.z = verticalMagnitude
+    } else {
+      // Normal shot - pure horizontal
+      ball.vel.copy(horizontalVel)
+      ball.vel.z = 0
+    }
+
     ball.rvel.copy(cueToSpin(aim.offset, ball.vel))
     ball.magnusEnabled = this.masseMode
+    ball.magnusElevation = this.elevation
     this.hitPointMesh.visible = false
     this.container?.trajectoryRenderer?.clearTrajectories()
   }

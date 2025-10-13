@@ -24,7 +24,7 @@ export class TrajectoryPredictor {
 
   constructor() {}
 
-  predictTrajectory(table: Table, aim: AimEvent, rules?: any, masseMode?: boolean): TrajectoryPrediction[] {
+  predictTrajectory(table: Table, aim: AimEvent, rules?: any, masseMode?: boolean, elevation?: number): TrajectoryPrediction[] {
     // Create a copy of the table for simulation
     const serializedTable = table.serialise()
     const simulationTable = Table.fromSerialised(serializedTable)
@@ -65,12 +65,30 @@ export class TrajectoryPredictor {
 
     // Apply the shot to the current player's cue ball
     currentCueBall.state = State.Sliding
-    currentCueBall.vel.copy(unitAtAngle(aim.angle).multiplyScalar(aim.power))
+
+    // Calculate velocity with elevation angle (same as in cue.ts hit method)
+    const horizontalVel = unitAtAngle(aim.angle).multiplyScalar(aim.power)
+
+    if (masseMode && elevation !== undefined && elevation > 0.2) {
+      // In masse mode with high elevation, apply vertical component
+      const horizontalMagnitude = aim.power * Math.cos(elevation)
+      const verticalMagnitude = aim.power * Math.sin(elevation)
+      currentCueBall.vel.copy(unitAtAngle(aim.angle).multiplyScalar(horizontalMagnitude))
+      currentCueBall.vel.z = verticalMagnitude
+    } else {
+      // Normal shot - pure horizontal
+      currentCueBall.vel.copy(horizontalVel)
+      currentCueBall.vel.z = 0
+    }
+
     currentCueBall.rvel.copy(cueToSpin(aim.offset, currentCueBall.vel))
 
     // Enable Magnus effect in trajectory prediction if in massé mode
     if (masseMode !== undefined) {
       currentCueBall.magnusEnabled = masseMode
+      if (elevation !== undefined) {
+        currentCueBall.magnusElevation = elevation
+      }
     }
 
     // Initialize trajectory data for each ball using simulation IDs

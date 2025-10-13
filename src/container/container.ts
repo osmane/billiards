@@ -229,9 +229,10 @@ export class Container {
 
     // Button is pressed - calculate and show trajectories
     try {
-      // Pass massé mode state to trajectory predictor
+      // Pass massé mode state and elevation to trajectory predictor
       const masseMode = this.table.cue.masseMode
-      const predictions = this.trajectoryPredictor.predictTrajectory(this.table, this.table.cue.aim, this.rules, masseMode)
+      const elevation = this.table.cue.elevation
+      const predictions = this.trajectoryPredictor.predictTrajectory(this.table, this.table.cue.aim, this.rules, masseMode, elevation)
       this.trajectoryRenderer.updateTrajectories(predictions, this.table)
       // Force visibility to true since button is pressed
       this.trajectoryRenderer.setVisible(true)

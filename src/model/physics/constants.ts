@@ -19,7 +19,15 @@ export let μw = 0.14
 // Adjusted for 2D billiards physics - much lower than 3D aerodynamic coefficient
 // Original Han model value (0.065) was too strong for our implementation
 // This coefficient is empirically tuned for gentle, realistic curves
-export let magnusCoeff = 0.004
+export let magnusCoeff = 0.006  // Increased for stronger curve
+
+// Table bounce restitution coefficient (felt dampening)
+// Typical values: 0.3-0.5 for cloth-covered table
+export let tableRestitution = 0.35  // Lower = less bounce height
+
+// Magnus effect multipliers for different states
+export let magnusAirborneMultiplier = 3.0  // Airborne magnus strength
+export let magnusTableMultiplier = 0.4     // On-table magnus strength
 
 export let Mz: number
 export let Mxy: number
@@ -141,4 +149,13 @@ export function setee(val: number) {
 }
 export function setMagnusCoeff(val: number) {
   magnusCoeff = val
+}
+export function setTableRestitution(val: number) {
+  tableRestitution = val
+}
+export function setMagnusAirborneMultiplier(val: number) {
+  magnusAirborneMultiplier = val
+}
+export function setMagnusTableMultiplier(val: number) {
+  magnusTableMultiplier = val
 }
