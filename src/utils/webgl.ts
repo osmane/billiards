@@ -1,4 +1,4 @@
-import { WebGLRenderer } from "three"
+import { SRGBColorSpace, VSMShadowMap, WebGLRenderer } from "three"
 
 export function renderer(element: HTMLElement) {
   if (typeof process !== "undefined") {
@@ -6,10 +6,14 @@ export function renderer(element: HTMLElement) {
   }
 
   const renderer = new WebGLRenderer({ antialias: true })
-  renderer.shadowMap.enabled = false
+  renderer.shadowMap.enabled = true
+  renderer.shadowMap.type = VSMShadowMap
+  renderer.shadowMap.autoUpdate = true
   renderer.autoClear = false
   renderer.setSize(element.offsetWidth, element.offsetHeight)
-  renderer.setPixelRatio(window.devicePixelRatio * 0.75)
+  const pixelRatio = Math.min(window.devicePixelRatio, 2)
+  renderer.setPixelRatio(pixelRatio)
+  renderer.outputColorSpace = SRGBColorSpace
   element.appendChild(renderer.domElement)
   return renderer
 }
