@@ -87,27 +87,32 @@ canvas {
   margin-left: 10px;
   margin-right: 10px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   border-radius: 5px;
   aspect-ratio: 1;
   padding: 0 5px;
+  z-index: 1;
 }
 
 .cueBall {
   height: 100%;
   margin: auto;
   aspect-ratio: 1;
-  background: radial-gradient(
-    circle at 65% 15%,
-    rgb(255, 255, 255) 2px,
-    rgb(255, 254, 254) 5%,
-    rgb(63, 63, 63) 60%,
-    rgb(24, 26, 26) 100%
-  );
   border-radius: 50%;
   position: absolute;
   top: 0;
   z-index: 5;
+  overflow: hidden;
+}
+
+#cueBallCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .objectBall {
@@ -116,7 +121,7 @@ canvas {
   aspect-ratio: 1;
   border: 0.5px solid rgb(0, 44, 64);
   border-radius: 50%;
-  z-index: 3;
+  z-index: 1;
   position: absolute;
   top: 0;
   pointer-events: none;
@@ -134,11 +139,56 @@ canvas {
   pointer-events: none;
 }
 
+.masseHitArea {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.masseHitArea.active {
+  display: block;
+}
+
+.masseHitArea::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 266.67%;
+  height: 266.67%;
+  border: 3px dashed rgba(155, 89, 182, 0.7);
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.elevationSlider {
+  width: 20px;
+  height: 70%;
+  margin: auto;
+  margin-right: 5px;
+  margin-left: 5px;
+  position: relative;
+  z-index: 10;
+}
+
+input[type="range"].elevationSlider {
+  appearance: slider-vertical;
+}
+
 .powerSlider {
   width: 20px;
   height: 70%;
   margin: auto;
   margin-right: 10px;
+  position: relative;
+  z-index: 10;
+  accent-color: rgb(255, 0, 0);
 }
 
 input[type="range"].powerSlider {
@@ -155,12 +205,18 @@ input[type="range"].powerSlider {
   font-size: large;
   min-width: 80px;
   user-select: none;
+  position: relative;
+  z-index: 10;
+  background-color: rgb(255, 0, 0);
+  border-color: rgb(200, 0, 0);
+  color: white;
 }
 
 .outerMenu {
   display: flex;
   height: 50%;
   justify-content: flex-start;
+  z-index: 10;
 }
 
 .menuButton {
@@ -216,6 +272,33 @@ input[type="range"].powerSlider {
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+/* Massé mode button active state */
+#masseButton.is-active {
+  background-color: #9b59b6;
+  border-color: #8e44ad;
+  color: white;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Massé presets dropdown */
+.massePresets {
+  padding: 6px;
+  background-color: rgba(47, 79, 79, 0.486);
+  border-radius: 5px;
+  margin: 2px 5px;
+  width: 150px;
+  border: 1px solid #666;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.massePresets option {
+  background-color: #2a2a2a;
+  color: #fff;
+}
+
 .chatarea {
   height: 70%;
   display: flex;
@@ -229,7 +312,7 @@ input[type="range"].powerSlider {
   width: 0px;
   min-width: 100%;
   overflow-y: scroll;
-  background-color: rgba(47, 79, 79, 0.486);
+  background-color: rgba(47, 79, 79);
   padding: 5px;
   margin: 2px;
   border-radius: 5px;
@@ -238,6 +321,7 @@ input[type="range"].powerSlider {
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 4px;
+  z-index: 10;
 }
 
 .chatoutput::-webkit-scrollbar {
@@ -268,19 +352,46 @@ a {
   right: 0px;
   top: 0px;
   visibility: hidden;
-  padding: 5px;
+  padding: 10px;
   border: double;
-  max-width: 50%;
+  max-width: 400px;
+  min-width: 300px;
+  max-height: 90vh;
+  overflow-y: auto;
   font-size: small;
+  z-index: 1000;
+  color: #fff;
+}
+
+.constants p {
+  color: #4CAF50;
+  margin: 5px 0;
+  font-weight: bold;
 }
 
 .nw {
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  margin: 5px 0;
+  gap: 10px;
+}
+
+.nw input[type="range"] {
+  flex: 1;
+  min-width: 120px;
 }
 
 label {
   display: inline-block;
-  width: 9ch;
+  min-width: 120px;
+  color: #ccc;
+  font-size: 13px;
+}
+
+.constants button {
+  margin-top: 10px;
+  padding: 8px 16px;
+  width: 100%;
 }
 
 
