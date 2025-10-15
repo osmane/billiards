@@ -6,6 +6,7 @@ import {
   BoxGeometry,
   MeshPhongMaterial,
   Group,
+  Color,
 } from "three"
 import { TableGeometry } from "./tablegeometry"
 import { PocketGeometry } from "./pocketgeometry"
@@ -39,6 +40,13 @@ export class TableMesh {
     opacity: 0.3,
   })
 
+  private readonly frameMaterial = new MeshPhongMaterial({
+    color: 0x8b5a2b,
+    emissive: new Color(0x2f1608),
+    emissiveIntensity: 0.2,
+    shininess: 35,
+  })
+
   generateTable(hasPockets: boolean) {
     const group = new Group()
     this.addCushions(group, hasPockets)
@@ -56,6 +64,8 @@ export class TableMesh {
           (p.pos.distanceTo(k.pos) - p.radius - k.radius)
       )
     }
+
+    this.addWoodenFrame(group)
     return group
   }
 
@@ -161,5 +171,62 @@ export class TableMesh {
     mesh.position.copy(pos)
     scene.add(mesh)
     return mesh
+  }
+
+  private addWoodenFrame(scene: Group) {
+    const visualHalfLength = TableGeometry.X
+    const visualHalfWidth = TableGeometry.Y
+
+    const cushionHeight = R * 1.25
+    const cushionThickness = R * 2.0
+    const cushionVerticalCenter = -R + cushionHeight / 2
+
+    const frameWidth = R * 2.4
+    const frameGap = R * 0.15
+    const frameHeight = cushionHeight
+    const frameElevation = cushionVerticalCenter
+
+    const innerOffsetY = visualHalfWidth + cushionThickness + frameGap
+    const innerOffsetX = visualHalfLength + cushionThickness + frameGap
+
+    const frameOuterX = innerOffsetX + frameWidth
+    const frameOuterY = innerOffsetY + frameWidth
+    const outerLength = frameOuterX * 2
+    const outerWidth = frameOuterY * 2
+
+    this.plane(
+      new Vector3(0, innerOffsetY + frameWidth / 2, frameElevation),
+      outerLength,
+      frameWidth,
+      frameHeight,
+      scene,
+      this.frameMaterial
+    )
+    this.plane(
+      new Vector3(0, -innerOffsetY - frameWidth / 2, frameElevation),
+      outerLength,
+      frameWidth,
+      frameHeight,
+      scene,
+      this.frameMaterial
+    )
+
+    this.plane(
+      new Vector3(innerOffsetX + frameWidth / 2, 0, frameElevation),
+      frameWidth,
+      outerWidth,
+      frameHeight,
+      scene,
+      this.frameMaterial
+    )
+    this.plane(
+      new Vector3(-innerOffsetX - frameWidth / 2, 0, frameElevation),
+      frameWidth,
+      outerWidth,
+      frameHeight,
+      scene,
+      this.frameMaterial
+    )
+
   }
 }

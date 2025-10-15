@@ -7,6 +7,7 @@ import {
   Mesh,
   CircleGeometry,
   MeshBasicMaterial,
+  MeshPhongMaterial,
   BoxGeometry,
   TorusGeometry
 } from "three"
@@ -56,10 +57,25 @@ export class Grid {
     const visualHalfWidth = TableGeometry.Y;
     const cushionThickness = R * 2.0;
 
-    const diamondMaterial = new MeshBasicMaterial({ color: 0xFFFF00 });
-    const diamondGeometry = new CircleGeometry(R / 4, 16);
     const cushionHeight = R * 1.25;
-    const diamondZ = -R + cushionHeight + 0.001;
+    const frameWidth = R * 2.4;
+    const frameGap = R * 0.15;
+    const frameHeight = cushionHeight;
+    const frameTopZ = -R + frameHeight;
+
+    const frameCenterOffsetY =
+      visualHalfWidth + cushionThickness + frameGap + frameWidth / 2;
+    const frameCenterOffsetX =
+      visualHalfLength + cushionThickness + frameGap + frameWidth / 2;
+
+    const diamondMaterial = new MeshPhongMaterial({
+      color: 0xf2f2f2,
+      emissive: 0x1a1a1a,
+      emissiveIntensity: 0.18,
+      shininess: 4,
+    });
+    const diamondGeometry = new CircleGeometry(R / 4, 16);
+    const diamondZ = frameTopZ + 0.001;
 
     const createDiamond = (x: number, y: number) => {
       const diamond = new Mesh(diamondGeometry, diamondMaterial);
@@ -71,7 +87,7 @@ export class Grid {
 
     // Uzun bantlar (üst ve alt) için 7 noktayı tek döngüde oluştur:
     // i, -3'ten +3'e ilerlerken [-0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75] oranlarını üretir.    
-    const yPosLong = visualHalfWidth + cushionThickness / 2;
+    const yPosLong = frameCenterOffsetY;
     for (let i = -4; i <= 4; i++) {
       const ratio = i / 4.0;
       // Taper oranını yeni sınıra göre ayarla (Math.abs(i) / 4.0)
@@ -83,7 +99,7 @@ export class Grid {
     }
 
     // Kısa bantlar (sağ ve sol)
-    const xPosShort = visualHalfLength + cushionThickness / 2;
+    const xPosShort = frameCenterOffsetX;
     for (let i = -2; i <= 2; i++) {
       const ratio = i / 2.0;
       // Taper oranını yeni sınıra göre ayarla (Math.abs(i) / 2.0)

@@ -1,9 +1,14 @@
 import { R } from "../model/physics/constants"
 import {
+  Group,
   Matrix4,
   Mesh,
   CylinderGeometry,
   MeshPhongMaterial,
+  CanvasTexture,
+  RepeatWrapping,
+  LinearFilter,
+  Color,
   Vector3,
   ShaderMaterial,
   DoubleSide,
@@ -12,11 +17,25 @@ import {
 
 export class CueMesh {
   static mesh: Mesh
-
-  private static readonly material = new MeshPhongMaterial({
-    color: 0x885577,
-    wireframe: false,
-    flatShading: false,
+  private static woodTexture: CanvasTexture | null = null
+  private static readonly material = CueMesh.createCueMaterial()
+  private static readonly ferruleMaterial = new MeshPhongMaterial({
+    color: 0xf3f1ec,
+    emissive: new Color(0x2a2a2a),
+    emissiveIntensity: 0.35,
+    transparent: true,
+    opacity: 0.7,
+    depthWrite: false,
+    shininess: 60,
+  })
+  private static readonly tipMaterial = new MeshPhongMaterial({
+    color: 0x6fa6d8,
+    emissive: new Color(0x1a2b3f),
+    emissiveIntensity: 0.6,
+    transparent: true,
+    opacity: 0.75,
+    depthWrite: false,
+    shininess: 80,
   })
 
   static readonly placermaterial = new MeshPhongMaterial({
@@ -48,15 +67,48 @@ export class CueMesh {
   }
 
   static createCue(tip, but, length) {
-    const geometry = new CylinderGeometry(tip, but, length, 11)
-    const mesh = new Mesh(geometry, CueMesh.material)
-    mesh.castShadow = false
+    const cueGroup = new Group()
+    cueGroup.name = "cueShaft"
 
-    // Translate along NEGATIVE Y so one end is at origin and extends downward
-    // This matches the virtual cue approach - cue extends from (0,0,0) to (0, -length, 0)
-    geometry.translate(0, -length / 2, 0)
+    const ferruleHeight = tip * 2.2
+    const shaftLength = Math.max(length - ferruleHeight, tip * 8)
 
-    return mesh
+    const shaftGeometry = new CylinderGeometry(tip, but, shaftLength, 24)
+    shaftGeometry.translate(0, -(shaftLength / 2 + ferruleHeight), 0)
+    const shaftMesh = new Mesh(shaftGeometry, CueMesh.material)
+    shaftMesh.castShadow = false
+    cueGroup.add(shaftMesh)
+
+    const ferruleRadiusTop = tip * 1.08
+    const ferruleRadiusBottom = tip * 1.18
+    const ferruleGeometry = new CylinderGeometry(
+      ferruleRadiusTop,
+      ferruleRadiusBottom,
+      ferruleHeight,
+      24
+    )
+    const ferruleMesh = new Mesh(ferruleGeometry, CueMesh.ferruleMaterial)
+    ferruleMesh.position.y = -ferruleHeight / 2
+    ferruleMesh.castShadow = false
+    cueGroup.add(ferruleMesh)
+
+    const tipRadius = ferruleRadiusTop * 0.98
+    const tipGeometry = new SphereGeometry(
+      tipRadius,
+      24,
+      16,
+      0,
+      Math.PI * 2,
+      0,
+      Math.PI / 2
+    )
+    tipGeometry.translate(0, -tipRadius, 0)
+    const tipMesh = new Mesh(tipGeometry, CueMesh.tipMaterial)
+    tipMesh.castShadow = false
+    tipMesh.renderOrder = 2
+    cueGroup.add(tipMesh)
+
+    return cueGroup
   }
 
   static createHitPoint() {
@@ -164,5 +216,59 @@ export class CueMesh {
     console.log('  - Length/R ratio:', (virtualCueLength / R).toFixed(2))
 
     return mesh
+  }
+
+  private static createCueMaterial(): MeshPhongMaterial {
+    const material = new MeshPhongMaterial({
+      color: 0xffffff,
+      map: CueMesh.getWoodTexture(),
+      transparent: true,
+      opacity: 0.65,
+      depthWrite: false,
+      shininess: 30,
+      emissive: new Color(0x4a2816),
+      emissiveIntensity: 0.6,
+    })
+    material.needsUpdate = true
+    return material
+  }
+
+  private static getWoodTexture(): CanvasTexture {
+    if (!CueMesh.woodTexture) {
+      const canvas = document.createElement("canvas")
+      canvas.width = 512
+      canvas.height = 32
+      const ctx = canvas.getContext("2d")
+      if (!ctx) {
+        throw new Error("Unable to create canvas context for cue texture")
+      }
+
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0)
+      gradient.addColorStop(0, "#8b5a2b")
+      gradient.addColorStop(0.25, "#a4703a")
+      gradient.addColorStop(0.5, "#c58b4b")
+      gradient.addColorStop(0.75, "#a4703a")
+      gradient.addColorStop(1, "#8b5a2b")
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      const stripeCount = 40
+      for (let i = 0; i < stripeCount; i++) {
+        const stripeWidth = 4 + Math.random() * 16
+        const stripeX = Math.random() * canvas.width
+        const alpha = 0.04 + Math.random() * 0.05
+        ctx.fillStyle = `rgba(60, 30, 15, ${alpha.toFixed(3)})`
+        ctx.fillRect(stripeX, 0, stripeWidth, canvas.height)
+      }
+
+      CueMesh.woodTexture = new CanvasTexture(canvas)
+      CueMesh.woodTexture.wrapS = RepeatWrapping
+      CueMesh.woodTexture.wrapT = RepeatWrapping
+      CueMesh.woodTexture.magFilter = LinearFilter
+      CueMesh.woodTexture.minFilter = LinearFilter
+      CueMesh.woodTexture.repeat.set(6, 1)
+      CueMesh.woodTexture.needsUpdate = true
+    }
+    return CueMesh.woodTexture
   }
 }
