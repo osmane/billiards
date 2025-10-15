@@ -514,6 +514,28 @@ export class Cue {
     const spacing = Math.max(ghostRadius * 2 + gapDistance, 1e-6)
     const positions = this.computeGhostBallPositions(effectivePoints, spacing)
 
+    if (effectiveImpact && effectivePoints.length > 0) {
+      const impactPoint = effectivePoints[effectivePoints.length - 1]
+      const lastPosition = positions[positions.length - 1]
+      const impactAlreadyIncluded =
+        lastPosition && lastPosition.distanceTo(impactPoint) <= 1e-4
+
+      if (!impactAlreadyIncluded) {
+        positions.push(impactPoint.clone())
+      }
+
+      if (positions.length >= 2) {
+        const impactIndex = positions.length - 1
+        const previousIndex = impactIndex - 1
+        const previousPosition = positions[previousIndex]
+        const distance = previousPosition.distanceTo(positions[impactIndex])
+        const minSeparation = 2 * ghostRadius - 1e-6
+        if (distance < minSeparation) {
+          positions.splice(previousIndex, 1)
+        }
+      }
+    }
+
     if (positions.length === 0) {
       this.hideHelperGhostBalls()
       return
