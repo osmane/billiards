@@ -582,27 +582,5 @@ export class Cue {
     this.container?.updateTrajectoryPrediction()
     return this.masseMode
   }
-
-  setMassePreset(angleDegrees: number, direction: 'left' | 'right') {
-    this.masseMode = true
-    const angleRad = (angleDegrees * Math.PI) / 180
-    const normalizedAngle = angleRad / (Math.PI / 2)
-    const offsetY = normalizedAngle * 0.75
-    const offsetX = direction === 'right' ? 0.5 : -0.5
-
-    this.aim.offset.set(offsetX, offsetY, 0)
-    if (this.aim.offset.length() > this.offCenterLimitMasse) {
-      this.aim.offset.normalize().multiplyScalar(this.offCenterLimitMasse)
-    }
-
-    this.elevation = angleRad
-    this.aim.power = this.maxPower * 0.35
-
-    // Show helper when preset is selected
-    this.showHelper(true)
-
-    this.updateAimInput()
-    this.container?.updateTrajectoryPrediction()
-  }
 }
 

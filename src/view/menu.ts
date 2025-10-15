@@ -11,7 +11,6 @@ export class Menu {
   replay: HTMLButtonElement
   camera: HTMLButtonElement
   masseButton: HTMLButtonElement
-  massePresets: HTMLSelectElement
 
   disabled = true
 
@@ -24,12 +23,6 @@ export class Menu {
     this.camera = this.getElement("camera")
     this.masseButton = this.getElement("masseButton")
 
-    const massePresetsEl = document.getElementById("massePresets")
-    if (!(massePresetsEl instanceof HTMLSelectElement)) {
-      throw new Error("Masse presets dropdown element with id 'massePresets' not found or is not a select element.")
-    }
-    this.massePresets = massePresetsEl
-
     if (this.camera) {
       this.setMenu(true)
       this.camera.onclick = (_) => {
@@ -37,26 +30,11 @@ export class Menu {
       }
     }
 
-    // Setup massé button
+    // Setup masse button
     if (this.masseButton) {
       this.masseButton.onclick = (_) => {
         this.toggleMasseMode()
       }
-    }
-
-    // Setup massé preset dropdown
-    if (this.massePresets) {
-      this.massePresets.addEventListener('change', (e) => {
-        const target = e.target as HTMLSelectElement
-        const value = target.value
-        if (value) {
-          const [angleStr, direction] = value.split('-')
-          const angle = parseInt(angleStr)
-          this.setMassePreset(angle, direction as 'left' | 'right')
-          // Reset dropdown to default option
-          target.selectedIndex = 0
-        }
-      })
     }
   }
 
@@ -112,17 +90,10 @@ export class Menu {
     // Update button visual state
     if (isActive) {
       this.masseButton.classList.add('is-active')
-      this.massePresets.style.display = 'block'
     } else {
       this.masseButton.classList.remove('is-active')
-      this.massePresets.style.display = 'none'
     }
 
-    this.container.lastEventTime = performance.now()
-  }
-
-  setMassePreset(angle: number, direction: 'left' | 'right') {
-    this.container.table.cue.setMassePreset(angle, direction)
     this.container.lastEventTime = performance.now()
   }
 }
