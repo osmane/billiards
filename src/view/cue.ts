@@ -11,7 +11,6 @@ import { R } from "../model/physics/constants"
 
 export class Cue {
   mesh: Mesh
-  helperMesh: Mesh
   placerMesh: Mesh
   hitPointMesh: Mesh  // 3D visualization of hit point on cue ball
   virtualCueMesh: Mesh  // Virtual cue stick showing exact hit direction and angle
@@ -19,6 +18,7 @@ export class Cue {
   private helperGhostBalls: Mesh[] = []
   private helperGhostMaterial?: Material | Material[]
   private helperGhostSourceGeometryId?: string
+  private helperVisible = false
   private readonly helperGhostScale = 1
   private readonly helperGhostGapDiameterMultiplier = 2 // Gap between surfaces equals two diameters
   private lastHelperPoints: Vector3[] | null = null
@@ -43,22 +43,17 @@ export class Cue {
       (R * 0.15) / 0.5,
       this.length
     )
-    this.helperMesh = CueMesh.createHelper()
     this.placerMesh = CueMesh.createPlacer()
     this.hitPointMesh = CueMesh.createHitPoint()
     this.virtualCueMesh = CueMesh.createVirtualCue()
     this.helperGhostGroup = new Group()
     this.helperGhostGroup.visible = false
     this.helperGhostGroup.name = "helperGhostBalls"
-    this.helperGhostGroup.renderOrder = this.helperMesh.renderOrder + 1
+    this.helperGhostGroup.renderOrder = 0
   }
 
   rotateAim(angle, table: Table) {
     this.aim.angle = this.aim.angle + angle
-    // Only update helper rotation if using straight cylinder (not curved tube)
-    if (!this.masseMode) {
-      this.helperMesh.rotation.z = this.aim.angle
-    }
     this.aimInputs.showOverlap()
     this.avoidCueTouchingOtherBall(table)
     this.container?.updateTrajectoryPrediction()
@@ -184,12 +179,6 @@ export class Cue {
     quaternion.setFromUnitVectors(negativeYAxis, cueDirection3D)
     this.mesh.setRotationFromQuaternion(quaternion)
 
-    // Only update helper position/rotation if using straight cylinder (not curved tube)
-    if (!this.masseMode) {
-      this.helperMesh.position.copy(pos)
-      this.helperMesh.rotation.z = this.aim.angle
-    }
-
     this.placerMesh.position.copy(pos)
     this.placerMesh.rotation.z = this.t
 
@@ -289,9 +278,9 @@ export class Cue {
     return intersections.length > 0
   }
 
-  showHelper(b) {
-    this.helperMesh.visible = b
-    if (!b) {
+  showHelper(visible: boolean) {
+    this.helperVisible = visible
+    if (!visible) {
       this.hideHelperGhostBalls()
       return
     }
@@ -299,7 +288,7 @@ export class Cue {
   }
 
   toggleHelper() {
-    this.showHelper(!this.helperMesh.visible)
+    this.showHelper(!this.helperVisible)
   }
 
   updateHelperCurve(trajectoryPoints: Vector3[] | null, hasImpact = false) {
@@ -307,18 +296,9 @@ export class Cue {
       ? trajectoryPoints.map((p) => p.clone())
       : null
     this.lastHelperHasImpact = hasImpact
-    if (this.masseMode && trajectoryPoints && trajectoryPoints.length > 2) {
-      // Update helper to follow curved trajectory
-      CueMesh.updateHelperGeometry(this.helperMesh, trajectoryPoints)
-      // Reset position/rotation for tube geometry (it's already positioned by points)
-      this.helperMesh.position.set(0, 0, 0)
-      this.helperMesh.rotation.set(0, 0, 0)
-    } else {
-      // Revert to straight helper
-      CueMesh.updateHelperGeometry(this.helperMesh, null)
-      // Restore normal position/rotation for straight helper
-      this.helperMesh.position.copy(this.aim.pos)
-      this.helperMesh.rotation.z = this.aim.angle
+    if (!this.helperVisible) {
+      this.hideHelperGhostBalls()
+      return
     }
     this.updateHelperGhostBalls(this.lastHelperPoints, hasImpact)
   }
@@ -499,7 +479,7 @@ export class Cue {
     trajectoryPoints: Vector3[] | null,
     hasImpact: boolean
   ) {
-    if (!this.helperMesh.visible) {
+    if (!this.helperVisible) {
       this.hideHelperGhostBalls()
       return
     }
@@ -592,11 +572,11 @@ export class Cue {
         this.aim.offset.copy(offset)
       }
       this.elevation = this.defaultElevation
-      // Reset to straight helper
+      // Reset helper visualization
       this.updateHelperCurve(null)
     } else {
       // Show helper when entering massé mode
-      this.helperMesh.visible = true
+      this.showHelper(true)
     }
     this.updateAimInput()
     this.container?.updateTrajectoryPrediction()
@@ -619,7 +599,7 @@ export class Cue {
     this.aim.power = this.maxPower * 0.35
 
     // Show helper when preset is selected
-    this.helperMesh.visible = true
+    this.showHelper(true)
 
     this.updateAimInput()
     this.container?.updateTrajectoryPrediction()
