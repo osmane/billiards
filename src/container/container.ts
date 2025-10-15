@@ -358,7 +358,10 @@ export class Container {
           const hasImpact =
             cueBallTrajectory.firstImpactIndex !== undefined ||
             (firstImpactDistance !== undefined && firstImpactDistance < impactThreshold)
-          this.table.cue.updateHelperCurve(helperPoints, hasImpact)
+          const hasBallImpact = predictions.some((p) =>
+            p.ballId !== cueBallId && p.firstImpactIndex !== undefined
+          )
+          this.table.cue.updateHelperCurve(helperPoints, hasImpact, hasBallImpact)
         } else {
           this.table.cue.updateHelperCurve(null)
         }
@@ -380,3 +383,4 @@ export class Container {
     }
   }
 }
+

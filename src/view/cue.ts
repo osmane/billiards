@@ -7,14 +7,16 @@ import { Ball, State } from "../model/ball"
 import { cueToSpin } from "../model/physics/physics"
 import { CueMesh } from "./cuemesh"
 import {
+  AdditiveBlending,
+  Color,
   DoubleSide,
   Group,
   Material,
   Mesh,
-  MeshBasicMaterial,
+  PlaneGeometry,
   Quaternion,
   Raycaster,
-  RingGeometry,
+  ShaderMaterial,
   Vector3,
 } from "three"
 import { R } from "../model/physics/constants"
@@ -26,7 +28,7 @@ export class Cue {
   virtualCueMesh: Mesh  // Virtual cue stick showing exact hit direction and angle
   helperGhostGroup: Group
   private helperGhostBalls: Mesh[] = []
-  private helperImpactRing: Mesh | null = null
+  private helperImpactRing: Group | null = null
   private helperGhostMaterial?: Material | Material[]
   private helperGhostSourceGeometryId?: string
   private helperVisible = false
@@ -34,6 +36,7 @@ export class Cue {
   private readonly helperGhostGapDiameterMultiplier = 2 // Gap between surfaces equals two diameters
   private lastHelperPoints: Vector3[] | null = null
   private lastHelperHasImpact = false
+  private lastHelperImpactIsBall = false
   readonly offCenterLimitMasse = 0.8  // Increased limit for masse shots
   readonly maxPower = 160 * R
   readonly defaultElevation = 0.17  // Default cue elevation (radians)
@@ -300,23 +303,24 @@ export class Cue {
       this.hideHelperGhostBalls()
       return
     }
-    this.updateHelperGhostBalls(this.lastHelperPoints, this.lastHelperHasImpact)
+    this.updateHelperGhostBalls(this.lastHelperPoints, this.lastHelperHasImpact, this.lastHelperImpactIsBall)
   }
 
   toggleHelper() {
     this.showHelper(!this.helperVisible)
   }
 
-  updateHelperCurve(trajectoryPoints: Vector3[] | null, hasImpact = false) {
+  updateHelperCurve(trajectoryPoints: Vector3[] | null, hasImpact = false, impactIsBall = false) {
     this.lastHelperPoints = trajectoryPoints
       ? trajectoryPoints.map((p) => p.clone())
       : null
     this.lastHelperHasImpact = hasImpact
+    this.lastHelperImpactIsBall = impactIsBall
     if (!this.helperVisible) {
       this.hideHelperGhostBalls()
       return
     }
-    this.updateHelperGhostBalls(this.lastHelperPoints, hasImpact)
+    this.updateHelperGhostBalls(this.lastHelperPoints, hasImpact, impactIsBall)
   }
 
   private disposeHelperGhostResources() {
@@ -327,13 +331,18 @@ export class Cue {
     this.helperGhostBalls = []
 
     if (this.helperImpactRing) {
-      this.helperImpactRing.geometry.dispose()
-      const material = this.helperImpactRing.material
-      if (Array.isArray(material)) {
-        material.forEach((mat) => mat.dispose())
-      } else {
-        material.dispose()
-      }
+      this.helperImpactRing.traverse((child) => {
+        const mesh = child as Mesh
+        if (mesh.isMesh) {
+          mesh.geometry?.dispose()
+          const meshMaterial = mesh.material
+          if (Array.isArray(meshMaterial)) {
+            meshMaterial.forEach((mat) => mat.dispose())
+          } else {
+            meshMaterial?.dispose()
+          }
+        }
+      })
       this.helperGhostGroup.remove(this.helperImpactRing)
       this.helperImpactRing = null
     }
@@ -443,28 +452,95 @@ export class Cue {
 
   private ensureImpactRing(ghostRadius: number) {
     if (!this.helperImpactRing) {
-      const geometry = new RingGeometry(0.98, 1, 128)
-      const material = new MeshBasicMaterial({
-        color: 0xff3030,
+      const indicatorGroup = new Group()
+      const renderOrder = this.helperGhostGroup.renderOrder + 1000
+
+      const indicatorMaterial = new ShaderMaterial({
+        uniforms: {
+          baseColor: { value: new Color(0x4cff7a) },
+          glowStrength: { value: 0.75 },
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          varying vec2 vUv;
+          uniform vec3 baseColor;
+          uniform float glowStrength;
+
+          void main() {
+            vec2 centered = vUv - 0.5;
+            float dist = length(centered);
+
+            float outerRadius = 0.48;
+            float innerRadius = 0.36;
+            float crossLength = 0.28;
+            float crossWidth = 0.055;
+            float centerRadius = 0.08;
+            float aa = 0.02;
+
+            float ringOuter = 1.0 - smoothstep(outerRadius, outerRadius + aa, dist);
+            float ringInner = smoothstep(innerRadius - aa, innerRadius, dist);
+            float ringMask = clamp(ringOuter * ringInner, 0.0, 1.0);
+
+            float verticalCore = 1.0 - smoothstep(crossWidth, crossWidth + aa, abs(centered.x));
+            float verticalCap = 1.0 - smoothstep(crossLength, crossLength + aa, abs(centered.y));
+            float vertical = verticalCore * verticalCap;
+
+            float horizontalCore = 1.0 - smoothstep(crossWidth, crossWidth + aa, abs(centered.y));
+            float horizontalCap = 1.0 - smoothstep(crossLength, crossLength + aa, abs(centered.x));
+            float horizontal = horizontalCore * horizontalCap;
+
+            float crossMask = clamp(vertical + horizontal, 0.0, 1.0);
+            float center = 1.0 - smoothstep(centerRadius, centerRadius + aa, dist);
+
+            float baseShape = max(ringMask, max(crossMask, center));
+
+            float normalized = clamp(dist / max(outerRadius, 0.0001), 0.0, 1.0);
+            float innerGlow = pow(1.0 - normalized, 2.5);
+            float rimGlow = smoothstep(0.6, 1.0, normalized);
+            float glow = glowStrength * (innerGlow * 0.6 + rimGlow * 0.8);
+
+            float alpha = clamp(baseShape + glow * 0.35, 0.0, 1.0);
+            if (alpha <= 0.01) discard;
+
+            vec3 color = baseColor * (1.0 + glow);
+            gl_FragColor = vec4(color, alpha);
+          }
+        `,
         transparent: true,
-        opacity: 0.5,
-        side: DoubleSide,
-        depthWrite: false,
         depthTest: false,
+        depthWrite: false,
+        blending: AdditiveBlending,
+        side: DoubleSide,
       })
-      const ring = new Mesh(geometry, material)
-      ring.visible = false
-      ring.name = "helperImpactRing"
-      ring.renderOrder = this.helperGhostGroup.renderOrder + 1000
-      ring.onBeforeRender = (_renderer, _scene, camera) => {
-        ring.quaternion.copy(camera.quaternion)
+
+      const indicatorMesh = new Mesh(new PlaneGeometry(1.9, 1.9), indicatorMaterial)
+      indicatorMesh.name = "helperImpactTarget"
+      indicatorMesh.renderOrder = renderOrder + 1
+      indicatorMesh.frustumCulled = false
+      indicatorMesh.onBeforeRender = (_renderer, _scene, camera) => {
+        indicatorMesh.quaternion.copy(camera.quaternion)
       }
-      this.helperGhostGroup.add(ring)
-      this.helperImpactRing = ring
+
+      indicatorGroup.name = "helperImpactIndicator"
+      indicatorGroup.renderOrder = renderOrder
+      indicatorGroup.visible = false
+      indicatorGroup.onBeforeRender = (_renderer, _scene, camera) => {
+        indicatorGroup.quaternion.copy(camera.quaternion)
+      }
+      indicatorGroup.add(indicatorMesh)
+
+      this.helperGhostGroup.add(indicatorGroup)
+      this.helperImpactRing = indicatorGroup
     }
 
     if (this.helperImpactRing) {
-      const ringScale = ghostRadius * 1.02
+      const ringScale = ghostRadius
       this.helperImpactRing.scale.setScalar(ringScale)
     }
   }
@@ -536,8 +612,10 @@ export class Cue {
 
   private updateHelperGhostBalls(
     trajectoryPoints: Vector3[] | null,
-    hasImpact: boolean
+    hasImpact: boolean,
+    impactIsBall: boolean
   ) {
+
     if (!this.helperVisible) {
       this.hideHelperGhostBalls()
       return
@@ -545,15 +623,16 @@ export class Cue {
 
     let effectivePoints = trajectoryPoints
     let effectiveImpact = hasImpact
+    let effectiveBallImpact = impactIsBall
 
     if (!effectivePoints || effectivePoints.length < 2) {
       effectivePoints = this.generateStraightHelperPoints()
       effectiveImpact = false
+      effectiveBallImpact = false
     }
 
-    if (!effectivePoints || effectivePoints.length < 2) {
-      this.hideHelperGhostBalls()
-      return
+    if (!effectiveImpact) {
+      effectiveBallImpact = false
     }
 
     if (!this.ensureHelperGhostResources()) {
@@ -588,8 +667,10 @@ export class Cue {
           positions.splice(previousIndex, 1)
         }
       }
-      if (positions.length > 0) {
+      if (positions.length > 0 && effectiveBallImpact) {
         impactRingPosition = positions[positions.length - 1]
+      } else {
+        impactRingPosition = null
       }
     }
 
@@ -657,12 +738,41 @@ export class Cue {
       }
     })
 
-    if (this.helperImpactRing) {
-      this.helperImpactRing.renderOrder =
-        baseOrder + visibleBalls.length + 1000
+    const impactVisual = this.helperImpactRing
+    if (impactVisual) {
+      impactVisual.renderOrder = baseOrder + visibleBalls.length + 1000
+      impactVisual.traverse((child) => {
+        const mesh = child as Mesh
+        if (mesh.isMesh) {
+          mesh.renderOrder = impactVisual.renderOrder + 1
+        }
+      })
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

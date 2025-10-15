@@ -189,17 +189,18 @@ export class ScoreButtons {
       document.getElementById("scoreHighlightRight")
     ]
 
-    const targetButton = document.getElementById("targetButton")
+    const targetButton = document.getElementById("targetButton") as HTMLButtonElement | null
+    const targetPlaceholder = document.getElementById("targetButtonPlaceholder")
 
     // Show/hide based on game mode
-    scoreButtons.forEach((button, index) => {
+    scoreButtons.forEach((button) => {
       if (button) {
         const display = isThreeCushionMode ? "block" : "none"
         button.style.display = display
       }
     })
 
-    highlightBoxes.forEach((box, index) => {
+    highlightBoxes.forEach((box) => {
       if (box) {
         box.style.display = "none" // Always start hidden, will be shown by toggle if needed
         // But remove from flow in non-3cushion modes
@@ -211,29 +212,82 @@ export class ScoreButtons {
       }
     })
 
-    // Show/hide target button based on game mode
+    const applyPlaceholderState = (visible: boolean) => {
+      if (!targetPlaceholder) {
+        return
+      }
+      if (visible) {
+        targetPlaceholder.classList.add("is-active")
+        targetPlaceholder.style.display = "none"
+        targetPlaceholder.style.visibility = "hidden"
+      } else {
+        targetPlaceholder.classList.remove("is-active")
+        targetPlaceholder.style.display = "inline-block"
+        targetPlaceholder.style.visibility = "visible"
+      }
+    }
+
     if (targetButton) {
-      targetButton.style.display = "block"
+      if (!targetButton.dataset.toggleSetup) {
+        const setVisible = (visible: boolean, triggerUpdate: boolean) => {
+          targetButton.dataset.visible = visible ? "true" : "false"
+          targetButton.style.display = visible ? "inline-block" : "none"
+          targetButton.classList.toggle("is-active", visible)
+          applyPlaceholderState(visible)
 
-      // Add toggle functionality - only add listener once
-      if (!targetButton.dataset.listenerAdded) {
-        targetButton.addEventListener("click", () => {
-          targetButton.classList.toggle("is-active")
-
-          // Force immediate trajectory update when toggle state changes
-          if (this.container && this.container.updateTrajectoryPrediction) {
-            // Clear trajectories first to ensure clean state
-            if (this.container.trajectoryRenderer) {
-              this.container.trajectoryRenderer.clearTrajectories()
+          if (visible) {
+            if (triggerUpdate) {
+              this.container?.updateTrajectoryPrediction()
             }
+          } else {
+            this.container?.trajectoryRenderer?.setVisible(false)
+            this.container?.trajectoryRenderer?.clearTrajectories()
+            this.container?.table?.cue.updateHelperCurve(null)
+          }
+        }
 
-            // Then trigger update which will calculate and show if button is pressed,
-            // or keep hidden if button is unpressed
-            this.container.updateTrajectoryPrediction()
+        let lastDoubleClickTime = 0
+        let doubleClickCount = 0
+        const maxInterval = 500
+
+        const handleToggle = (visible?: boolean, triggerUpdate = true) => {
+          const nextState =
+            typeof visible === "boolean" ? visible : targetButton.style.display === "none"
+          setVisible(nextState, triggerUpdate)
+          doubleClickCount = 0
+          lastDoubleClickTime = 0
+        }
+
+        targetPlaceholder?.addEventListener("dblclick", () => {
+          const now = performance.now()
+          if (now - lastDoubleClickTime <= maxInterval) {
+            doubleClickCount += 1
+          } else {
+            doubleClickCount = 1
+          }
+          lastDoubleClickTime = now
+
+          if (doubleClickCount >= 2) {
+            handleToggle(true)
           }
         })
-        targetButton.dataset.listenerAdded = "true"
+
+        targetButton.addEventListener("click", () => {
+          handleToggle(false, false)
+        })
+
+        setVisible(false, false)
+        targetButton.dataset.toggleSetup = "true"
+      } else {
+        const isVisible = targetButton.dataset.visible === "true"
+        targetButton.style.display = isVisible ? "inline-block" : "none"
+        targetButton.classList.toggle("is-active", isVisible)
+        applyPlaceholderState(isVisible)
       }
+    } else if (targetPlaceholder) {
+      targetPlaceholder.style.display = "inline-block"
+      targetPlaceholder.style.visibility = "visible"
+      targetPlaceholder.classList.remove("is-active")
     }
   }
 
@@ -246,3 +300,5 @@ export class ScoreButtons {
     element.setAttribute("aria-label", `${label}: ${score}`)
   }
 }
+
+
