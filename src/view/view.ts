@@ -42,6 +42,7 @@ export class View {
   private currentLighting: LightingConfig = { ...DEFAULT_LIGHTING }
   private orbitGuide: LineLoop | null = null
   private orbitGuideSegments = 96
+  private debugModeActive = false
   private lightConfigSubscription?: () => void
   constructor(element, table, assets) {
     this.element = element
@@ -96,6 +97,11 @@ export class View {
     cam.camera.updateProjectionMatrix()
     this.updateOrbitGuideVisibility()
     this.renderer?.render(this.scene, cam.camera)
+  }
+
+  setDebugMode(enabled: boolean) {
+    this.debugModeActive = enabled
+    this.updateOrbitGuideVisibility()
   }
 
   private initialiseScene() {
@@ -257,25 +263,7 @@ export class View {
     if (!this.orbitGuide) {
       return
     }
-    this.orbitGuide.visible = this.isDebugPanelVisible()
-  }
-
-  private isDebugPanelVisible() {
-    if (typeof document === "undefined") {
-      return false
-    }
-    const panel = document.getElementById("constants") as HTMLElement | null
-    if (!panel) {
-      return false
-    }
-    if (panel.offsetParent !== null) {
-      return true
-    }
-    if (typeof window === "undefined") {
-      return false
-    }
-    const style = window.getComputedStyle(panel)
-    return style.display !== "none" && style.visibility !== "hidden" && style.opacity !== "0"
+    this.orbitGuide.visible = this.debugModeActive
   }
 
   private updateLightTargetFromTable() {

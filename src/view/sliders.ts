@@ -30,15 +30,17 @@ import {
 } from "../model/physics/constants"
 
 export class Sliders {
-  style
+  private element: HTMLElement | null
+  private visible: boolean
   notify
   container: any
 
   constructor(notify?, container?) {
     this.notify = notify ?? (() => {})
     this.container = container
-    this.style =
-      (document.getElementById("constants") as HTMLElement)?.style ?? {}
+    this.element = document.getElementById("constants") as HTMLElement | null
+    this.visible = this.computeInitialVisibility()
+    this.applyVisibility()
 
     this.initialiseSlider("R", R, setR)
     this.initialiseSlider("m", m, setm)
@@ -59,9 +61,44 @@ export class Sliders {
   }
 
   toggleVisibility() {
-    const newVisibility = this.style.visibility === "visible" ? "hidden" : "visible"
-    this.style.visibility = newVisibility
-    console.log(`Constants panel visibility: ${newVisibility}`)
+    this.setVisible(!this.visible)
+  }
+
+  setVisible(show: boolean) {
+    if (this.visible === show) {
+      return
+    }
+    this.visible = show
+    this.applyVisibility()
+  }
+
+  isVisible() {
+    return this.visible
+  }
+
+  private applyVisibility() {
+    if (!this.element) {
+      return
+    }
+    this.element.style.visibility = this.visible ? "visible" : "hidden"
+  }
+
+  private computeInitialVisibility(): boolean {
+    if (!this.element) {
+      return false
+    }
+    if (this.element.style.visibility) {
+      return this.element.style.visibility !== "hidden"
+    }
+    if (typeof window !== "undefined" && window.getComputedStyle) {
+      const computed = window.getComputedStyle(this.element)
+      return (
+        computed.visibility !== "hidden" &&
+        computed.display !== "none" &&
+        computed.opacity !== "0"
+      )
+    }
+    return false
   }
 
   getInputElement(id) {

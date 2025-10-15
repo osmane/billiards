@@ -82,9 +82,7 @@ export abstract class ControllerBase extends Controller {
   }
 
   private togglePanel() {
-    this.container.sliders.toggleVisibility()
-    this.container.table.showSpin(true)
-    this.container.table.showTraces(true)
+    this.container.toggleDebugMode()
   }
 
   private toggleFullscreen() {

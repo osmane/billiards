@@ -57,6 +57,7 @@ export class Container {
   clothPanel?: ClothPanel
   frame: (timestamp: number) => void
   private wasMoving = false
+  private debugModeEnabled = false
 
   last = performance.now()
   readonly step = 0.001953125 * 1
@@ -80,6 +81,10 @@ export class Container {
     this.sound = assets.sound
     this.chat = new Chat(this.sendChat, this)
     this.sliders = new Sliders(undefined, this)
+    this.debugModeEnabled = this.sliders.isVisible()
+    this.view.setDebugMode(this.debugModeEnabled)
+    this.table.showSpin(this.debugModeEnabled)
+    this.table.showTraces(this.debugModeEnabled)
     this.recorder = new Recorder(this)
     this.id = id
     this.menu = new Menu(this)
@@ -134,6 +139,25 @@ export class Container {
       this.updateTrajectoryPrediction()
     }
     this.sound.processOutcomes(this.table.outcome)
+  }
+
+  toggleDebugMode() {
+    this.setDebugMode(!this.debugModeEnabled)
+  }
+
+  setDebugMode(enabled: boolean) {
+    if (this.debugModeEnabled === enabled) {
+      return
+    }
+    this.debugModeEnabled = enabled
+    this.sliders.setVisible(enabled)
+    this.table.showSpin(enabled)
+    this.table.showTraces(enabled)
+    this.view.setDebugMode(enabled)
+  }
+
+  isDebugModeEnabled() {
+    return this.debugModeEnabled
   }
 
   processEvents() {
