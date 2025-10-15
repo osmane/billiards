@@ -353,6 +353,6 @@ export class TrajectoryPredictor {
 
   // Helper method to check if prediction should be enabled
   static shouldPredict(container: any): boolean {
-    return container?.rules?.rulename === "threecushion"
+    return !!container?.table && !!container?.table?.cueball
   }
 }

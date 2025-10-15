@@ -213,7 +213,7 @@ export class ScoreButtons {
 
     // Show/hide target button based on game mode
     if (targetButton) {
-      targetButton.style.display = isThreeCushionMode ? "block" : "none"
+      targetButton.style.display = "block"
 
       // Add toggle functionality - only add listener once
       if (!targetButton.dataset.listenerAdded) {
