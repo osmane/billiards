@@ -65,8 +65,14 @@ export class Cue {
     this.container?.updateTrajectoryPrediction()
   }
 
-  setPower(value: number) {
-    this.aim.power = value * this.maxPower
+  setPower(value: number | string) {
+    const numericValue =
+      typeof value === "number" ? value : parseFloat(value)
+    if (!Number.isFinite(numericValue)) {
+      return
+    }
+    const clamped = Math.max(0, numericValue)
+    this.aim.power = clamped * this.maxPower
     this.container?.updateTrajectoryPrediction()
   }
 

@@ -15,6 +15,7 @@ export class Aim extends ControllerBase {
     table.cue.aimMode()
     table.cue.showHelper(true)
     table.cueball = this.container.rules.cueball
+    table.cue.aim.i = table.balls.indexOf(table.cueball)
     table.cue.moveTo(table.cueball.pos)
     this.container.view.camera.suggestMode(this.container.view.camera.aimView)
     table.cue.aimInputs.showOverlap()
@@ -29,6 +30,8 @@ export class Aim extends ControllerBase {
       this.container.scoreButtons.updateGameModeVisibility()
       this.container.scoreButtons.reinitializeEventHandlers()
     }, 100)
+
+    this.container.updateTrajectoryPrediction()
   }
 
   override handleInput(input: Input): Controller {

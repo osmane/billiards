@@ -56,6 +56,7 @@ export class AimInputs {
 
     this.initializeCanvas()
     this.addListeners()
+    this.initializePower()
   }
 
   initializeCanvas() {
@@ -441,5 +442,14 @@ export class AimInputs {
       this.container.lastEventTime = performance.now()
       this.container.updateTrajectoryPrediction()
     }
+  }
+
+  private initializePower() {
+    if (!this.cuePowerElement) {
+      return
+    }
+    const initialValue = parseFloat(this.cuePowerElement.value)
+    const normalizedPower = Number.isFinite(initialValue) ? initialValue : 0
+    this.container.table.cue.setPower(normalizedPower)
   }
 }
