@@ -6,7 +6,17 @@ import { AimInputs } from "./aiminputs"
 import { Ball, State } from "../model/ball"
 import { cueToSpin } from "../model/physics/physics"
 import { CueMesh } from "./cuemesh"
-import { Group, Material, Mesh, Quaternion, Raycaster, Vector3 } from "three"
+import {
+  DoubleSide,
+  Group,
+  Material,
+  Mesh,
+  MeshBasicMaterial,
+  Quaternion,
+  Raycaster,
+  RingGeometry,
+  Vector3,
+} from "three"
 import { R } from "../model/physics/constants"
 
 export class Cue {
@@ -16,6 +26,7 @@ export class Cue {
   virtualCueMesh: Mesh  // Virtual cue stick showing exact hit direction and angle
   helperGhostGroup: Group
   private helperGhostBalls: Mesh[] = []
+  private helperImpactRing: Mesh | null = null
   private helperGhostMaterial?: Material | Material[]
   private helperGhostSourceGeometryId?: string
   private helperVisible = false
@@ -316,6 +327,18 @@ export class Cue {
     })
     this.helperGhostBalls = []
 
+    if (this.helperImpactRing) {
+      this.helperImpactRing.geometry.dispose()
+      const material = this.helperImpactRing.material
+      if (Array.isArray(material)) {
+        material.forEach((mat) => mat.dispose())
+      } else {
+        material.dispose()
+      }
+      this.helperGhostGroup.remove(this.helperImpactRing)
+      this.helperImpactRing = null
+    }
+
     if (this.helperGhostMaterial) {
       if (Array.isArray(this.helperGhostMaterial)) {
         this.helperGhostMaterial.forEach((mat) => mat.dispose())
@@ -419,6 +442,34 @@ export class Cue {
     }
   }
 
+  private ensureImpactRing(ghostRadius: number) {
+    if (!this.helperImpactRing) {
+      const geometry = new RingGeometry(0.98, 1, 128)
+      const material = new MeshBasicMaterial({
+        color: 0xff3030,
+        transparent: true,
+        opacity: 0.5,
+        side: DoubleSide,
+        depthWrite: false,
+        depthTest: false,
+      })
+      const ring = new Mesh(geometry, material)
+      ring.visible = false
+      ring.name = "helperImpactRing"
+      ring.renderOrder = this.helperGhostGroup.renderOrder + 1000
+      ring.onBeforeRender = (_renderer, _scene, camera) => {
+        ring.quaternion.copy(camera.quaternion)
+      }
+      this.helperGhostGroup.add(ring)
+      this.helperImpactRing = ring
+    }
+
+    if (this.helperImpactRing) {
+      const ringScale = ghostRadius * 1.02
+      this.helperImpactRing.scale.setScalar(ringScale)
+    }
+  }
+
   private generateStraightHelperPoints(): Vector3[] | null {
     const cueBall = this.container?.table?.cueball
     if (!cueBall) {
@@ -478,6 +529,9 @@ export class Cue {
     this.helperGhostBalls.forEach((ball) => {
       ball.visible = false
     })
+    if (this.helperImpactRing) {
+      this.helperImpactRing.visible = false
+    }
     this.helperGhostGroup.visible = false
   }
 
@@ -513,6 +567,7 @@ export class Cue {
     const gapDistance = (this.helperGhostGapDiameterMultiplier * 2 * baseRadius)
     const spacing = Math.max(ghostRadius * 2 + gapDistance, 1e-6)
     const positions = this.computeGhostBallPositions(effectivePoints, spacing)
+    let impactRingPosition: Vector3 | null = null
 
     if (effectiveImpact && effectivePoints.length > 0) {
       const impactPoint = effectivePoints[effectivePoints.length - 1]
@@ -534,6 +589,9 @@ export class Cue {
           positions.splice(previousIndex, 1)
         }
       }
+      if (positions.length > 0) {
+        impactRingPosition = positions[positions.length - 1]
+      }
     }
 
     if (positions.length === 0) {
@@ -551,6 +609,16 @@ export class Cue {
       } else {
         ball.visible = false
       }
+    }
+
+    if (impactRingPosition) {
+      this.ensureImpactRing(ghostRadius)
+      if (this.helperImpactRing) {
+        this.helperImpactRing.position.copy(impactRingPosition)
+        this.helperImpactRing.visible = true
+      }
+    } else if (this.helperImpactRing) {
+      this.helperImpactRing.visible = false
     }
 
     this.updateGhostBallRenderOrder()
@@ -589,6 +657,11 @@ export class Cue {
         mesh.renderOrder = hiddenOrderStart + index
       }
     })
+
+    if (this.helperImpactRing) {
+      this.helperImpactRing.renderOrder =
+        baseOrder + visibleBalls.length + 1000
+    }
   }
 
   toggleMasseMode() {

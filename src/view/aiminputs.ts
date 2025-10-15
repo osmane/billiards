@@ -1,4 +1,4 @@
-import { Color, Vector3 } from "three"
+import { Vector3 } from "three"
 import { Container } from "../container/container"
 import { Input } from "../events/input"
 import { Overlap } from "../utils/overlap"
@@ -11,7 +11,6 @@ export class AimInputs {
   readonly cueElevationElement: HTMLInputElement
   readonly cuePowerElement: HTMLInputElement
   readonly cueHitElement: HTMLElement
-  readonly objectBallStyle: CSSStyleDeclaration | undefined
   readonly container: Container
   readonly overlap: Overlap
 
@@ -43,7 +42,6 @@ export class AimInputs {
     this.cueElevationElement = document.getElementById("cueElevation") as HTMLInputElement
     this.cuePowerElement = document.getElementById("cuePower") as HTMLInputElement
     this.cueHitElement = document.getElementById("cueHit")!
-    this.objectBallStyle = document.getElementById("objectBall")?.style
     this.overlap = new Overlap(this.container.table.balls)
 
     // Normalize light direction
@@ -65,8 +63,8 @@ export class AimInputs {
     const size = Math.min(rect.width, rect.height)
     this.cueBallCanvas.width = size
     this.cueBallCanvas.height = size
-    this.cx = size / 2 - .5 // Shift sphere right by 1.5px to align with objectBall
-    this.cy = size / 2 + 1 // Shift sphere down by 1.5px to align with objectBall
+    this.cx = size / 2
+    this.cy = size / 2
     // Use 0.49 instead of 0.5 to avoid edge artifacts with border-radius
     this.radius = Math.floor(size * 0.51)
 
@@ -375,24 +373,13 @@ export class AimInputs {
     const closest = this.overlap.getOverlapOffset(table.cueball, dir)
 
     if (closest) {
-      // Calculate target point position in 3D sphere space
-      // This should show where the object ball is relative to aim direction
+      // Calculate target point position in 3D sphere space.
+      // This should show where the object ball is relative to aim direction.
       // For now, keep it at north pole (can be enhanced later)
       this.targetPoint = [0, 0, 1]
-
-      // Also update HTML object ball indicator (preserve existing feature)
-      if (this.objectBallStyle) {
-        const ballWidth = this.cueBallElement.offsetWidth
-        this.objectBallStyle.visibility = "visible"
-        this.objectBallStyle.left = 5 + (closest.overlap * ballWidth) / 2 + "px"
-        this.objectBallStyle.backgroundColor = new Color(0, 0, 0)
-          .lerp(closest.ball.ballmesh.color, 0.5)
-          .getStyle()
-      }
     } else {
-      if (this.objectBallStyle) {
-        this.objectBallStyle.visibility = "hidden"
-      }
+      // Move target indicator out of view when no overlap is detected.
+      this.targetPoint = [0, 0, -1]
     }
   }
 

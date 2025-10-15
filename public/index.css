@@ -115,18 +115,6 @@ canvas {
   left: 0;
 }
 
-.objectBall {
-  height: 99%;
-  margin: auto;
-  aspect-ratio: 1;
-  border: 0.5px solid rgb(0, 44, 64);
-  border-radius: 50%;
-  z-index: 1;
-  position: absolute;
-  top: 0;
-  pointer-events: none;
-}
-
 .cueTip {
   height: 20%;
   width: 20%;
