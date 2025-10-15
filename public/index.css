@@ -127,34 +127,6 @@ canvas {
   pointer-events: none;
 }
 
-.masseHitArea {
-  display: none;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.masseHitArea.active {
-  display: block;
-}
-
-.masseHitArea::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 266.67%;
-  height: 266.67%;
-  border: 3px dashed rgba(155, 89, 182, 0.7);
-  border-radius: 50%;
-  box-sizing: border-box;
-}
-
 .elevationSlider {
   width: 20px;
   height: 70%;
@@ -258,14 +230,6 @@ input[type="range"].powerSlider {
   border-color: #357abd;
   color: white;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-/* Massé mode button active state */
-#masseButton.is-active {
-  background-color: #9b59b6;
-  border-color: #8e44ad;
-  color: white;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .chatarea {

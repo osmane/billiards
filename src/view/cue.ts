@@ -34,15 +34,14 @@ export class Cue {
   private readonly helperGhostGapDiameterMultiplier = 2 // Gap between surfaces equals two diameters
   private lastHelperPoints: Vector3[] | null = null
   private lastHelperHasImpact = false
-  readonly offCenterLimit = 0.3
-  readonly offCenterLimitMasse = 0.8  // Increased limit for massé shots
+  readonly offCenterLimitMasse = 0.8  // Increased limit for masse shots
   readonly maxPower = 160 * R
   readonly defaultElevation = 0.17  // Default cue elevation (radians)
   t = 0
   aimInputs: AimInputs
   aim: AimEvent = new AimEvent()
   container: any // Container reference for trajectory updates
-  masseMode: boolean = false  // Toggle for massé mode
+  readonly masseMode = true  // masse mode always active
   elevation: number = 0.17  // Current cue elevation angle in radians
 
   length = TableGeometry.tableX * 1
@@ -95,7 +94,7 @@ export class Cue {
     // Calculate velocity with elevation angle
     const horizontalVel = unitAtAngle(aim.angle).multiplyScalar(aim.power)
 
-    if (this.masseMode && this.elevation > 0.2) {
+    if (this.elevation > 0.2) {
       // In masse mode with high elevation, apply vertical component
       const horizontalMagnitude = aim.power * Math.cos(this.elevation)
       const verticalMagnitude = aim.power * Math.sin(this.elevation)
@@ -108,7 +107,7 @@ export class Cue {
     }
 
     ball.rvel.copy(cueToSpin(aim.offset, ball.vel))
-    ball.magnusEnabled = this.masseMode
+    ball.magnusEnabled = this.elevation > 0.2
     ball.magnusElevation = this.elevation
     this.hitPointMesh.visible = false
     this.container?.trajectoryRenderer?.clearTrajectories()
@@ -137,7 +136,7 @@ export class Cue {
   }
 
   avoidCueTouchingOtherBall(table: Table) {
-    const limit = this.masseMode ? this.offCenterLimitMasse : this.offCenterLimit
+    const limit = this.offCenterLimitMasse
     let n = 0
     while (n++ < 20 && this.intersectsAnything(table)) {
       this.aim.offset.y += 0.1
@@ -663,25 +662,12 @@ export class Cue {
         baseOrder + visibleBalls.length + 1000
     }
   }
-
-  toggleMasseMode() {
-    this.masseMode = !this.masseMode
-    if (!this.masseMode) {
-      const offset = this.aim.offset.clone()
-      if (offset.length() > this.offCenterLimit) {
-        offset.normalize().multiplyScalar(this.offCenterLimit)
-        this.aim.offset.copy(offset)
-      }
-      this.elevation = this.defaultElevation
-      // Reset helper visualization
-      this.updateHelperCurve(null)
-    } else {
-      // Show helper when entering massé mode
-      this.showHelper(true)
-    }
-    this.updateAimInput()
-    this.container?.updateTrajectoryPrediction()
-    return this.masseMode
-  }
 }
+
+
+
+
+
+
+
 

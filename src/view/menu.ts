@@ -10,7 +10,6 @@ export class Menu {
   share: HTMLButtonElement
   replay: HTMLButtonElement
   camera: HTMLButtonElement
-  masseButton: HTMLButtonElement
 
   disabled = true
 
@@ -21,19 +20,11 @@ export class Menu {
     this.redo = this.getElement("redo")
     this.share = this.getElement("share")
     this.camera = this.getElement("camera")
-    this.masseButton = this.getElement("masseButton")
 
     if (this.camera) {
       this.setMenu(true)
       this.camera.onclick = (_) => {
         this.adjustCamera()
-      }
-    }
-
-    // Setup masse button
-    if (this.masseButton) {
-      this.masseButton.onclick = (_) => {
-        this.toggleMasseMode()
       }
     }
   }
@@ -82,18 +73,5 @@ export class Menu {
 
   getElement(id): HTMLButtonElement {
     return document.getElementById(id)! as HTMLButtonElement
-  }
-
-  toggleMasseMode() {
-    const isActive = this.container.table.cue.toggleMasseMode()
-
-    // Update button visual state
-    if (isActive) {
-      this.masseButton.classList.add('is-active')
-    } else {
-      this.masseButton.classList.remove('is-active')
-    }
-
-    this.container.lastEventTime = performance.now()
   }
 }

@@ -90,9 +90,9 @@ export class TrajectoryPredictor {
     currentCueBall.rvel.copy(cueToSpin(aim.offset, currentCueBall.vel))
     const initialSpeed = currentCueBall.vel.length()
 
-    // Enable Magnus effect in trajectory prediction if in massé mode
+    // Enable Magnus effect in trajectory prediction when masse behaviour applies
     if (masseMode !== undefined) {
-      currentCueBall.magnusEnabled = masseMode
+      currentCueBall.magnusEnabled = (masseMode ?? false) && elevation !== undefined && elevation > 0.2
       if (elevation !== undefined) {
         currentCueBall.magnusElevation = elevation
       }
@@ -160,7 +160,8 @@ export class TrajectoryPredictor {
       return best
     }
 
-    const directImpactDistance = masseMode ? null : computeDirectImpactDistance()
+    const isHighElevationMasse = (masseMode ?? false) && elevation !== undefined && elevation > 0.2
+    const directImpactDistance = isHighElevationMasse ? null : computeDirectImpactDistance()
 
     const recordPoint = (ball: Ball, time: number): number | null => {
       const trajectory = trajectories.get(ball.id)
@@ -356,3 +357,7 @@ export class TrajectoryPredictor {
     return !!container?.table && !!container?.table?.cueball
   }
 }
+
+
+
+
