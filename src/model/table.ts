@@ -84,6 +84,7 @@ export class Table {
   private prepareAdvancePair(a: Ball, b: Ball, t: number) {
     // Use physics context from ball a (should be same as b in a given game mode)
     if (Collision.willCollide(a, b, t, a.physicsContext)) {
+      Collision.separateAtImpact(a, b, t, a.physicsContext)
       const incidentSpeed = Collision.collide(a, b)
       this.outcome.push(Outcome.collision(a, b, incidentSpeed))
       return false

@@ -2,6 +2,7 @@ import { Ball, State } from "../ball"
 import { CollisionThrow } from "./collisionthrow"
 import { R, PhysicsContext } from "./constants"
 
+const TOI_EPSILON = 1e-5
 
 // Continuous collision detection (analytical time-of-impact for two moving balls)
 // Returns the smallest t in [0, dt] where |(pa-pb) + (va-vb)*t| = 2R, or -1 if none.
@@ -27,6 +28,10 @@ function timeOfImpactBallBall(a: Ball, b: Ball, dt: number, context?: PhysicsCon
 }
 
 export class Collision {
+  static timeOfImpact(a: Ball, b: Ball, t: number, context?: PhysicsContext): number {
+    return timeOfImpactBallBall(a, b, t, context)
+  }
+
   static willCollide(a: Ball, b: Ball, t: number, context?: PhysicsContext): boolean {
     if (!(a.onTable() && b.onTable())) return false
     if (!(a.inMotion() || b.inMotion())) return false
@@ -36,6 +41,41 @@ export class Collision {
     if (toi >= 0) return true
     // Fallback: end-of-step proximity check (legacy behavior)
     return a.futurePosition(t).distanceToSquared(b.futurePosition(t)) < 4 * radius * radius
+  }
+
+  static separateAtImpact(a: Ball, b: Ball, dt: number, context?: PhysicsContext) {
+    const radius = context?.R ?? R
+    const targetDistance = 2 * radius
+    const toi = timeOfImpactBallBall(a, b, dt, context)
+    const contactPosA = a.pos.clone()
+    const contactPosB = b.pos.clone()
+
+    if (toi >= 0) {
+      contactPosA.addScaledVector(a.vel, toi)
+      contactPosB.addScaledVector(b.vel, toi)
+    }
+
+    const separation = contactPosA.clone().sub(contactPosB)
+    let distance = separation.length()
+
+    if (distance < TOI_EPSILON) {
+      // Degenerate case: balls share the same position, pick arbitrary normal
+      separation.set(1, 0, 0)
+      distance = Math.max(distance, TOI_EPSILON)
+    }
+
+    const normal = separation.multiplyScalar(1 / distance)
+    const penetration = targetDistance - distance
+    if (penetration <= 0) {
+      return
+    }
+
+    const correctionMagnitude = (penetration + radius * 1e-4) * 0.5
+    const correction = normal.multiplyScalar(correctionMagnitude)
+    a.pos.add(correction)
+    b.pos.sub(correction)
+    a.futurePos.copy(a.pos)
+    b.futurePos.copy(b.pos)
   }
 
   static collide(a: Ball, b: Ball) {
