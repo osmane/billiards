@@ -68,7 +68,9 @@ export class Assets {
         }
         if (!playfield) {
           this.table.traverse((o) => {
-            if (playfield) return
+            if (playfield) {
+              return
+            }
             const nm = (o.name || "").toLowerCase()
             if (nm.includes("cloth") || nm.includes("playfield") || nm.includes("felt")) {
               playfield = o
@@ -100,6 +102,44 @@ export class Assets {
         bbox.getCenter(c)
         this.table.position.x -= c.x
         this.table.position.y -= c.y
+        if (!TableGeometry.hasPockets) {
+          let clothMesh: Mesh | null = playfield instanceof Mesh ? playfield : null
+          if (!clothMesh) {
+            playfield.traverse((o) => {
+              if (!clothMesh && o instanceof Mesh) {
+                clothMesh = o
+              }
+            })
+          }
+          const cushionMeshes: Mesh[] = []
+          this.table.traverse((o) => {
+            if (!(o instanceof Mesh)) {
+              return
+            }
+            if (o === clothMesh) {
+              return
+            }
+            const nm = (o.name || "").toLowerCase()
+            if (nm.includes("cushion") || nm.includes("rail") || nm.includes("bande") || nm.includes("bank")) {
+              cushionMeshes.push(o)
+            }
+          })
+          if (!cushionMeshes.length) {
+            this.table.children.forEach((child) => {
+              if (child instanceof Mesh && child !== clothMesh) {
+                cushionMeshes.push(child)
+              }
+            })
+          }
+          if (clothMesh) {
+            TableMesh.caromSurfaces = {
+              cloth: clothMesh,
+              cushions: cushionMeshes,
+            }
+          }
+        } else {
+          TableMesh.caromSurfaces = null
+        }
         if (!TableMesh.mesh) {
           TableMesh.mesh = (m.scene.children && m.scene.children[0]) as any
         }

@@ -5,7 +5,6 @@ import {
   CylinderGeometry,
   BoxGeometry,
   MeshPhongMaterial,
-  PointLight,
   Group,
 } from "three"
 import { TableGeometry } from "./tablegeometry"
@@ -13,32 +12,10 @@ import { PocketGeometry } from "./pocketgeometry"
 import { R } from "../model/physics/constants"
 
 export class TableMesh {
-  logger = (_) => { }
+  logger = (_) => {}
 
   static mesh
-
-  generateTable(hasPockets: boolean) {
-    const group = new Group()
-    const light = new PointLight(0xf0f0e8, 22.0)
-    light.position.set(0, 0, R * 50)
-    group.add(light)
-    this.addCushions(group, hasPockets)
-
-    if (hasPockets) {
-      PocketGeometry.knuckles.forEach((k) => this.knuckleCylinder(k, group))
-      PocketGeometry.pocketCenters.forEach((p) =>
-        this.knuckleCylinder(p, group, this.pocket)
-      )
-
-      const p = PocketGeometry.pockets.pocketNW.pocket
-      const k = PocketGeometry.pockets.pocketNW.knuckleNE
-      this.logger(
-        "knuckle-pocket gap = " +
-        (p.pos.distanceTo(k.pos) - p.radius - k.radius)
-      )
-    }
-    return group
-  }
+  static caromSurfaces: { cloth: Mesh; cushions: Mesh[] } | null = null
 
   private readonly cloth = new MeshPhongMaterial({
     color: 0x4455b9,
@@ -62,15 +39,35 @@ export class TableMesh {
     opacity: 0.3,
   })
 
+  generateTable(hasPockets: boolean) {
+    const group = new Group()
+    this.addCushions(group, hasPockets)
+
+    if (hasPockets) {
+      PocketGeometry.knuckles.forEach((k) => this.knuckleCylinder(k, group))
+      PocketGeometry.pocketCenters.forEach((p) =>
+        this.knuckleCylinder(p, group, this.pocket)
+      )
+
+      const p = PocketGeometry.pockets.pocketNW.pocket
+      const k = PocketGeometry.pockets.pocketNW.knuckleNE
+      this.logger(
+        "knuckle-pocket gap = " +
+          (p.pos.distanceTo(k.pos) - p.radius - k.radius)
+      )
+    }
+    return group
+  }
+
   private knuckleCylinder(knuckle, scene, material = this.cloth) {
-    const k = this.cylinder(
+    const mesh = this.cylinder(
       knuckle.pos,
       knuckle.radius,
       (R * 0.75) / 0.5,
       scene,
       material
     )
-    k.position.setZ((-R * 0.25) / 0.5 / 2)
+    mesh.position.setZ((-R * 0.25) / 0.5 / 2)
   }
 
   private cylinder(pos, radius, depth, scene, material) {
@@ -78,63 +75,91 @@ export class TableMesh {
     const mesh = new Mesh(geometry, material)
     mesh.position.copy(pos)
     mesh.geometry.applyMatrix4(
-      new Matrix4()
-        .identity()
-        .makeRotationAxis(new Vector3(1, 0, 0), Math.PI / 2)
+      new Matrix4().identity().makeRotationAxis(new Vector3(1, 0, 0), Math.PI / 2)
     )
     scene.add(mesh)
     return mesh
   }
 
   addCushions(scene, hasPockets) {
-    const visualHalfLength = TableGeometry.X; // Görsel yarı uzunluk
-    const visualHalfWidth = TableGeometry.Y;  // Görsel yarı genişlik
+    TableMesh.caromSurfaces = null
 
-    // Masa yatağını (slate) çiz
-    const slateThickness = R * 1.5;
-    this.plane(
+    const visualHalfLength = TableGeometry.X
+    const visualHalfWidth = TableGeometry.Y
+
+    const slateThickness = R * 1.5
+    const clothMesh = this.plane(
       new Vector3(0, 0, -R - slateThickness / 2),
-      2 * visualHalfLength, // Tam genişlik
-      2 * visualHalfWidth,  // Tam uzunluk
+      2 * visualHalfLength,
+      2 * visualHalfWidth,
       slateThickness,
       scene,
-      this.cloth // Yeşil çuha materyali
-    );
+      this.cloth
+    )
 
     if (hasPockets) {
-      // Cepli masalar için mevcut kod
-      // ...
-    } else {
-      // --- DEĞİŞİKLİK BURADA ---
-      // 3-Bant (Karambol) masası için cepsiz, düz bantlar çiz
-      const cushionHeight = R * 1.25;
-      const cushionThickness = R * 2.0;
-      const verticalPosition = -R + (cushionHeight / 2);
+      return
+    }
 
-      // Uzun bantların (oyun yüzeyinin dışındaki) tam uzunluğunu hesapla
-      const fullCushionLength = 2 * visualHalfLength + 2 * cushionThickness;
-      // Kısa bantların (oyun yüzeyinin dışındaki) tam uzunluğunu hesapla
-      const fullCushionWidth = 2 * visualHalfWidth;
+    const cushionMeshes: Mesh[] = []
 
-      // Uzun bantlar (Doğu/Batı)
-      this.plane(new Vector3(0, visualHalfWidth + cushionThickness / 2, verticalPosition),
-        fullCushionLength, cushionThickness, cushionHeight, scene);
-      this.plane(new Vector3(0, -visualHalfWidth - cushionThickness / 2, verticalPosition),
-        fullCushionLength, cushionThickness, cushionHeight, scene);
+    const cushionHeight = R * 1.25
+    const cushionThickness = R * 2.0
+    const verticalPosition = -R + cushionHeight / 2
 
-      // Kısa bantlar (Kuzey/Güney)
-      this.plane(new Vector3(visualHalfLength + cushionThickness / 2, 0, verticalPosition),
-        cushionThickness, fullCushionWidth, cushionHeight, scene);
-      this.plane(new Vector3(-visualHalfLength - cushionThickness / 2, 0, verticalPosition),
-        cushionThickness, fullCushionWidth, cushionHeight, scene);
+    const fullCushionLength = 2 * visualHalfLength + 2 * cushionThickness
+    const fullCushionWidth = 2 * visualHalfWidth
+
+    cushionMeshes.push(
+      this.plane(
+        new Vector3(0, visualHalfWidth + cushionThickness / 2, verticalPosition),
+        fullCushionLength,
+        cushionThickness,
+        cushionHeight,
+        scene
+      )
+    )
+    cushionMeshes.push(
+      this.plane(
+        new Vector3(0, -visualHalfWidth - cushionThickness / 2, verticalPosition),
+        fullCushionLength,
+        cushionThickness,
+        cushionHeight,
+        scene
+      )
+    )
+
+    cushionMeshes.push(
+      this.plane(
+        new Vector3(visualHalfLength + cushionThickness / 2, 0, verticalPosition),
+        cushionThickness,
+        fullCushionWidth,
+        cushionHeight,
+        scene
+      )
+    )
+    cushionMeshes.push(
+      this.plane(
+        new Vector3(-visualHalfLength - cushionThickness / 2, 0, verticalPosition),
+        cushionThickness,
+        fullCushionWidth,
+        cushionHeight,
+        scene
+      )
+    )
+
+    TableMesh.caromSurfaces = {
+      cloth: clothMesh,
+      cushions: cushionMeshes,
     }
   }
 
   private plane(pos, x, y, z, scene, material = this.cushion) {
-    const geometry = new BoxGeometry(x, y, z);
-    const mesh = new Mesh(geometry, material);
-    mesh.receiveShadow = true;
-    mesh.position.copy(pos);
-    scene.add(mesh);
+    const geometry = new BoxGeometry(x, y, z)
+    const mesh = new Mesh(geometry, material)
+    mesh.receiveShadow = true
+    mesh.position.copy(pos)
+    scene.add(mesh)
+    return mesh
   }
 }

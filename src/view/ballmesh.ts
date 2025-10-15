@@ -31,20 +31,20 @@ export interface LightingConfig {
 }
 
 export const DEFAULT_LIGHTING: LightingConfig = {
-  orbitAngleDeg: 83,
-  elevationDeg: 39,
-  distanceInDiameters: 11.5,
-  intensity: 2.3,
-  decay: 0.6,
-  coneDeg: 33,
+  orbitAngleDeg: 270,
+  elevationDeg: 80,
+  distanceInDiameters: 24,
+  intensity: 8.4,
+  decay: 1.4,
+  coneDeg: 57,
   color: "#f5f8ff",
-  shadowBias: -0.00045,
+  shadowBias: -0.00005,
   shadowNormalBias: 0,
-  shadowBlur: 1000,
+  shadowBlur: 185,
   shadowMapSize: 2048,
-  shadowBlurSamples: 18,
-  shadowNear: 10,
-  shadowFar: 12,
+  shadowBlurSamples: 15,
+  shadowNear: 0.5,
+  shadowFar: 2,
   castShadow: true,
 }
 

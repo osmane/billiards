@@ -1,11 +1,9 @@
 import {
-  AmbientLight,
   Box3,
   BufferGeometry,
   Color,
   Float32BufferAttribute,
   Frustum,
-  HemisphereLight,
   LineBasicMaterial,
   LineLoop,
   Matrix4,
@@ -39,8 +37,6 @@ export class View {
   table: Table
   loadAssets = true
   assets: Assets
-  private ambientLight: AmbientLight | null = null
-  private hemisphereLight: HemisphereLight | null = null
   private spotLight: SpotLight | null = null
   private lightTarget = new Vector3(0, 0, 0)
   private currentLighting: LightingConfig = { ...DEFAULT_LIGHTING }
@@ -124,14 +120,8 @@ export class View {
   }
 
   private setupLighting() {
-    this.ambientLight = new AmbientLight(0x40445a, 0.6)
-    this.scene.add(this.ambientLight)
-
-    this.hemisphereLight = new HemisphereLight(0x3940a6, 0x1b1f29, 0.4)
-    this.scene.add(this.hemisphereLight)
-
     this.currentLighting = BallMesh.getLightingConfig()
-    const spot = new SpotLight(0xffffff, this.currentLighting.intensity, 0, MathUtils.degToRad(this.currentLighting.coneDeg), 0.3, 0.6)
+    const spot = new SpotLight(0xffffff, this.currentLighting.intensity, 0, MathUtils.degToRad(this.currentLighting.coneDeg), 0.8, 0.6)
     spot.castShadow = this.currentLighting.castShadow
     this.spotLight = spot
     this.scene.add(spot)

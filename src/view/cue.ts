@@ -6,7 +6,7 @@ import { AimInputs } from "./aiminputs"
 import { Ball, State } from "../model/ball"
 import { cueToSpin } from "../model/physics/physics"
 import { CueMesh } from "./cuemesh"
-import { Mesh, Raycaster, Vector3, Quaternion } from "three"
+import { Group, Material, Mesh, Quaternion, Raycaster, Vector3 } from "three"
 import { R } from "../model/physics/constants"
 
 export class Cue {
@@ -15,6 +15,14 @@ export class Cue {
   placerMesh: Mesh
   hitPointMesh: Mesh  // 3D visualization of hit point on cue ball
   virtualCueMesh: Mesh  // Virtual cue stick showing exact hit direction and angle
+  helperGhostGroup: Group
+  private helperGhostBalls: Mesh[] = []
+  private helperGhostMaterial?: Material | Material[]
+  private helperGhostSourceGeometryId?: string
+  private readonly helperGhostScale = 1
+  private readonly helperGhostGapDiameterMultiplier = 2 // Gap between surfaces equals two diameters
+  private lastHelperPoints: Vector3[] | null = null
+  private lastHelperHasImpact = false
   readonly offCenterLimit = 0.3
   readonly offCenterLimitMasse = 0.8  // Increased limit for massé shots
   readonly maxPower = 160 * R
@@ -39,6 +47,10 @@ export class Cue {
     this.placerMesh = CueMesh.createPlacer()
     this.hitPointMesh = CueMesh.createHitPoint()
     this.virtualCueMesh = CueMesh.createVirtualCue()
+    this.helperGhostGroup = new Group()
+    this.helperGhostGroup.visible = false
+    this.helperGhostGroup.name = "helperGhostBalls"
+    this.helperGhostGroup.renderOrder = this.helperMesh.renderOrder + 1
   }
 
   rotateAim(angle, table: Table) {
@@ -159,7 +171,8 @@ export class Cue {
     const radiusInMM = 30.75
     const virtualCueHalfLength = (100 / radiusInMM) * R / 2
     const additionalOffset = (10 / radiusInMM) * R
-    const totalOffset = virtualCueHalfLength + additionalOffset
+    const cueClearance = 1.25 * 2 * R
+    const totalOffset = virtualCueHalfLength + additionalOffset + cueClearance + cueClearance
     const swing = (sin(this.t + Math.PI / 2) - 1) * 2 * R * (this.aim.power / this.maxPower)
     const cuePosition = hitPointOnSurface.clone()
       .addScaledVector(cueDirection3D, totalOffset)
@@ -278,13 +291,22 @@ export class Cue {
 
   showHelper(b) {
     this.helperMesh.visible = b
+    if (!b) {
+      this.hideHelperGhostBalls()
+      return
+    }
+    this.updateHelperGhostBalls(this.lastHelperPoints, this.lastHelperHasImpact)
   }
 
   toggleHelper() {
     this.showHelper(!this.helperMesh.visible)
   }
 
-  updateHelperCurve(trajectoryPoints: Vector3[] | null) {
+  updateHelperCurve(trajectoryPoints: Vector3[] | null, hasImpact = false) {
+    this.lastHelperPoints = trajectoryPoints
+      ? trajectoryPoints.map((p) => p.clone())
+      : null
+    this.lastHelperHasImpact = hasImpact
     if (this.masseMode && trajectoryPoints && trajectoryPoints.length > 2) {
       // Update helper to follow curved trajectory
       CueMesh.updateHelperGeometry(this.helperMesh, trajectoryPoints)
@@ -298,6 +320,234 @@ export class Cue {
       this.helperMesh.position.copy(this.aim.pos)
       this.helperMesh.rotation.z = this.aim.angle
     }
+    this.updateHelperGhostBalls(this.lastHelperPoints, hasImpact)
+  }
+
+  private disposeHelperGhostResources() {
+    this.helperGhostBalls.forEach((ball) => {
+      ball.geometry.dispose()
+      this.helperGhostGroup.remove(ball)
+    })
+    this.helperGhostBalls = []
+
+    if (this.helperGhostMaterial) {
+      if (Array.isArray(this.helperGhostMaterial)) {
+        this.helperGhostMaterial.forEach((mat) => mat.dispose())
+      } else {
+        this.helperGhostMaterial.dispose()
+      }
+    }
+
+    this.helperGhostMaterial = undefined
+    this.helperGhostSourceGeometryId = undefined
+    this.helperGhostGroup.visible = false
+  }
+
+  private configureGhostMaterial<T extends Material>(material: T): T {
+    const configured = material as any
+    if ("transparent" in configured) {
+      configured.transparent = true
+    }
+    if ("opacity" in configured) {
+      configured.opacity = 0.3
+    }
+    if ("depthWrite" in configured) {
+      configured.depthWrite = false
+    }
+    if ("depthTest" in configured) {
+      configured.depthTest = true
+    }
+    if ("color" in configured && configured.color?.clone) {
+      const colorClone = configured.color.clone()
+      if (colorClone.offsetHSL) {
+        colorClone.offsetHSL(0, -0.2, 0.15)
+      }
+      configured.color.copy(colorClone)
+    }
+    if ("emissive" in configured && configured.emissive?.clone) {
+      const emissiveClone = configured.emissive.clone()
+      if (emissiveClone.offsetHSL) {
+        emissiveClone.offsetHSL(0, -0.15, 0.2)
+      }
+      configured.emissive.copy(emissiveClone)
+      if ("emissiveIntensity" in configured) {
+        configured.emissiveIntensity = Math.max(configured.emissiveIntensity ?? 0.35, 0.35)
+      }
+    }
+    material.needsUpdate = true
+    return material
+  }
+
+  private cloneGhostMaterial(material: Material | Material[]): Material | Material[] {
+    if (Array.isArray(material)) {
+      return material.map((mat) => this.configureGhostMaterial(mat.clone()))
+    }
+    return this.configureGhostMaterial(material.clone())
+  }
+
+  private ensureHelperGhostResources(): boolean {
+    const cueBallMesh = this.container?.table?.cueball?.ballmesh?.mesh
+    if (!cueBallMesh) {
+      return false
+    }
+
+    const geometryId = cueBallMesh.geometry.uuid
+    if (
+      this.helperGhostSourceGeometryId &&
+      this.helperGhostSourceGeometryId !== geometryId
+    ) {
+      this.disposeHelperGhostResources()
+    }
+
+    if (!this.helperGhostMaterial) {
+      this.helperGhostMaterial = this.cloneGhostMaterial(cueBallMesh.material)
+      this.helperGhostSourceGeometryId = geometryId
+    } else if (!this.helperGhostSourceGeometryId) {
+      this.helperGhostSourceGeometryId = geometryId
+    }
+
+    return !!this.helperGhostMaterial
+  }
+
+  private ensureHelperGhostCount(count: number) {
+    const cueBallMesh = this.container?.table?.cueball?.ballmesh?.mesh
+    if (!cueBallMesh || !this.helperGhostMaterial) {
+      return
+    }
+
+    while (this.helperGhostBalls.length < count) {
+      const geometry = cueBallMesh.geometry.clone()
+      const sharedMaterial = this.helperGhostMaterial
+      const materialForMesh = Array.isArray(sharedMaterial)
+        ? sharedMaterial.slice()
+        : sharedMaterial
+      const ghostBall = new Mesh(geometry, materialForMesh)
+      ghostBall.visible = false
+      ghostBall.castShadow = false
+      ghostBall.receiveShadow = false
+      ghostBall.name = `helperGhostBall-${this.helperGhostBalls.length}`
+      ghostBall.renderOrder = this.helperGhostGroup.renderOrder + 1
+      ghostBall.scale.setScalar(this.helperGhostScale)
+      this.helperGhostGroup.add(ghostBall)
+      this.helperGhostBalls.push(ghostBall)
+    }
+  }
+
+  private generateStraightHelperPoints(): Vector3[] | null {
+    const cueBall = this.container?.table?.cueball
+    if (!cueBall) {
+      return null
+    }
+
+    const direction = unitAtAngle(this.aim.angle)
+    if (direction.lengthSq() === 0) {
+      return null
+    }
+
+    const normalizedDirection = direction.setZ(0).normalize()
+    const start = cueBall.pos.clone()
+    const helperLength = (R * 30) / 0.5
+    const end = start.clone().addScaledVector(normalizedDirection, helperLength)
+
+    return [start, end]
+  }
+
+  private computeGhostBallPositions(points: Vector3[], spacing: number): Vector3[] {
+    if (points.length < 2 || spacing <= 0) {
+      return []
+    }
+
+    const positions: Vector3[] = []
+    let accumulated = 0
+    let nextDistance = spacing
+
+    for (let i = 1; i < points.length; i++) {
+      const start = points[i - 1]
+      const end = points[i]
+      const segment = end.clone().sub(start)
+      const segmentLength = segment.length()
+      if (segmentLength === 0) {
+        continue
+      }
+
+      while (accumulated + segmentLength >= nextDistance) {
+        const remaining = nextDistance - accumulated
+        const ratio = remaining / segmentLength
+        const position = start.clone().addScaledVector(segment, ratio)
+        positions.push(position)
+        nextDistance += spacing
+
+        if (positions.length > 256) {
+          return positions
+        }
+      }
+
+      accumulated += segmentLength
+    }
+
+    return positions
+  }
+
+  private hideHelperGhostBalls() {
+    this.helperGhostBalls.forEach((ball) => {
+      ball.visible = false
+    })
+    this.helperGhostGroup.visible = false
+  }
+
+  private updateHelperGhostBalls(
+    trajectoryPoints: Vector3[] | null,
+    hasImpact: boolean
+  ) {
+    if (!this.helperMesh.visible) {
+      this.hideHelperGhostBalls()
+      return
+    }
+
+    let effectivePoints = trajectoryPoints
+    let effectiveImpact = hasImpact
+
+    if (!effectivePoints || effectivePoints.length < 2) {
+      effectivePoints = this.generateStraightHelperPoints()
+      effectiveImpact = false
+    }
+
+    if (!effectivePoints || effectivePoints.length < 2) {
+      this.hideHelperGhostBalls()
+      return
+    }
+
+    if (!this.ensureHelperGhostResources()) {
+      this.hideHelperGhostBalls()
+      return
+    }
+
+    const baseRadius = this.container?.table?.cueball?.radius ?? R
+    const ghostRadius = baseRadius * this.helperGhostScale
+    const gapDistance = (this.helperGhostGapDiameterMultiplier * 2 * baseRadius)
+    const spacing = Math.max(ghostRadius * 2 + gapDistance, 1e-6)
+    const positions = this.computeGhostBallPositions(effectivePoints, spacing)
+
+    if (positions.length === 0) {
+      this.hideHelperGhostBalls()
+      return
+    }
+
+    this.ensureHelperGhostCount(positions.length)
+
+    for (let i = 0; i < this.helperGhostBalls.length; i++) {
+      const ball = this.helperGhostBalls[i]
+      if (i < positions.length) {
+        ball.position.copy(positions[i])
+        ball.visible = true
+      } else {
+        ball.visible = false
+      }
+    }
+
+    this.helperGhostGroup.visible = true
+    this.lastHelperPoints = effectivePoints.map((p) => p.clone())
+    this.lastHelperHasImpact = effectiveImpact
   }
 
   toggleMasseMode() {
@@ -342,3 +592,4 @@ export class Cue {
     this.container?.updateTrajectoryPrediction()
   }
 }
+

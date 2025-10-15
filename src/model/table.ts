@@ -200,6 +200,7 @@ export class Table {
     })
     scene.add(this.cue.mesh)
     scene.add(this.cue.helperMesh)
+    scene.add(this.cue.helperGhostGroup)
     scene.add(this.cue.placerMesh)
     scene.add(this.cue.hitPointMesh)
     scene.add(this.cue.virtualCueMesh)

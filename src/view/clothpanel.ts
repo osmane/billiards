@@ -135,7 +135,7 @@ export class ClothPanel {
       "lightDistance",
       "Distance (diameters)",
       6,
-      24,
+      400,
       0.5,
       this.lightingParams.distanceInDiameters,
       (v) => {

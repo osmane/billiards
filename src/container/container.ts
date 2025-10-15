@@ -25,6 +25,9 @@ import { TrajectoryPredictor } from "../model/trajectorypredictor"
 import { TrajectoryRenderer } from "../view/trajectoryrenderer"
 import { Vector3 } from "three"
 import { R } from "../model/physics/constants"
+import { CaromClothManager } from "../view/caromcloth"
+import { ClothPanel } from "../view/clothpanel"
+import { TableMesh } from "../view/tablemesh"
 
 /**
  * Model, View, Controller container.
@@ -50,6 +53,8 @@ export class Container {
   scoreButtons: ScoreButtons
   trajectoryPredictor: TrajectoryPredictor
   trajectoryRenderer: TrajectoryRenderer
+  caromClothManager?: CaromClothManager
+  clothPanel?: ClothPanel
   frame: (timestamp: number) => void
   private wasMoving = false
 
@@ -79,6 +84,16 @@ export class Container {
     this.id = id
     this.menu = new Menu(this)
     this.table.addToScene(this.view.scene)
+    if (this.rules.rulename === "threecushion") {
+      const surfaces = TableMesh.caromSurfaces ?? null
+      this.caromClothManager = new CaromClothManager(surfaces)
+      this.clothPanel = new ClothPanel(this.caromClothManager)
+      if (!surfaces) {
+        setTimeout(() => {
+          this.caromClothManager?.setSurfaces(TableMesh.caromSurfaces ?? null)
+        }, 0)
+      }
+    }
     this.hud = new Hud()
     this.lobbyIndicator = new LobbyIndicator()
     this.updateController(new Init(this))
@@ -314,7 +329,12 @@ export class Container {
           } else if (limitToHelper) {
             helperPoints = trimPointsByDistance(trajectoryVectors, helperMaxDistance)
           }
-          this.table.cue.updateHelperCurve(helperPoints)
+          const firstImpactDistance = cueBallTrajectory.firstImpactDistance
+          const impactThreshold = helperMaxDistance - 1e-6
+          const hasImpact =
+            cueBallTrajectory.firstImpactIndex !== undefined ||
+            (firstImpactDistance !== undefined && firstImpactDistance < impactThreshold)
+          this.table.cue.updateHelperCurve(helperPoints, hasImpact)
         } else {
           this.table.cue.updateHelperCurve(null)
         }
