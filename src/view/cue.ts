@@ -352,7 +352,7 @@ export class Cue {
       configured.opacity = 0.3
     }
     if ("depthWrite" in configured) {
-      configured.depthWrite = false
+      configured.depthWrite = true
     }
     if ("depthTest" in configured) {
       configured.depthTest = true
@@ -545,9 +545,42 @@ export class Cue {
       }
     }
 
+    this.updateGhostBallRenderOrder()
     this.helperGhostGroup.visible = true
     this.lastHelperPoints = effectivePoints.map((p) => p.clone())
     this.lastHelperHasImpact = effectiveImpact
+  }
+
+  private updateGhostBallRenderOrder() {
+    const camera = this.container?.view?.camera?.camera
+    if (!camera) {
+      return
+    }
+
+    this.helperGhostGroup.updateMatrixWorld(true)
+    const baseOrder = this.helperGhostGroup.renderOrder + 1
+    const worldPos = new Vector3()
+    const visibleBalls = this.helperGhostBalls
+      .map((mesh, index) => ({
+        mesh,
+        index,
+        distanceSq: mesh.visible
+          ? camera.position.distanceToSquared(mesh.getWorldPosition(worldPos))
+          : Infinity,
+      }))
+      .filter((entry) => entry.mesh.visible && Number.isFinite(entry.distanceSq))
+      .sort((a, b) => a.distanceSq - b.distanceSq)
+
+    visibleBalls.forEach((entry, orderIndex) => {
+      entry.mesh.renderOrder = baseOrder + orderIndex
+    })
+
+    const hiddenOrderStart = baseOrder + visibleBalls.length
+    this.helperGhostBalls.forEach((mesh, index) => {
+      if (!mesh.visible) {
+        mesh.renderOrder = hiddenOrderStart + index
+      }
+    })
   }
 
   toggleMasseMode() {
