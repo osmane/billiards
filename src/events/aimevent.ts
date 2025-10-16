@@ -10,6 +10,7 @@ export class AimEvent extends GameEvent {
   power = 0
   pos = new Vector3(0, 0, 0)
   i = 0
+  elevation = 0.17 // Cue elevation angle in radians (default value)
 
   constructor() {
     super()
@@ -28,6 +29,9 @@ export class AimEvent extends GameEvent {
     event.power = json.power
     if (json.i) {
       event.i = json.i
+    }
+    if (json.elevation !== undefined) {
+      event.elevation = json.elevation
     }
     return event
   }

@@ -48,6 +48,8 @@ export class Replay extends ControllerBase {
     this.container.table.cueball = this.container.table.balls[aim.i]
     this.container.table.cueball.pos.copy(aim.pos)
     this.container.table.cue.aim = aim
+    // Restore elevation from aim event for accurate replay
+    this.container.table.cue.elevation = aim.elevation
     this.container.table.cue.updateAimInput()
     this.container.table.cue.t = 1
     clearTimeout(this.timer)
@@ -99,6 +101,8 @@ export class Replay extends ControllerBase {
     this.container.rules.cueball = this.container.table.cueball
     this.container.table.cueball.pos.copy(aim.pos)
     this.container.table.cue.aim = aim
+    // Restore elevation from aim event for accurate replay
+    this.container.table.cue.elevation = aim.elevation
     this.container.view.camera.forceMode(this.container.view.camera.aimView)
     return new Aim(this.container)
   }

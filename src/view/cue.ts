@@ -156,6 +156,7 @@ export class Cue {
   updateAimInput() {
     this.aimInputs?.updateVisualState(this.aim.offset.x, this.aim.offset.y)
     this.aimInputs?.updatePowerSlider(this.aim.power / this.maxPower)
+    this.aimInputs?.updateElevationSlider(this.elevation)
     this.aimInputs?.showOverlap()
   }
 

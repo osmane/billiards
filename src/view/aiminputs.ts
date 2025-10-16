@@ -72,6 +72,8 @@ export class AimInputs {
     const elevationDegrees = (this.container.table.cue.elevation * 180) / Math.PI
     this.cueElevationElement.value = elevationDegrees.toString()
     this.pitch = Math.PI / 2 - this.container.table.cue.elevation
+    // Sync elevation to aim event for replay
+    this.container.table.cue.aim.elevation = this.container.table.cue.elevation
 
     this.drawSphere()
   }
@@ -163,6 +165,8 @@ export class AimInputs {
 
     // Update cue elevation
     this.container.table.cue.elevation = angleRad
+    // Sync elevation to aim event for replay
+    this.container.table.cue.aim.elevation = angleRad
 
     // Update pitch for sphere rendering (pitch = π/2 - elevation)
     this.pitch = Math.PI / 2 - angleRad
@@ -415,6 +419,16 @@ export class AimInputs {
     power > 0 &&
       this.cuePowerElement?.value &&
       (this.cuePowerElement.value = power)
+  }
+
+  updateElevationSlider(elevation: number) {
+    if (this.cueElevationElement) {
+      const elevationDegrees = (elevation * 180) / Math.PI
+      this.cueElevationElement.value = elevationDegrees.toString()
+      this.pitch = Math.PI / 2 - elevation
+      this.hitPoint = this.pushToWhiteArea(this.hitPoint)
+      this.drawSphere()
+    }
   }
 
   hit = (_) => {
