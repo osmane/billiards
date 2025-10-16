@@ -436,7 +436,14 @@ export class AimInputs {
       return
     }
     const initialValue = parseFloat(this.cuePowerElement.value)
-    const normalizedPower = Number.isFinite(initialValue) ? initialValue : 0
+    let normalizedPower = Number.isFinite(initialValue) ? initialValue : 0
+
+    // Ensure a reasonable default power if it's zero or too small
+    if (normalizedPower < 0.01) {
+      normalizedPower = 0.5 // Default to 50% power
+      this.cuePowerElement.value = normalizedPower.toString()
+    }
+
     this.container.table.cue.setPower(normalizedPower)
   }
 }

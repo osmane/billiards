@@ -105,9 +105,15 @@ export class Container {
     this.wasMoving = !this.table.allStationary()
 
     // Initial trajectory prediction for 3 cushion mode
-    setTimeout(() => {
-      this.updateTrajectoryPrediction()
-    }, 1000)
+    // Poll until balls are stationary, then update trajectory
+    const ensureInitialTrajectory = () => {
+      if (this.table.allStationary()) {
+        this.updateTrajectoryPrediction()
+      } else {
+        requestAnimationFrame(ensureInitialTrajectory)
+      }
+    }
+    requestAnimationFrame(ensureInitialTrajectory)
   }
 
   sendChat = (msg) => {
@@ -256,11 +262,16 @@ export class Container {
     const targetButton = document.getElementById("targetButton")
     const trajectoryVisible = targetButton?.classList.contains("is-active") ?? false
 
-    // Only predict trajectories for 3 cushion mode when balls are stationary
+    // Only predict trajectories when balls are stationary
     if (!TrajectoryPredictor.shouldPredict(this) || !this.table.allStationary()) {
       this.trajectoryRenderer.clearTrajectories()
       this.table.cue.updateHelperCurve(null)
       return
+    }
+
+    // Ensure power is set to a reasonable default if it's zero or too small
+    if (this.table.cue.aim.power < 0.01) {
+      this.table.cue.aim.power = this.table.cue.maxPower * 0.5 // Set to 50% power as default
     }
 
     // Always calculate trajectories (for helper curve), but control visibility separately

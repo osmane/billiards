@@ -31,7 +31,24 @@ export class Aim extends ControllerBase {
       this.container.scoreButtons.reinitializeEventHandlers()
     }, 100)
 
-    this.container.updateTrajectoryPrediction()
+    // Ensure trajectory prediction happens after aim mode is fully set up and balls are stationary
+    // Poll until balls are stationary, then update trajectory
+    // Also add a small delay to ensure all initialization is complete
+    const ensureTrajectoryUpdate = () => {
+      if (this.container.table.allStationary()) {
+        this.container.updateTrajectoryPrediction()
+        // Update again after a short delay to ensure everything is settled
+        setTimeout(() => {
+          if (this.container.table.allStationary()) {
+            this.container.updateTrajectoryPrediction()
+          }
+        }, 50)
+      } else {
+        // If balls are still moving, check again on the next frame
+        requestAnimationFrame(ensureTrajectoryUpdate)
+      }
+    }
+    requestAnimationFrame(ensureTrajectoryUpdate)
   }
 
   override handleInput(input: Input): Controller {
