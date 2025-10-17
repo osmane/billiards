@@ -1,31 +1,32 @@
 import { Vector3 } from "three"
 import { Container } from "../container/container"
 import { Input } from "../events/input"
-import { Overlap } from "../utils/overlap"
-import { unitAtAngle } from "../utils/utils"
 
-export class AimInputs {
+/**
+ * Precision aiming panel with 2x size controls for enhanced precision
+ */
+export class PrecisionPanel {
+  readonly container: Container
+  readonly panelElement: HTMLElement
+  readonly buttonElement: HTMLElement
   readonly cueBallElement: HTMLElement
   readonly cueBallCanvas: HTMLCanvasElement
   readonly ctx: CanvasRenderingContext2D
   readonly cueElevationElement: HTMLInputElement
   readonly cuePowerElement: HTMLInputElement
-  readonly cueHitElement: HTMLElement
-  readonly container: Container
-  readonly overlap: Overlap
 
-  // Sphere rendering properties
+  // Sphere rendering properties (same as AimInputs but with doubled size)
   radius: number = 0
   cx: number = 0
   cy: number = 0
-  pitch: number = Math.PI / 2 // Cue elevation angle (rotated from horizontal)
-  hitPoint: [number, number, number] = [0, 0, 1] // Current hit point in 3D space
-  targetPoint: [number, number, number] = [0, 0, 1] // Target ball indicator (if visible)
+  pitch: number = Math.PI / 2
+  hitPoint: [number, number, number] = [0, 0, 1]
+  targetPoint: [number, number, number] = [0, 0, 1]
 
-  // Visual constants from sphereProjectionAreaformSide.html
-  readonly hitPointRatio = 0.021 // Hit point visual size
-  readonly targetPointRatio = 0.003 // Target point size
-  readonly greyRatio = 0.75 // Grey area threshold
+  // Visual constants
+  readonly hitPointRatio = 0.021
+  readonly targetPointRatio = 0.003
+  readonly greyRatio = 0.75
   readonly blendWidth = this.hitPointRatio * 2 * 1.2
 
   // Lighting
@@ -34,15 +35,17 @@ export class AimInputs {
   readonly ambientLight = 0.35
   readonly diffuseLight = 0.65
 
-  constructor(container) {
+  private isVisible = false
+
+  constructor(container: Container) {
     this.container = container
-    this.cueBallElement = document.getElementById("cueBall")!
-    this.cueBallCanvas = document.getElementById("cueBallCanvas") as HTMLCanvasElement
+    this.panelElement = document.getElementById("precisionPanel")!
+    this.buttonElement = document.getElementById("precisionButton")!
+    this.cueBallElement = document.getElementById("precisionCueBall")!
+    this.cueBallCanvas = document.getElementById("precisionCueBallCanvas") as HTMLCanvasElement
     this.ctx = this.cueBallCanvas.getContext("2d", { alpha: false })!
-    this.cueElevationElement = document.getElementById("cueElevation") as HTMLInputElement
-    this.cuePowerElement = document.getElementById("cuePower") as HTMLInputElement
-    this.cueHitElement = document.getElementById("cueHit")!
-    this.overlap = new Overlap(this.container.table.balls)
+    this.cueElevationElement = document.getElementById("precisionCueElevation") as HTMLInputElement
+    this.cuePowerElement = document.getElementById("precisionCuePower") as HTMLInputElement
 
     // Normalize light direction
     const lightLen = Math.sqrt(this.lightDir[0]**2 + this.lightDir[1]**2 + this.lightDir[2]**2)
@@ -54,45 +57,98 @@ export class AimInputs {
 
     this.initializeCanvas()
     this.addListeners()
-    this.initializePower()
   }
 
   initializeCanvas() {
-    // Set canvas size to match element size
+    // Set canvas size to be 2x the original size
     const rect = this.cueBallElement.getBoundingClientRect()
     const size = Math.min(rect.width, rect.height)
+
+    // Ensure valid canvas size
+    if (size <= 0) {
+      // Panel is not visible yet, skip initialization
+      return
+    }
+
     this.cueBallCanvas.width = size
     this.cueBallCanvas.height = size
     this.cx = size / 2
     this.cy = size / 2
-    // Use 0.49 instead of 0.5 to avoid edge artifacts with border-radius
     this.radius = Math.floor(size * 0.51)
 
-    // Initialize with default elevation (convert from cue.elevation to degrees)
-    const elevationDegrees = (this.container.table.cue.elevation * 180) / Math.PI
-    this.cueElevationElement.value = elevationDegrees.toString()
-    this.pitch = Math.PI / 2 - this.container.table.cue.elevation
-    // Sync elevation to aim event for replay
-    this.container.table.cue.aim.elevation = this.container.table.cue.elevation
-
+    // Sync with current cue state
+    this.syncFromOriginal()
     this.drawSphere()
   }
 
   addListeners() {
+    this.buttonElement?.addEventListener("click", this.togglePanel)
     this.cueBallCanvas?.addEventListener("mousedown", this.onMouseDown)
     this.cueBallCanvas?.addEventListener("mouseup", this.onMouseUp)
     this.cueBallCanvas?.addEventListener("mouseleave", this.onMouseLeave)
     this.cueBallCanvas?.addEventListener("mousemove", this.onMouseMove)
     this.cueBallCanvas?.addEventListener("click", this.onClick)
-
     this.cueElevationElement?.addEventListener("input", this.elevationChanged)
-    this.cueHitElement?.addEventListener("click", this.hit)
     this.cuePowerElement?.addEventListener("change", this.powerChanged)
+  }
 
-    if (!("ontouchstart" in window)) {
-      document.getElementById("viewP1")?.addEventListener("dblclick", this.hit)
+  togglePanel = () => {
+    this.isVisible = !this.isVisible
+    if (this.isVisible) {
+      this.panelElement.classList.add("is-visible")
+      this.buttonElement.classList.add("is-active")
+
+      // Initialize canvas now that panel is visible
+      setTimeout(() => {
+        this.initializeCanvas()
+      }, 50)
+    } else {
+      this.panelElement.classList.remove("is-visible")
+      this.buttonElement.classList.remove("is-active")
     }
-    document.addEventListener("wheel", this.mousewheel)
+  }
+
+  hide() {
+    if (this.isVisible) {
+      this.isVisible = false
+      this.panelElement.classList.remove("is-visible")
+      this.buttonElement.classList.remove("is-active")
+    }
+  }
+
+  syncFromOriginal() {
+    const cue = this.container.table.cue
+    const aimInputs = cue.aimInputs
+
+    // Sync elevation
+    const elevationDegrees = (cue.elevation * 180) / Math.PI
+    this.cueElevationElement.value = elevationDegrees.toString()
+    this.pitch = Math.PI / 2 - cue.elevation
+
+    // Sync power
+    const normalizedPower = cue.aim.power / cue.maxPower
+    this.cuePowerElement.value = normalizedPower.toString()
+
+    // Sync hit point
+    if (aimInputs) {
+      this.hitPoint = [...aimInputs.hitPoint] as [number, number, number]
+      this.targetPoint = [...aimInputs.targetPoint] as [number, number, number]
+    }
+
+    // Redraw if visible
+    if (this.isVisible) {
+      this.drawSphere()
+    }
+  }
+
+  syncToOriginal() {
+    const aimInputs = this.container.table.cue.aimInputs
+    if (aimInputs) {
+      // Update original controls
+      aimInputs.hitPoint = [...this.hitPoint] as [number, number, number]
+      aimInputs.pitch = this.pitch
+      aimInputs.drawSphere()
+    }
   }
 
   isDragging = false
@@ -137,22 +193,20 @@ export class AimInputs {
 
       const clickedPoint: [number, number, number] = [nx, ny, nz]
 
-      // Only accept if in white area
       if (this.isInWhiteArea(clickedPoint)) {
         this.hitPoint = clickedPoint
 
-        // Direct normalized coordinates from sphere surface
-        // nx, ny are already in range [-1, 1] representing the ball surface
         const offsetX = -nx
         const offsetY = -ny
 
+        // Update original cue
         this.container.table.cue.setSpin(
           new Vector3(offsetX, offsetY, 0),
           this.container.table
         )
 
-        // Sync to precision panel
-        this.container.precisionPanel?.syncFromOriginal()
+        // Sync to original canvas
+        this.syncToOriginal()
 
         this.drawSphere()
         this.container.lastEventTime = performance.now()
@@ -168,28 +222,47 @@ export class AimInputs {
 
     // Update cue elevation
     this.container.table.cue.elevation = angleRad
-    // Sync elevation to aim event for replay
     this.container.table.cue.aim.elevation = angleRad
 
-    // Update pitch for sphere rendering (pitch = π/2 - elevation)
+    // Update pitch
     this.pitch = Math.PI / 2 - angleRad
 
     // Push hit point to white area if needed
     this.hitPoint = this.pushToWhiteArea(this.hitPoint)
 
-    // Update cue spin offset based on adjusted hit point
+    // Update cue spin
     this.syncHitPointToCue()
 
-    // Sync to precision panel
-    this.container.precisionPanel?.syncFromOriginal()
+    // Sync to original
+    const aimInputs = this.container.table.cue.aimInputs
+    if (aimInputs) {
+      aimInputs.pitch = this.pitch
+      aimInputs.hitPoint = [...this.hitPoint] as [number, number, number]
+      if (aimInputs.cueElevationElement) {
+        aimInputs.cueElevationElement.value = degrees.toString()
+      }
+      aimInputs.drawSphere()
+    }
 
     this.drawSphere()
     this.container.lastEventTime = performance.now()
     this.container.updateTrajectoryPrediction()
   }
 
+  powerChanged = (_: Event) => {
+    const normalizedPower = parseFloat(this.cuePowerElement.value)
+    this.container.table.cue.setPower(normalizedPower)
+
+    // Sync to original
+    const aimInputs = this.container.table.cue.aimInputs
+    if (aimInputs && aimInputs.cuePowerElement) {
+      aimInputs.cuePowerElement.value = normalizedPower.toString()
+    }
+
+    this.container.updateTrajectoryPrediction()
+  }
+
   syncHitPointToCue() {
-    // Direct normalized coordinates
     const offsetX = -this.hitPoint[0]
     const offsetY = -this.hitPoint[1]
 
@@ -197,6 +270,8 @@ export class AimInputs {
       new Vector3(offsetX, offsetY, 0),
       this.container.table
     )
+
+    this.syncToOriginal()
   }
 
   rotateX(v: [number, number, number], pitch: number): [number, number, number] {
@@ -226,16 +301,13 @@ export class AimInputs {
     const threshold = 1 - this.greyRatio
 
     if (tRaw >= threshold) {
-      // In grey area, push to white area
       const targetTRaw = threshold - 0.02
       const targetRY = targetTRaw * 2 - 1
 
-      // Apply inverse rotation
       const sx = Math.sin(this.pitch), cx = Math.cos(this.pitch)
       const newY = cx * targetRY + sx * rz
       const newZ = -sx * targetRY + cx * rz
 
-      // Normalize (keep on sphere surface)
       const len = Math.sqrt(rx*rx + newY*newY + newZ*newZ)
       return [rx/len, newY/len, newZ/len]
     }
@@ -265,6 +337,11 @@ export class AimInputs {
     const W = this.cueBallCanvas.width
     const H = this.cueBallCanvas.height
 
+    // Safety check for valid canvas dimensions
+    if (W <= 0 || H <= 0 || !isFinite(W) || !isFinite(H)) {
+      return
+    }
+
     // Background gradient
     const gradient = this.ctx.createLinearGradient(0, 0, 0, H)
     gradient.addColorStop(0, 'rgb(0, 64, 94)')
@@ -276,7 +353,6 @@ export class AimInputs {
     const data = img.data
     const r2 = this.radius * this.radius
 
-    // Fill background
     const bgColor: [number, number, number] = [0, 64, 94]
     for (let i = 0; i < data.length; i += 4) {
       data[i] = bgColor[0]
@@ -300,10 +376,8 @@ export class AimInputs {
         let ny = y / this.radius
         let nz = z / this.radius
 
-        // Apply rotation for white-grey pattern
         const [rx, ry, rz] = this.rotateX([nx, ny, nz], this.pitch)
 
-        // Calculate distances for hit point and target point
         const dotHit = nx * this.hitPoint[0] + ny * this.hitPoint[1] + nz * this.hitPoint[2]
         const hitThreshold = 1 - this.hitPointRatio * 2
 
@@ -313,12 +387,10 @@ export class AimInputs {
         let r, g, b
 
         if (dotHit >= hitThreshold) {
-          // Blue hit point with gradient
           const hitColor: [number, number, number] = [0, 64, 94]
           const edgeFade = (dotHit - hitThreshold) / (1 - hitThreshold)
           const t = this.smoothstep(0, 0.3, edgeFade)
 
-          // Get base color
           let tRaw = (ry + 1) * 0.5
           const threshold = 1 - this.greyRatio
           const whiteColor: [number, number, number] = [217, 217, 217]
@@ -328,12 +400,10 @@ export class AimInputs {
           const baseG = whiteColor[1]*(1-tBlend) + greyColor[1]*tBlend
           const baseB = whiteColor[2]*(1-tBlend) + greyColor[2]*tBlend
 
-          // Gradient blend
           r = baseR * (1-t) + hitColor[0] * t
           g = baseG * (1-t) + hitColor[1] * t
           b = baseB * (1-t) + hitColor[2] * t
         } else {
-          // Normal painting: rotated height-based
           let tRaw = (ry + 1) * 0.5
           const threshold = 1 - this.greyRatio
 
@@ -346,7 +416,6 @@ export class AimInputs {
           b = whiteColor[2]*(1-t) + greyColor[2]*t
         }
 
-        // Red target point with gradient and transparency
         if (dotTarget >= targetThreshold) {
           const targetColor: [number, number, number] = [255, 0, 0]
           const edgeFade = (dotTarget - targetThreshold) / (1 - targetThreshold)
@@ -357,7 +426,6 @@ export class AimInputs {
           b = b * (1-t) + targetColor[2] * t
         }
 
-        // Apply lighting
         const litColor = this.applyLighting([r, g, b], [nx, ny, nz])
         r = litColor[0]
         g = litColor[1]
@@ -372,103 +440,10 @@ export class AimInputs {
     }
 
     this.ctx.putImageData(img, 0, 0)
-
-    // Update target point for object ball overlap
-    this.updateTargetPoint()
   }
 
-  updateTargetPoint() {
-    const table = this.container.table
-    const dir = unitAtAngle(table.cue.aim.angle)
-    const closest = this.overlap.getOverlapOffset(table.cueball, dir)
-
-    if (closest) {
-      // Calculate target point position in 3D sphere space.
-      // This should show where the object ball is relative to aim direction.
-      // For now, keep it at north pole (can be enhanced later)
-      this.targetPoint = [0, 0, 1]
-    } else {
-      // Move target indicator out of view when no overlap is detected.
-      this.targetPoint = [0, 0, -1]
-    }
-
-    // Sync target point to precision panel
-    this.container.precisionPanel?.updateTargetPoint(this.targetPoint)
-  }
-
-  updateVisualState(x: number, y: number) {
-    // Direct mapping: offset values are already normalized [-1, 1]
-    const nx = -x
-    const ny = -y
-
-    // Calculate nz to keep point on sphere surface
-    const nxy2 = nx*nx + ny*ny
-    if (nxy2 <= 1) {
-      const nz = Math.sqrt(1 - nxy2)
-      this.hitPoint = [nx, ny, nz]
-    }
-
+  updateTargetPoint(targetPoint: [number, number, number]) {
+    this.targetPoint = targetPoint
     this.drawSphere()
-  }
-
-  showOverlap() {
-    this.drawSphere()
-  }
-
-  setButtonText(text) {
-    this.cueHitElement && (this.cueHitElement.innerText = text)
-  }
-
-  powerChanged = (_) => {
-    this.container.table.cue.setPower(this.cuePowerElement.value)
-    // Sync to precision panel
-    this.container.precisionPanel?.syncFromOriginal()
-    this.container.updateTrajectoryPrediction()
-  }
-
-  updatePowerSlider(power) {
-    power > 0 &&
-      this.cuePowerElement?.value &&
-      (this.cuePowerElement.value = power)
-  }
-
-  updateElevationSlider(elevation: number) {
-    if (this.cueElevationElement) {
-      const elevationDegrees = (elevation * 180) / Math.PI
-      this.cueElevationElement.value = elevationDegrees.toString()
-      this.pitch = Math.PI / 2 - elevation
-      this.hitPoint = this.pushToWhiteArea(this.hitPoint)
-      this.drawSphere()
-    }
-  }
-
-  hit = (_) => {
-    this.container.table.cue.setPower(this.cuePowerElement?.value)
-    this.container.inputQueue.push(new Input(0, "SpaceUp"))
-  }
-
-  mousewheel = (e) => {
-    if (this.cuePowerElement) {
-      this.cuePowerElement.value -= Math.sign(e.deltaY) / 10
-      this.container.table.cue.setPower(this.cuePowerElement.value)
-      this.container.lastEventTime = performance.now()
-      this.container.updateTrajectoryPrediction()
-    }
-  }
-
-  private initializePower() {
-    if (!this.cuePowerElement) {
-      return
-    }
-    const initialValue = parseFloat(this.cuePowerElement.value)
-    let normalizedPower = Number.isFinite(initialValue) ? initialValue : 0
-
-    // Ensure a reasonable default power if it's zero or too small
-    if (normalizedPower < 0.01) {
-      normalizedPower = 0.5 // Default to 50% power
-      this.cuePowerElement.value = normalizedPower.toString()
-    }
-
-    this.container.table.cue.setPower(normalizedPower)
   }
 }

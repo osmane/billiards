@@ -3,6 +3,7 @@ import { BreakEvent } from "../events/breakevent"
 import { ChatEvent } from "../events/chatevent"
 import { StationaryEvent } from "../events/stationaryevent"
 import { share, shorten } from "../utils/shorten"
+import JSONCrush from "jsoncrush"
 
 export class Menu {
   container: Container
@@ -61,6 +62,72 @@ export class Menu {
     this.replay.onclick = (_) => {
       this.interuptEventQueue(breakEvent)
     }
+  }
+
+  aimMode() {
+    if (!this.share) {
+      return
+    }
+
+    // Enable share button in aim mode
+    this.share.disabled = false
+    this.replay.disabled = true
+    this.redo.disabled = true
+
+    const queue = this.container.eventQueue
+    this.share.onclick = (_) => {
+      // Only allow sharing when balls are stationary
+      if (!this.container.table.allStationary()) {
+        return
+      }
+
+      // Build URL from current state
+      const currentState = this.buildCurrentStateUrl()
+      if (!currentState) {
+        return
+      }
+
+      // In single player mode, directly copy to clipboard without network call
+      const response = share(currentState)
+      queue.push(new ChatEvent(null, response))
+    }
+  }
+
+  private buildCurrentStateUrl(): string | null {
+    // Get current table state
+    const init = this.container.table.shortSerialise()
+
+    // Get current aim event (cue position, angle, power, elevation, spin)
+    const aim = this.container.table.cue.aim.copy()
+
+    // Create a replay state with single shot
+    const state = {
+      init: init,
+      shots: [aim],
+      start: Date.now(),
+      now: Date.now(),
+      score: 0,
+      wholeGame: false,
+      v: 1,
+    }
+
+    const serialised = JSON.stringify(state)
+    const compressed = JSONCrush.crush(serialised)
+
+    // Encode for URL
+    const encoded = encodeURIComponent(compressed)
+      .replace(/\(/g, "%28")
+      .replace(/\)/g, "%29")
+      .replace(/\!/g, "%21")
+      .replace(/\*/g, "%2A")
+
+    // Get replay URL from recorder
+    const replayUrl = this.container.recorder.replayUrl
+    if (!replayUrl) {
+      return null
+    }
+
+    return `${replayUrl}${encoded}`
   }
 
   interuptEventQueue(breakEvent: BreakEvent) {

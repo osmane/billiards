@@ -20,6 +20,9 @@ export class Aim extends ControllerBase {
     this.container.view.camera.suggestMode(this.container.view.camera.aimView)
     table.cue.aimInputs.showOverlap()
 
+    // Enable share button in aim mode
+    this.container.menu.aimMode()
+
     // Update score buttons visibility for the current game mode
     // This is crucial when transitioning from replay back to normal gameplay
     this.container.scoreButtons.updateGameModeVisibility()

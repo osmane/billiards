@@ -78,6 +78,9 @@
           >
         </div>
         <div class="outerMenu">
+          <button class="menuButton" title="precision" id="precisionButton" type="submit">
+            &#128269;
+          </button>
           <button class="menuButton" title="share" id="share" type="submit">
             &#128279;
           </button>
@@ -95,6 +98,37 @@
             &#127919;
           </button>
         </div>
+      </div>
+    </div>
+    <div class="precisionPanel" id="precisionPanel">
+      <div class="precisionBallContainer">
+        <div id="precisionCueBall" class="precisionCueBall">
+          <canvas id="precisionCueBallCanvas"></canvas>
+        </div>
+      </div>
+      <div class="precisionSliderRow">
+        <input
+          class="precisionElevationSlider"
+          type="range"
+          orient="vertical"
+          min="0"
+          max="90"
+          step="0.5"
+          value="10"
+          id="precisionCueElevation"
+          aria-label="precision elevation slider"
+        />
+        <input
+          class="precisionPowerSlider"
+          type="range"
+          orient="vertical"
+          min="0"
+          max="1"
+          step="0.005"
+          value="0.7"
+          id="precisionCuePower"
+          aria-label="precision power slider"
+        />
       </div>
     </div>
     <div class="constants" id="constants">

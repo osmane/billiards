@@ -28,6 +28,7 @@ import { R } from "../model/physics/constants"
 import { CaromClothManager } from "../view/caromcloth"
 import { ClothPanel } from "../view/clothpanel"
 import { TableMesh } from "../view/tablemesh"
+import { PrecisionPanel } from "../view/precisionpanel"
 
 /**
  * Model, View, Controller container.
@@ -55,6 +56,7 @@ export class Container {
   trajectoryRenderer: TrajectoryRenderer
   caromClothManager?: CaromClothManager
   clothPanel?: ClothPanel
+  precisionPanel: PrecisionPanel
   frame: (timestamp: number) => void
   private wasMoving = false
   private debugModeEnabled = false
@@ -102,6 +104,7 @@ export class Container {
     }
     this.hud = new Hud()
     this.lobbyIndicator = new LobbyIndicator()
+    this.precisionPanel = new PrecisionPanel(this)
     this.updateController(new Init(this))
     this.wasMoving = !this.table.allStationary()
 
@@ -244,7 +247,17 @@ export class Container {
     if (wasMoving && !isMoving) {
       endShot()
     }
+    // Close precision panel when shot is made (balls start moving)
+    if (!wasMoving && isMoving) {
+      this.precisionPanel?.hide()
+    }
     this.wasMoving = isMoving
+
+    // Update share button state in aim mode
+    // Disable when balls are moving, enable when stationary
+    if (this.menu.share && controllerName(this.controller) === "Aim") {
+      this.menu.share.disabled = isMoving
+    }
 
     requestAnimationFrame((t) => {
       this.animate(t)
