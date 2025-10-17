@@ -219,6 +219,10 @@ export class Table {
     })
   }
 
+  showVirtualCue(bool) {
+    this.cue.virtualCueMesh.visible = bool
+  }
+
   halt() {
     this.balls.forEach((b) => {
       b.vel.copy(zero)

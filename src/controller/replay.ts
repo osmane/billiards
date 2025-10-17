@@ -22,6 +22,10 @@ export class Replay extends ControllerBase {
     this.firstShot = this.shots[0]
     this.delay = delay
     this.container.table.showTraces(true)
+    // Ensure virtual cue is hidden in replay mode (controlled by debug mode)
+    if (!this.container.isDebugModeEnabled()) {
+      this.container.table.showVirtualCue(false)
+    }
     this.container.table.updateFromShortSerialised(this.init)
     if (retry) {
       const retryEvent = new BreakEvent(init, shots)

@@ -85,6 +85,7 @@ export class Container {
     this.view.setDebugMode(this.debugModeEnabled)
     this.table.showSpin(this.debugModeEnabled)
     this.table.showTraces(this.debugModeEnabled)
+    this.table.showVirtualCue(this.debugModeEnabled)
     this.recorder = new Recorder(this)
     this.id = id
     this.menu = new Menu(this)
@@ -159,6 +160,7 @@ export class Container {
     this.sliders.setVisible(enabled)
     this.table.showSpin(enabled)
     this.table.showTraces(enabled)
+    this.table.showVirtualCue(enabled)
     this.view.setDebugMode(enabled)
   }
 
