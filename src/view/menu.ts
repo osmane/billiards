@@ -65,17 +65,17 @@ export class Menu {
   }
 
   aimMode() {
-    if (!this.share) {
+    if (!this.replay) {
       return
     }
 
-    // Enable share button in aim mode
-    this.share.disabled = false
-    this.replay.disabled = true
+    // Enable replay button in aim mode to share current state
+    this.replay.disabled = false
+    this.share.disabled = true
     this.redo.disabled = true
 
     const queue = this.container.eventQueue
-    this.share.onclick = (_) => {
+    this.replay.onclick = (_) => {
       // Only allow sharing when balls are stationary
       if (!this.container.table.allStationary()) {
         return
@@ -87,7 +87,7 @@ export class Menu {
         return
       }
 
-      // In single player mode, directly copy to clipboard without network call
+      // In single player aim mode, directly copy to clipboard without network call
       const response = share(currentState)
       queue.push(new ChatEvent(null, response))
     }

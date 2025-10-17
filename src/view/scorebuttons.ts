@@ -95,7 +95,7 @@ export class ScoreButtons {
       highlight.style.display = "block"
       highlight.style.width = `${buttonRect.width}px`
       highlight.style.left = `${buttonRect.left}px`
-      highlight.style.top = `${buttonRect.top - highlight.offsetHeight - 2}px` // 2px above the button
+      highlight.style.top = `${buttonRect.bottom + 2}px` // 2px below the button (changed from above)
 
       // Copy font properties to pills inside this highlight box
       this.updatePillFonts(highlightId, buttonStyles)

@@ -371,6 +371,18 @@ label {
 }
 
 
+.scoreButtonsContainer {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  z-index: 1000;
+  padding: 8px;
+  opacity: 0.7;
+}
+
 .scoreButton {
   font-weight: 600;
   position: relative;

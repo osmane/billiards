@@ -253,10 +253,10 @@ export class Container {
     }
     this.wasMoving = isMoving
 
-    // Update share button state in aim mode
+    // Update replay button state in aim mode
     // Disable when balls are moving, enable when stationary
-    if (this.menu.share && controllerName(this.controller) === "Aim") {
-      this.menu.share.disabled = isMoving
+    if (this.menu.replay && controllerName(this.controller) === "Aim") {
+      this.menu.replay.disabled = isMoving
     }
 
     requestAnimationFrame((t) => {

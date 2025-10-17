@@ -8,6 +8,7 @@ import { GameEvent } from "../events/gameevent"
 import { EventType } from "../events/eventtype"
 import { RerackEvent } from "../events/rerackevent"
 import { End } from "./end"
+import { ChatEvent } from "../events/chatevent"
 
 export class Replay extends ControllerBase {
   delay: number
@@ -15,6 +16,9 @@ export class Replay extends ControllerBase {
   firstShot: GameEvent
   timer
   init
+  waitingForClick: boolean = false
+  clickHandler: (event: MouseEvent) => void
+
   constructor(container, init, shots, retry = false, delay = 1500) {
     super(container)
     this.init = init
@@ -33,7 +37,36 @@ export class Replay extends ControllerBase {
       this.container.eventQueue.push(retryEvent)
     } else {
       this.container.view.camera.forceMode(this.container.view.camera.topView)
-      this.playNextShot(this.delay * 1.5)
+      // Instead of playing immediately, wait for click
+      this.waitForClick()
+    }
+  }
+
+  waitForClick() {
+    this.waitingForClick = true
+    // Show message in chat
+    this.container.eventQueue.push(
+      new ChatEvent(null, "Click on the screen to start replay")
+    )
+
+    // Setup click handler
+    this.clickHandler = (event: MouseEvent) => {
+      if (this.waitingForClick) {
+        this.waitingForClick = false
+        // Remove the click handler
+        const viewElement = document.getElementById("viewP1")
+        if (viewElement) {
+          viewElement.removeEventListener("click", this.clickHandler)
+        }
+        // Start playing
+        this.playNextShot(this.delay * 1.5)
+      }
+    }
+
+    // Add click listener to view
+    const viewElement = document.getElementById("viewP1")
+    if (viewElement) {
+      viewElement.addEventListener("click", this.clickHandler)
     }
   }
 
@@ -81,6 +114,15 @@ export class Replay extends ControllerBase {
   }
 
   override handleBreak(event: BreakEvent): Controller {
+    // Clean up click handler if waiting
+    if (this.waitingForClick) {
+      this.waitingForClick = false
+      const viewElement = document.getElementById("viewP1")
+      if (viewElement && this.clickHandler) {
+        viewElement.removeEventListener("click", this.clickHandler)
+      }
+    }
+
     this.container.table.updateFromShortSerialised(event.init)
     this.shots = [...event.shots]
     this.container.table.showSpin(true)
@@ -93,10 +135,27 @@ export class Replay extends ControllerBase {
 
   override handleAbort(_: AbortEvent): Controller {
     console.log("Replay aborted")
+    // Clean up click handler if waiting
+    if (this.waitingForClick) {
+      this.waitingForClick = false
+      const viewElement = document.getElementById("viewP1")
+      if (viewElement && this.clickHandler) {
+        viewElement.removeEventListener("click", this.clickHandler)
+      }
+    }
     return new End(this.container)
   }
 
   retry() {
+    // Clean up click handler if waiting
+    if (this.waitingForClick) {
+      this.waitingForClick = false
+      const viewElement = document.getElementById("viewP1")
+      if (viewElement && this.clickHandler) {
+        viewElement.removeEventListener("click", this.clickHandler)
+      }
+    }
+
     clearTimeout(this.timer)
     this.timer = undefined
     this.container.table.updateFromShortSerialised(this.init)

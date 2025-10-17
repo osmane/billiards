@@ -209,12 +209,6 @@ export class CueMesh {
     mesh.renderOrder = 998 // Render just below hit point
     mesh.visible = true
 
-    console.log('Virtual cue created:')
-    console.log('  - Length (game units):', virtualCueLength)
-    console.log('  - Radius (game units):', virtualCueRadius)
-    console.log('  - R (ball radius):', R)
-    console.log('  - Length/R ratio:', (virtualCueLength / R).toFixed(2))
-
     return mesh
   }
 

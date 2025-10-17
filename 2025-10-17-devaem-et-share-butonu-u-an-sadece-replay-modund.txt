@@ -1,0 +1,143 @@
+
+ ▐▛███▜▌   Claude Code v2.0.21
+▝▜█████▛▘  Sonnet 4.5 · Claude Pro
+  ▘▘ ▝▝    D:\MyProject\billiards
+══════════════════════════════════════════════════════════════════════ Conversation compacted · ctrl+o for history ══════════════════════════════════════════════════════════════════════
+  ⎿  Referenced file src\view\cue.ts
+  ⎿  Referenced file src\container\container.ts
+  ⎿  Read src\controller\controllerbase.ts (96 lines)
+  ⎿  Read src\model\table.ts (266 lines)
+  ⎿  Read src\model\trajectorypredictor.ts (429 lines)
+  ⎿  Todo list read (3 items)
+
+● I'll analyze the console output to understand why the angle correction isn't working properly. Let me check the browser console to see what debug information is being logged.
+
+● Read(src\container\container.ts)
+  ⎿  Read 100 lines
+
+● Looking at the code, I can see the debug logging is in place. Now I need to understand why the angle correction might not be working. Let me check if there's an issue with how the
+   lock is being checked in the rotateAim method:
+
+● Read(src\view\cue.ts)
+  ⎿  Read 25 lines
+
+● I see the issue now. Looking at the code, the debug logging and lock mechanism are in place. Let me check if there's a potential timing issue or if the angle correction detection
+  logic needs adjustment. Let me create a test to see what's happening in the console:
+
+● Looking at the code, I believe I've found the root cause. The issue is that when we apply the angle correction, we're calling updateTrajectoryPrediction() again at line 414 in
+  container.ts, which will immediately re-detect the same scenario and potentially cause issues.
+
+  Additionally, I notice that the moveTo() call might not be sufficient to update all the visual elements. Let me add more comprehensive visual updates and also add better debug
+  logging to understand the exact flow:
+
+● Update(src\container\container.ts)
+  ⎿  Updated src\container\container.ts with 6 additions                                                                                                             
+       329            const angleDiff = this.lastCorrectedAngle !== null ? Math.abs(currentAngle - this.lastCorrectedAngle) : Infinity
+       330            const skipCorrection = angleDiff < 0.001 // Skip if angle is same as last correction (within 0.001 radians)
+       331    
+       332 +          console.log(`🔍 Bug check: bugDetected=${bugDetected}, skipCorrection=${skipCorrection}`)
+       333 +          console.log(`   Travel: ${travelDistance.toFixed(4)}, Expected: ${expectedMinDistance.toFixed(4)}`)
+       334 +          console.log(`   Power: ${this.table.cue.aim.power.toFixed(4)}, Angle: ${(currentAngle * 180 / Math.PI).toFixed(1)}°`)
+       335 +          console.log(`   lastCorrectedAngle: ${this.lastCorrectedAngle !== null ? (this.lastCorrectedAngle * 180 / Math.PI).toFixed(1) + '°' : 'null'}`)
+       336 +          console.log(`   angleDiff: ${(angleDiff * 180 / Math.PI).toFixed(4)}°`)
+       337 +  
+       338            if (bugDetected && !skipCorrection) {
+       339              console.warn("⚠️ COLLISION BUG DETECTED - Attempting auto-correction...")
+       340              console.warn(`   Original angle: ${(this.table.cue.aim.angle * 180 / Math.PI).toFixed(1)}°`)
+
+● Now let me also add debug logging to see when rotateAim is called and whether the lock is working:
+
+● Update(src\view\cue.ts)
+  ⎿  Updated src\view\cue.ts with 5 additions and 1 removal                                                                                                                       
+       68      rotateAim(angle, table: Table) {
+       69        // Check if angle corrections are locked (auto-correction in progress)
+       70        if (this.container && performance.now() < this.container.angleCorrectionLockUntil) {
+       71 -        console.log("🔒 rotateAim blocked by lock")
+       71 +        const remainingLock = (this.container.angleCorrectionLockUntil - performance.now()).toFixed(0)
+       72 +        console.log(`🔒 rotateAim blocked by lock (${remainingLock}ms remaining)`)
+       73          return // Ignore all rotation attempts during lock period
+       74        }
+       75    
+       76 +      console.log(`🎯 rotateAim called: changing angle by ${(angle * 180 / Math.PI).toFixed(4)}°`)
+       77        this.aim.angle = this.aim.angle + angle
+       78    
+       79        // Reset last corrected angle when user manually changes angle
+       80        if (this.container) {
+       81 +        console.log(`   Resetting lastCorrectedAngle (was ${this.container.lastCorrectedAngle !== null ? (this.container.lastCorrectedAngle * 180 / Math.PI).toFixed(1)
+          +  + '°' : 'null'})`)
+       82          this.container.lastCorrectedAngle = null
+       83        }
+       84    
+       85        this.aimInputs.showOverlap()
+       86        this.avoidCueTouchingOtherBall(table)
+       87 +      console.log(`   Calling updateTrajectoryPrediction from rotateAim`)
+       88        this.container?.updateTrajectoryPrediction()
+       89      }
+       90    
+
+● Now let's add better logging in the correction application section to see exactly what's happening:
+
+● Update(src\container\container.ts)
+  ⎿  Updated src\container\container.ts with 14 additions and 2 removals                                                                
+       390                console.warn(`   New angle: ${(bestAngle * 180 / Math.PI).toFixed(1)}°`)
+       391    
+       392                // Apply the corrected angle to the aim
+       393 +              console.warn(`   📝 Applying correction...`)
+       394 +              console.warn(`      Before: aim.angle = ${(this.table.cue.aim.angle * 180 / Math.PI).toFixed(1)}°`)
+       395                this.table.cue.aim.angle = bestAngle
+       396 -              console.warn(`   aim.angle set to: ${(this.table.cue.aim.angle * 180 / Math.PI).toFixed(1)}°`)
+       396 +              console.warn(`      After: aim.angle = ${(this.table.cue.aim.angle * 180 / Math.PI).toFixed(1)}°`)
+       397    
+       398                // Update cue visual position to match new angle
+       399 +              console.warn(`   🎨 Updating visual elements...`)
+       400                this.table.cue.moveTo(this.table.cue.aim.pos)
+       401 +              console.warn(`      moveTo() completed`)
+       402    
+       403                // Update overlap display
+       404                this.table.cue.aimInputs?.showOverlap()
+       405 +              console.warn(`      showOverlap() completed`)
+       406    
+       407                // Force visual update by updating lastEventTime
+       408                this.lastEventTime = performance.now()
+       409 +              console.warn(`      lastEventTime updated: ${this.lastEventTime}`)
+       410    
+       411                // Lock angle corrections for 300ms to prevent mouse interference
+       412                this.angleCorrectionLockUntil = performance.now() + 300
+       413 -              console.warn(`   🔒 Lock set until: ${this.angleCorrectionLockUntil}`)
+       413 +              console.warn(`   🔒 Lock set until: ${this.angleCorrectionLockUntil} (current: ${performance.now()})`)
+       414    
+       415                // Remember this corrected angle to prevent re-correction
+       416                this.lastCorrectedAngle = bestAngle
+       417 +              console.warn(`   📌 lastCorrectedAngle set to: ${(this.lastCorrectedAngle * 180 / Math.PI).toFixed(1)}°`)
+       418    
+       419                // Re-predict trajectory with corrected angle to get proper ghost balls
+       420 +              console.warn(`   🔄 Re-predicting trajectory with corrected angle...`)
+       421                predictions = this.trajectoryPredictor.predictTrajectory(
+       422                  this.table,
+       423                  this.table.cue.aim,
+     ...
+       418                  elevation,
+       419                  limitToHelper
+       420                )
+       421 +              console.warn(`   ✓ Trajectory re-prediction complete, ${predictions.length} predictions`)
+       422 +  
+       423 +              // Verify the angle is still correct after re-prediction
+       424 +              console.warn(`   🔍 Verification: aim.angle is now ${(this.table.cue.aim.angle * 180 / Math.PI).toFixed(1)}°`)
+       425              } else {
+       426                console.warn(`   ❌ NO SAFE ANGLE FOUND within ±90°`)
+       427                console.warn(`   Expected minimum distance: ${expectedMinDistance.toFixed(4)}`)
+
+● Good! Now let's build and test this with comprehensive debug logging:
+
+● Bash(npm run build)
+  ⎿  > billiards@0.3.2 build       
+     > webpack
+     … +17 lines (ctrl+o to expand)
+  ⎿  Session limit reached ∙ resets 12pm
+     /upgrade to increase your usage limit.
+
+> /export 
+  ⎿  Conversation exported to: 2025-10-17-devaem-et-share-butonu-u-an-sadece-replay-modund.txt
+
+
+
