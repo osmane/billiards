@@ -379,6 +379,7 @@ export class Container {
           } else if (limitToHelper) {
             helperPoints = trimPointsByDistance(trajectoryVectors, helperMaxDistance)
           }
+
           const firstImpactDistance = cueBallTrajectory.firstImpactDistance
           const impactThreshold = helperMaxDistance - 1e-6
           const hasImpact =
@@ -387,6 +388,24 @@ export class Container {
           const hasBallImpact = predictions.some((p) =>
             p.ballId !== cueBallId && p.firstImpactIndex !== undefined
           )
+
+          // Detect collision depth bug: trajectory drawing stopped at collision point
+          // If the last trajectory point is at the collision point, it means trajectory couldn't continue after collision
+          if (
+            trajectoryVisible &&
+            cueBallTrajectory.firstImpactIndex !== undefined &&
+            cueBallTrajectory.firstImpactIndex === trajectoryVectors.length - 1
+          ) {
+            console.warn(
+              "⚠️ COLLISION DEPTH BUG DETECTED - Trajectory lines stopped at ball-ball collision point",
+              {
+                impactIndex: cueBallTrajectory.firstImpactIndex,
+                totalPoints: trajectoryVectors.length,
+                impactDistance: cueBallTrajectory.firstImpactDistance?.toFixed(2)
+              }
+            )
+          }
+
           this.table.cue.updateHelperCurve(helperPoints, hasImpact, hasBallImpact)
         } else {
           this.table.cue.updateHelperCurve(null)

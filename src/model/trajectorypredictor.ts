@@ -19,6 +19,7 @@ export interface TrajectoryPrediction {
   ballId: number
   firstImpactIndex?: number
   firstImpactDistance?: number
+  hadSimulationError?: boolean
 }
 
 export class TrajectoryPredictor {
@@ -216,6 +217,7 @@ export class TrajectoryPredictor {
     // Run simulation with improved error handling
     let stepsWithoutMotion = 0
     const maxStepsWithoutMotion = 100 // Stop if balls haven't moved for 100 steps
+    let simulationEndedByError = false
 
     while (simulationTime < maxSimTime) {
       // Advance simulation
@@ -301,9 +303,13 @@ export class TrajectoryPredictor {
         }
       } catch (error) {
         // Break on simulation errors (collision depth exceeded, etc.)
+        simulationEndedByError = true
         break
       }
     }
+
+    // Store error flag in predictions for later detection
+    const hadSimulationError = simulationEndedByError
 
     if (cueBallFirstImpactDistance === null && directImpactDistance !== null) {
       const clampedDistance = Math.min(directImpactDistance, helperDistanceLimit)
@@ -344,7 +350,8 @@ export class TrajectoryPredictor {
           ballId: originalBallId, // Use original ball ID for rendering
           points,
           firstImpactIndex,
-          firstImpactDistance
+          firstImpactDistance,
+          hadSimulationError
         })
       }
     })
