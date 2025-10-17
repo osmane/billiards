@@ -55,7 +55,9 @@ export abstract class ControllerBase extends Controller {
         cue.toggleHelper()
         return true
       case "movementXUp":
-        cue.rotateAim(delta * 2, this.container.table)
+        // Precision panel aktifse hassasiyeti 2 kat artır (hareketi 2 kat yavaşlat)
+        const precisionMultiplier = this.container.precisionPanel?.getIsVisible() ? 0.5 : 1.0
+        cue.rotateAim(delta * 2 * precisionMultiplier, this.container.table)
         return true
       case "movementYUp":
       case "NumpadSubtract":

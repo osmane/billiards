@@ -116,6 +116,10 @@ export class PrecisionPanel {
     }
   }
 
+  getIsVisible(): boolean {
+    return this.isVisible
+  }
+
   syncFromOriginal() {
     const cue = this.container.table.cue
     const aimInputs = cue.aimInputs
