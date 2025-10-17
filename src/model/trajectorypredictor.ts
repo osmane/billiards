@@ -7,6 +7,7 @@ import { State } from "./ball"
 import { OutcomeType } from "./outcome"
 import { R } from "./physics/constants"
 import { Vector3 } from "three"
+import { Collision } from "./physics/collision"
 
 export interface TrajectoryPoint {
   position: { x: number; y: number; z: number }
@@ -27,6 +28,7 @@ export class TrajectoryPredictor {
   private timeStep = 0.001953125 // Same as container step size
   private sampleInterval = 0.05 // Sample positions every 50ms for smooth lines
   private maxRetries = 100 // Maximum collision resolution retries per step
+  private readonly COLLISION_BUG_SHORTEN_DISTANCE = 50 // TEST: Distance to backtrack when collision bug detected
 
   constructor() {}
 
@@ -242,6 +244,7 @@ export class TrajectoryPredictor {
             return
           }
 
+
           const impactedBalls: Ball[] = []
           if (outcome.ballA) {
             impactedBalls.push(outcome.ballA)
@@ -302,7 +305,7 @@ export class TrajectoryPredictor {
           break
         }
       } catch (error) {
-        // Break on simulation errors (collision depth exceeded, etc.)
+        // Collision depth error - simulation cannot continue
         simulationEndedByError = true
         break
       }

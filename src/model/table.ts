@@ -79,11 +79,25 @@ export class Table {
   /**
    * Returns true if a pair of balls can advance by t without any collision.
    * If there is a collision, adjust velocity appropriately.
-   *
    */
   private prepareAdvancePair(a: Ball, b: Ball, t: number) {
-    // Use physics context from ball a (should be same as b in a given game mode)
+    const radius = a.physicsContext?.R ?? R
+    const currentDistance = a.pos.distanceTo(b.pos)
+    const targetDistance = 2 * radius
+    const penetration = targetDistance - currentDistance
+
+    // Only process collision if there's actual penetration
+    // This prevents infinite retry loops when balls are separated but have
+    // velocities that would cause future collision
+    const hasActualPenetration = penetration > radius * 1e-6
+
     if (Collision.willCollide(a, b, t, a.physicsContext)) {
+      if (!hasActualPenetration) {
+        // Balls will collide in the future but are currently separated
+        // Let normal physics handle this in the next timestep
+        return true
+      }
+
       Collision.separateAtImpact(a, b, t, a.physicsContext)
       const incidentSpeed = Collision.collide(a, b)
       this.outcome.push(Outcome.collision(a, b, incidentSpeed))
