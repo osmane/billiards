@@ -59,6 +59,10 @@ export const CAROM_BALL_MASS = 0.21;    // 0.205–0.215 kg
 export interface PhysicsContext {
   R: number;  // Ball radius
   m: number;  // Ball mass
+  mu?: number; // Rolling friction coefficient override
+  rho?: number; // Spin decay distribution coefficient override
+  muS?: number; // Sliding friction coefficient override
+  spinStopThreshold?: number; // Threshold for zero-spin detection
 }
 
 // Mode-specific physics contexts
@@ -74,7 +78,11 @@ export const SNOOKER_PHYSICS: PhysicsContext = {
 
 export const CAROM_PHYSICS: PhysicsContext = {
   R: CAROM_BALL_RADIUS,
-  m: CAROM_BALL_MASS
+  m: CAROM_BALL_MASS,
+  mu: 0.015,
+  rho: 0.05,
+  muS: 0.22,
+  spinStopThreshold: 0.02
 };
 
 // Global parameters (legacy - maintained for backward compatibility)
@@ -96,8 +104,10 @@ function refresh() {
 
 // Physics context-aware refresh functions
 export function refreshWithContext(physics: PhysicsContext): { Mz: number, Mxy: number, I: number } {
-  const Mz_ctx = ((mu * physics.m * g * 2) / 3) * rho
-  const Mxy_ctx = (7 / (5 * Math.sqrt(2))) * physics.R * mu * physics.m * g
+  const effectiveMu = physics.mu ?? mu
+  const effectiveRho = physics.rho ?? rho
+  const Mz_ctx = ((effectiveMu * physics.m * g * 2) / 3) * effectiveRho
+  const Mxy_ctx = (7 / (5 * Math.sqrt(2))) * physics.R * effectiveMu * physics.m * g
   const I_ctx = (2 / 5) * physics.m * physics.R * physics.R
 
   return { Mz: Mz_ctx, Mxy: Mxy_ctx, I: I_ctx }

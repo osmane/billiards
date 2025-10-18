@@ -131,9 +131,16 @@ export class Rack {
     const dx = TableGeometry.X / 2
     const dy = TableGeometry.Y / 4
     // Use CAROM_PHYSICS for all Three-Cushion balls
-    threeballs.push(Rack.cueBall(Rack.jitter(new Vector3(-dx, -dy, 0)), CAROM_PHYSICS))
-    threeballs.push(new Ball(Rack.jitter(new Vector3(-dx, 0, 0)), 0xe0de36, CAROM_PHYSICS))
-    threeballs.push(new Ball(Rack.jitter(new Vector3(dx, 0, 0)), 0xff0000, CAROM_PHYSICS))
+    const white = Rack.cueBall(Rack.jitter(new Vector3(-dx, -dy, 0)), CAROM_PHYSICS)
+    white.ballmesh.applySymmetricDots(0xff0000)
+
+    const yellow = new Ball(Rack.jitter(new Vector3(-dx, 0, 0)), 0xe0de36, CAROM_PHYSICS)
+    yellow.ballmesh.applySymmetricDots(0xff0000)
+
+    const red = new Ball(Rack.jitter(new Vector3(dx, 0, 0)), 0xff0000, CAROM_PHYSICS)
+    threeballs.push(white)
+    threeballs.push(yellow)
+    threeballs.push(red)
     return threeballs
   }
 

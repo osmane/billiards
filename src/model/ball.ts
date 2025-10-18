@@ -143,7 +143,8 @@ export class Ball {
     const vz = passesThroughZero(this.vel, delta.v)
     const wz = passesThroughZero(this.rvel, delta.w)
     const halts = this.state === State.Rolling ? vz || wz : vz && wz
-    if (halts && Math.abs(this.rvel.z) < 0.01) {
+    const spinThreshold = this.physicsContext?.spinStopThreshold ?? 0.01
+    if (halts && Math.abs(this.rvel.z) < spinThreshold) {
       this.setStationary()
       return true
     }

@@ -1,11 +1,16 @@
 import {
   ArrowHelper,
+  CircleGeometry,
   Color,
+  DoubleSide,
+  Material,
+  MathUtils,
   Mesh,
   MeshPhysicalMaterial,
+  MeshStandardMaterial,
+  Quaternion,
   SphereGeometry,
   Vector3,
-  MathUtils,
 } from "three"
 import { State } from "../model/ball"
 import { norm, up, zero } from "../utils/utils"
@@ -119,6 +124,7 @@ export class BallMesh {
   radius: number
 
   private material: MeshPhysicalMaterial
+  private dotMeshes: Mesh[] = []
 
   private static instances = new Set<BallMesh>()
   private static lightingConfig: LightingConfig = { ...DEFAULT_LIGHTING }
@@ -186,6 +192,64 @@ export class BallMesh {
     scene.remove(this.trace.line)
   }
 
+  clearDots() {
+    this.dotMeshes.forEach((dot) => {
+      dot.geometry.dispose()
+      const dotMaterial = dot.material
+      if (Array.isArray(dotMaterial)) {
+        dotMaterial.forEach((mat) => mat.dispose())
+      } else if (dotMaterial) {
+        ;(dotMaterial as Material).dispose()
+      }
+      this.mesh.remove(dot)
+    })
+    this.dotMeshes = []
+  }
+
+  applySymmetricDots(dotColor = 0xff0000, diameterRatio = 0.089) {
+    this.clearDots()
+
+    const dotRadius = this.radius * diameterRatio
+    const geometrySegments = 64
+    const normals = [
+      new Vector3(1, 0, 0),
+      new Vector3(-1, 0, 0),
+      new Vector3(0, 1, 0),
+      new Vector3(0, -1, 0),
+      new Vector3(0, 0, 1),
+      new Vector3(0, 0, -1),
+    ]
+
+    normals.forEach((normal) => {
+      const geometry = new CircleGeometry(dotRadius, geometrySegments)
+      const material = new MeshStandardMaterial({
+        color: dotColor,
+        metalness: 0,
+        roughness: 0.35,
+        transparent: false,
+        side: DoubleSide,
+      })
+      const dot = new Mesh(geometry, material)
+
+      const orientation = new Quaternion().setFromUnitVectors(
+        new Vector3(0, 0, 1),
+        normal.clone().normalize()
+      )
+      dot.quaternion.copy(orientation)
+
+      const offset = normal
+        .clone()
+        .normalize()
+        .multiplyScalar(this.radius + this.radius * 0.001)
+      dot.position.copy(offset)
+
+      dot.renderOrder = this.mesh.renderOrder + 1
+
+      this.mesh.add(dot)
+      this.dotMeshes.push(dot)
+    })
+  }
+
   updateRadius(newRadius: number) {
     if (this.radius === newRadius) {
       return
@@ -198,6 +262,7 @@ export class BallMesh {
   dispose() {
     this.mesh.geometry.dispose()
     this.material.dispose()
+    this.clearDots()
     this.trace.dispose()
     BallMesh.instances.delete(this)
   }

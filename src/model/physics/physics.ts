@@ -33,10 +33,11 @@ export function sliding(v, w, context?: PhysicsContext) {
   const radius = context?.R ?? R
   const mass = context?.m ?? m
   const physics = context ? refreshWithContext(context) : { Mz, Mxy, I }
+  const slidingMu = context?.muS ?? muS
 
   const va = surfaceVelocity(v, w, context)
-  delta.v.copy(norm(va).multiplyScalar(-muS * g))
-  delta.w.copy(norm(upCross(va)).multiplyScalar(((5 / 2) * muS * g) / radius))
+  delta.v.copy(norm(va).multiplyScalar(-slidingMu * g))
+  delta.w.copy(norm(upCross(va)).multiplyScalar(((5 / 2) * slidingMu * g) / radius))
   delta.w.setZ(-(5 / 2) * (physics.Mz / (mass * radius * radius)) * Math.sign(w.z))
   return delta
 }
