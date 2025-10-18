@@ -27,7 +27,7 @@ export class AimEvent extends GameEvent {
     event.angle = json.angle
     event.offset = vec(json.offset)
     event.power = json.power
-    if (json.i) {
+    if (json.i !== undefined) {
       event.i = json.i
     }
     if (json.elevation !== undefined) {
