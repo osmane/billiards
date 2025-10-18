@@ -63,6 +63,10 @@ export interface PhysicsContext {
   rho?: number; // Spin decay distribution coefficient override
   muS?: number; // Sliding friction coefficient override
   spinStopThreshold?: number; // Threshold for zero-spin detection
+  // Collision resolution parameters (Codex 2025-10-21)
+  collisionSeparationBias?: number; // Extra separation after collision (default: 0.01)
+  minSeparationSpeed?: number; // Minimum separation velocity (default: 0.004 m/s)
+  collisionVelocityEpsilon?: number; // Minimum approach speed to trigger collision (default: 0.002 m/s)
 }
 
 // Mode-specific physics contexts

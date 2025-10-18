@@ -54,13 +54,59 @@ export class Table {
     let retries = 0
     while (!this.prepareAdvanceAll(t)) {
       retries++
+
+      // Emergency separation after many retries (Codex 2025-10-21)
+      if (retries === 80) {
+        console.warn('Collision resolution struggling (80 retries), applying emergency separation')
+        this.emergencySeparateAll()
+      }
+
       if (retries > 100) {
+        console.error(`Depth exceeded resolving collisions after ${retries} retries`)
         throw new Error("Depth exceeded resolving collisions")
       }
     }
+
+    // Log if high retry count for debugging (Codex telemetry)
+    if (retries > 10) {
+      console.warn(`High collision retry count: ${retries}`)
+    }
+
     this.balls.forEach((a) => {
       a.update(t)
       a.fround()
+    })
+  }
+
+  // Emergency separation for stuck balls (Codex 2025-10-21)
+  private emergencySeparateAll() {
+    this.pairs.forEach(pair => {
+      const dist = pair.a.pos.distanceTo(pair.b.pos)
+      const radius = pair.a.physicsContext?.R ?? R
+      const targetDist = 2 * radius
+
+      if (dist < targetDist) {
+        const offset = pair.b.pos.clone().sub(pair.a.pos)
+        const offsetLen = offset.length()
+
+        if (offsetLen > 1e-6) {
+          offset.multiplyScalar(1 / offsetLen)
+        } else {
+          offset.set(1, 0, 0)  // Arbitrary direction if balls overlap exactly
+        }
+
+        const penetration = targetDist - dist
+        const pushMagnitude = penetration * 0.6  // 60% of penetration
+
+        // Positional correction
+        pair.a.pos.addScaledVector(offset, -pushMagnitude)
+        pair.b.pos.addScaledVector(offset, pushMagnitude)
+
+        // Add separation velocity
+        const minSepSpeed = pair.a.physicsContext?.minSeparationSpeed ?? 0.004
+        pair.a.vel.addScaledVector(offset, -minSepSpeed)
+        pair.b.vel.addScaledVector(offset, minSepSpeed)
+      }
     })
   }
 

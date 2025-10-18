@@ -70,3 +70,8 @@ notes.txt
 discussion.txt
 test-output.txt
 test-results-collision-fix.md
+patches/2025-10-18-rel-normal-fix.patch
+patches/2025-10-18-sticking-spec-update.patch
+COLLISION-FIX-README.md
+discussion-part2.txt
+discussion2.txt

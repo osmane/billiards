@@ -28,6 +28,15 @@ function timeOfImpactBallBall(a: Ball, b: Ball, dt: number, context?: PhysicsCon
 }
 
 export class Collision {
+  static debugHook?: (snapshot: {
+    relNormalBefore: number
+    relNormalAfterImpulse: number
+    relNormalAfterCorrection: number
+    normalImpulse: number
+    tangentialImpulse: number
+    distance: number
+  }) => void
+
   static timeOfImpact(a: Ball, b: Ball, t: number, context?: PhysicsContext): number {
     return timeOfImpactBallBall(a, b, t, context)
   }
@@ -78,7 +87,10 @@ export class Collision {
       return
     }
 
-    const correctionMagnitude = (penetration + radius * 1e-4) * 0.5
+    // Use configurable separation bias (Codex 2025-10-21)
+    // Default: R * 0.01 for ~0.28mm extra separation
+    const separationBias = context?.collisionSeparationBias ?? 0.01
+    const correctionMagnitude = (penetration + radius * separationBias) * 0.5
     const correction = normal.multiplyScalar(correctionMagnitude)
     a.pos.add(correction)
     b.pos.sub(correction)
@@ -103,7 +115,54 @@ export class Collision {
   static readonly model = new CollisionThrow()
 
   private static updateVelocities(a: Ball, b: Ball) {
+    const context = a.physicsContext ?? b.physicsContext
+    const normal = b.pos.clone().sub(a.pos)
+    const dist = normal.length()
+    let relNormalBefore = 0
+    if (dist > 1e-6) {
+      normal.multiplyScalar(1 / dist)
+      relNormalBefore = a.vel.clone().sub(b.vel).dot(normal)
+    } else {
+      normal.set(0, 0, 0)
+    }
+
     const impactSpeed = Collision.model.updateVelocities(a, b)
+    let relNormalAfterImpulse = dist > 1e-6 ? a.vel.clone().sub(b.vel).dot(normal) : 0
+
+    // Post-impulse correction: only apply if balls are STILL approaching (positive relNormalVel)
+    // If relNormalVel < 0, balls are already separating - don't interfere!
+    if (dist > 1e-6 && relNormalAfterImpulse > 0) {
+      const correction = -0.5 * relNormalAfterImpulse
+      a.vel.addScaledVector(normal, correction)
+      b.vel.addScaledVector(normal, -correction)
+    }
+
+    let relNormalAfterCorrection =
+      dist > 1e-6 ? a.vel.clone().sub(b.vel).dot(normal) : relNormalAfterImpulse
+
+    // Apply minimum separation speed (Codex 2025-10-21)
+    // Prevents balls from sticking when they have near-zero relative velocity
+    const minSeparationSpeed = context?.minSeparationSpeed ?? 0.004
+    if (dist > 1e-6 && Math.abs(relNormalAfterCorrection) < minSeparationSpeed) {
+      // Apply minimum separation velocity
+      const sign = relNormalAfterCorrection >= 0 ? -1 : 1  // If approaching or zero, push apart
+      const boost = sign * minSeparationSpeed * 0.5
+      a.vel.addScaledVector(normal, -boost)
+      b.vel.addScaledVector(normal, boost)
+      relNormalAfterCorrection = sign * minSeparationSpeed
+    }
+
+    if (Collision.debugHook) {
+      Collision.debugHook({
+        relNormalBefore,
+        relNormalAfterImpulse,
+        relNormalAfterCorrection,
+        normalImpulse: Collision.model.normalImpulse,
+        tangentialImpulse: Collision.model.tangentialImpulse,
+        distance: dist,
+      })
+    }
+
     a.state = State.Sliding
     b.state = State.Sliding
     return impactSpeed

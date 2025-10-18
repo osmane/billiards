@@ -17,7 +17,7 @@
     "yarn": "1.x"
   },
   "scripts": {
-    "test": "jest --testPathPattern=test",
+    "test": "jest --config ./test/jest.config.js --testPathPatterns=test",
     "coverage": "jest --config ./test/jest.config.js --coverage",
     "dev": "webpack",
     "serve": "webpack serve",
