@@ -486,6 +486,9 @@ label {
 	gap: 20px;
 	z-index: 500;
 	/* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); */
+	/* max-height = viewport - scoreButtonsContainer (48px) - gap (2px) - panel (17vh) */
+	max-height: calc(83vh - 50px);
+	overflow: visible;
 }
 
 .precisionPanel.is-visible {
@@ -493,8 +496,11 @@ label {
 }
 
 .precisionBallContainer {
-  height: 280%;
-  width: 280%;
+  /* Use explicit pixel dimensions to ensure proper canvas rendering */
+  width: 336px;
+  height: 336px;
+  max-width: 336px;
+  max-height: 336px;
   margin: 0;
   position: relative;
   overflow: visible;
@@ -535,6 +541,7 @@ label {
 .precisionElevationSlider {
   width: 40px;
   height: 280px;
+  max-height: 280px;
   margin: 0;
   position: relative;
   z-index: 10;
@@ -547,6 +554,7 @@ input[type="range"].precisionElevationSlider {
 .precisionPowerSlider {
   width: 40px;
   height: 280px;
+  max-height: 280px;
   margin: 0;
   position: relative;
   z-index: 10;
@@ -555,6 +563,198 @@ input[type="range"].precisionElevationSlider {
 
 input[type="range"].precisionPowerSlider {
   appearance: slider-vertical;
+}
+
+/* Mobile responsive adjustments for precisionPanel */
+@media screen and (max-height: 700px) {
+  .precisionPanel {
+    /* Calculate available height: 83vh (view3d) - scoreButtons (48px) - gap (2px) */
+    max-height: calc(83vh - 50px);
+    padding: 20px;
+    gap: 15px;
+  }
+
+  .precisionBallContainer {
+    /* Scale down proportionally when height is constrained */
+    height: auto;
+    width: auto;
+    max-width: min(280px, calc(83vh - 50px - 40px - 280px - 35px));
+    max-height: min(280px, calc(83vh - 50px - 40px - 280px - 35px));
+  }
+
+  .precisionElevationSlider,
+  .precisionPowerSlider {
+    height: auto;
+    max-height: min(240px, calc(83vh - 50px - 40px - 35px - 150px));
+  }
+
+  .precisionSliderRow {
+    gap: 30px;
+  }
+}
+
+@media screen and (max-height: 600px) {
+  .precisionPanel {
+    max-height: calc(83vh - 50px);
+    padding: 15px;
+    gap: 10px;
+  }
+
+  .precisionBallContainer {
+    max-width: min(200px, calc(83vh - 50px - 30px - 200px - 25px));
+    max-height: min(200px, calc(83vh - 50px - 30px - 200px - 25px));
+  }
+
+  .precisionElevationSlider,
+  .precisionPowerSlider {
+    max-height: min(180px, calc(83vh - 50px - 30px - 25px - 120px));
+  }
+
+  .precisionSliderRow {
+    gap: 20px;
+  }
+}
+
+/* Portrait mode (narrow screens) - switch to horizontal layout within panel */
+/* Only applies when width is too narrow for side-by-side layout outside panel */
+@media screen and (max-height: 500px) and (max-width: 500px) {
+  .precisionPanel {
+    flex-direction: row;
+    max-height: calc(83vh - 50px);
+    padding: 10px 15px;
+    gap: 15px;
+  }
+
+  .precisionBallContainer {
+    /* Place ball container to the right of sliders inside the panel */
+    position: relative !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    height: auto;
+    width: auto;
+    max-width: min(150px, calc(83vh - 50px - 20px));
+    max-height: min(150px, calc(83vh - 50px - 20px));
+    order: 2;
+  }
+
+  .precisionSliderRow {
+    gap: 15px;
+    order: 1;
+    height: 100%;
+  }
+
+  .precisionElevationSlider,
+  .precisionPowerSlider {
+    max-height: calc(83vh - 50px - 20px);
+  }
+}
+
+/* Very small portrait screens - more aggressive downscaling */
+@media screen and (max-height: 420px) and (max-width: 500px) {
+  .precisionPanel {
+    flex-direction: row;
+    max-height: calc(83vh - 50px);
+    padding: 8px 12px;
+    gap: 12px;
+  }
+
+  .precisionBallContainer {
+    position: relative !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    height: auto;
+    width: auto;
+    max-width: min(120px, calc(83vh - 50px - 16px));
+    max-height: min(120px, calc(83vh - 50px - 16px));
+    order: 2;
+  }
+
+  .precisionSliderRow {
+    gap: 12px;
+    order: 1;
+    height: 100%;
+  }
+
+  .precisionElevationSlider,
+  .precisionPowerSlider {
+    width: 30px;
+    max-height: calc(83vh - 50px - 16px);
+  }
+}
+
+/* When height < 778px: Always move precisionBallContainer to the right of precisionSliderRow */
+/* This prevents overlay between ball container and sliders */
+@media screen and (max-height: 778px) {
+  /* Override the flex layout */
+  .precisionPanel.is-visible {
+    /* Panel only contains sliders in this mode */
+    padding: 20px;
+    gap: 15px;
+  }
+
+  .precisionBallContainer {
+    /* Move ball container completely outside the panel, to the right of sliders */
+    position: fixed !important;
+    /* Position to the right of precisionPanel + padding + sliders */
+    /* left = panel left (81px) + panel padding (20px) + sliders width (~120px) + gap (20px) */
+    left: calc(81px + 20px + 120px + 20px) !important;
+    bottom: calc(17vh + 15px);
+    right: auto !important;
+    /* Calculate width: remaining viewport width */
+    width: min(200px, calc(100vw - 81px - 20px - 120px - 40px));
+    height: min(200px, calc(83vh - 50px));
+    max-width: min(200px, calc(100vw - 81px - 20px - 120px - 40px));
+    max-height: min(200px, calc(83vh - 50px));
+    margin: 0;
+    z-index: 501;
+  }
+
+  .precisionSliderRow {
+    /* Keep sliders in the left panel */
+    position: relative;
+    gap: 30px;
+  }
+
+  .precisionElevationSlider,
+  .precisionPowerSlider {
+    max-height: calc(83vh - 50px - 40px - 30px);
+  }
+}
+
+/* For wider screens with height < 778px, allow ball container to be bigger */
+@media screen and (max-height: 778px) and (min-width: 600px) {
+  .precisionBallContainer {
+    left: calc(81px + 20px + 120px + 20px) !important;
+    width: min(280px, calc(100vw - 81px - 20px - 120px - 40px)) !important;
+    height: min(280px, calc(83vh - 50px)) !important;
+    max-width: min(280px, calc(100vw - 81px - 20px - 120px - 40px)) !important;
+    max-height: min(280px, calc(83vh - 50px)) !important;
+  }
+}
+
+/* For very wide screens with height < 778px, allow full size */
+@media screen and (max-height: 778px) and (min-width: 900px) {
+  .precisionBallContainer {
+    left: calc(81px + 20px + 120px + 20px) !important;
+    width: min(336px, calc(100vw - 81px - 20px - 120px - 40px)) !important;
+    height: min(336px, calc(83vh - 50px)) !important;
+    max-width: min(336px, calc(100vw - 81px - 20px - 120px - 40px)) !important;
+    max-height: min(336px, calc(83vh - 50px)) !important;
+  }
+}
+
+/* Very small height screens - more aggressive downscaling */
+@media screen and (max-height: 500px) {
+  .precisionBallContainer {
+    left: calc(81px + 20px + 120px + 20px) !important;
+    width: min(150px, calc(100vw - 81px - 20px - 120px - 40px)) !important;
+    height: min(150px, calc(83vh - 50px)) !important;
+    max-width: min(150px, calc(100vw - 81px - 20px - 120px - 40px)) !important;
+    max-height: min(150px, calc(83vh - 50px)) !important;
+    bottom: calc(17vh + 10px);
+  }
 }
 
 
