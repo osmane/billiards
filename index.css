@@ -684,9 +684,9 @@ input[type="range"].precisionPowerSlider {
   }
 }
 
-/* When height < 778px: Always move precisionBallContainer to the right of precisionSliderRow */
-/* This prevents overlay between ball container and sliders */
-@media screen and (max-height: 778px) {
+/* When height < 778px AND width >= 450px: Move precisionBallContainer to the right of precisionSliderRow */
+/* This prevents overlay between ball container and sliders on wide enough screens */
+@media screen and (max-height: 778px) and (min-width: 450px) {
   /* Override the flex layout */
   .precisionPanel.is-visible {
     /* Panel only contains sliders in this mode */
@@ -723,6 +723,41 @@ input[type="range"].precisionPowerSlider {
   }
 }
 
+/* Narrow portrait screens with height < 778px: Use vertical stacking */
+@media screen and (max-height: 778px) and (max-width: 449px) {
+  .precisionPanel.is-visible {
+    flex-direction: column;
+    padding: 15px;
+    gap: 10px;
+    max-height: calc(83vh - 50px);
+  }
+
+  .precisionBallContainer {
+    /* Keep ball container in panel, above sliders */
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: min(280px, calc(100vw - 81px - 40px));
+    height: min(280px, calc(100vw - 81px - 40px));
+    max-width: min(280px, calc(100vw - 81px - 40px));
+    max-height: min(280px, calc(100vw - 81px - 40px));
+    margin: 0 auto;
+    order: 1;
+  }
+
+  .precisionSliderRow {
+    position: relative;
+    gap: 25px;
+    order: 2;
+  }
+
+  .precisionElevationSlider,
+  .precisionPowerSlider {
+    max-height: min(200px, calc(83vh - 50px - 280px - 40px));
+  }
+}
+
 /* For wider screens with height < 778px, allow ball container to be bigger */
 @media screen and (max-height: 778px) and (min-width: 600px) {
   .precisionBallContainer {
@@ -745,8 +780,8 @@ input[type="range"].precisionPowerSlider {
   }
 }
 
-/* Very small height screens - more aggressive downscaling */
-@media screen and (max-height: 500px) {
+/* Very small height screens with enough width - more aggressive downscaling */
+@media screen and (max-height: 500px) and (min-width: 450px) {
   .precisionBallContainer {
     left: calc(81px + 20px + 120px + 20px) !important;
     width: min(150px, calc(100vw - 81px - 20px - 120px - 40px)) !important;
