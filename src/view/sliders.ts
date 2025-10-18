@@ -120,6 +120,10 @@ export class Sliders {
       const val = parseFloat((e.target as HTMLInputElement).value)
       setter(val)
       this.showValue(id, val)
+      // Update lastEventTime to enable throttling
+      if (this.container && this.container.lastEventTime !== undefined) {
+        this.container.lastEventTime = performance.now()
+      }
       this.notify()
     }
   }

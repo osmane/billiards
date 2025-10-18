@@ -14,6 +14,11 @@ export class WatchAim extends ControllerBase {
   override handleAim(event: AimEvent) {
     this.container.table.cue.aim = event
     this.container.table.cueball.pos.copy(event.pos)
+    // Apply elevation from aim event to cue for proper trajectory prediction
+    // Use the elevation from the event if available, otherwise keep current elevation
+    if (event.elevation !== undefined && Number.isFinite(event.elevation)) {
+      this.container.table.cue.elevation = event.elevation
+    }
     return this
   }
 

@@ -87,7 +87,7 @@ export class AimInputs {
 
     this.cueElevationElement?.addEventListener("input", this.elevationChanged)
     this.cueHitElement?.addEventListener("click", this.hit)
-    this.cuePowerElement?.addEventListener("change", this.powerChanged)
+    this.cuePowerElement?.addEventListener("input", this.powerChanged)
 
     if (!("ontouchstart" in window)) {
       document.getElementById("viewP1")?.addEventListener("dblclick", this.hit)
@@ -423,6 +423,7 @@ export class AimInputs {
     this.container.table.cue.setPower(this.cuePowerElement.value)
     // Sync to precision panel
     this.container.precisionPanel?.syncFromOriginal()
+    this.container.lastEventTime = performance.now()
     this.container.updateTrajectoryPrediction()
   }
 

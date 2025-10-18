@@ -89,7 +89,7 @@ export class PrecisionPanel {
     this.cueBallCanvas?.addEventListener("mousemove", this.onMouseMove)
     this.cueBallCanvas?.addEventListener("click", this.onClick)
     this.cueElevationElement?.addEventListener("input", this.elevationChanged)
-    this.cuePowerElement?.addEventListener("change", this.powerChanged)
+    this.cuePowerElement?.addEventListener("input", this.powerChanged)
   }
 
   togglePanel = () => {
@@ -263,6 +263,7 @@ export class PrecisionPanel {
       aimInputs.cuePowerElement.value = normalizedPower.toString()
     }
 
+    this.container.lastEventTime = performance.now()
     this.container.updateTrajectoryPrediction()
   }
 

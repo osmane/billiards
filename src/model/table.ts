@@ -186,6 +186,10 @@ export class Table {
     }
     if (data.aim) {
       this.cue.aim = AimEvent.fromJson(data.aim)
+      // Apply elevation from aim event to cue for proper visualization
+      if (data.aim.elevation !== undefined) {
+        this.cue.elevation = data.aim.elevation
+      }
     }
     if (data.cushionModel) {
       this.cushionModel = data.cushionModel

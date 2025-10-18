@@ -9,7 +9,7 @@ export class BreakEvent extends GameEvent {
   constructor(init?, shots?) {
     super()
     this.init = init
-    this.shots = shots
+    this.shots = shots ?? []
     this.type = EventType.BREAK
   }
 
