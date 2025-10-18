@@ -24,11 +24,19 @@ import {
   CAROM_TABLE_WIDTH,
 } from "../../model/physics/constants"
 
+type CueSettings = {
+  power: number
+  angle: number
+  offset: Vector3
+  elevation: number
+}
+
 export class ThreeCushion implements Rules {
   readonly container: Container
 
   cueball!: Ball
   private assignedCueBall?: Ball
+  private aimSettingsByBallId: Map<number, CueSettings> = new Map()
   currentBreak = 0
   previousBreak = 0
   score = 0
@@ -89,6 +97,8 @@ export class ThreeCushion implements Rules {
   }
 
   update(outcomes: Outcome[]): Controller {
+    this.captureCueSettings(this.cueball)
+
     if (Outcome.isThreeCushionPoint(this.cueball, outcomes)) {
       this.container.sound.playSuccess(outcomes.length / 3)
       this.currentBreak++
@@ -124,8 +134,14 @@ export class ThreeCushion implements Rules {
   }
 
   prepareForLocalTurn() {
+    if (!this.assignedCueBall) {
+      this.assignedCueBall = this.cueball
+    }
+
     if (this.assignedCueBall) {
       this.cueball = this.assignedCueBall
+      this.container.table.cueball = this.cueball
+      this.restoreCueSettingsFor(this.cueball)
     }
   }
 
@@ -135,6 +151,63 @@ export class ThreeCushion implements Rules {
 
   isEndOfGame(_: Outcome[]) {
     return false
+  }
+
+  private captureCueSettings(ball?: Ball) {
+    if (!ball) {
+      return
+    }
+
+    const table = this.container?.table
+    const cue = table?.cue
+    if (!table || !cue) {
+      return
+    }
+
+    this.aimSettingsByBallId.set(ball.id, {
+      power: cue.aim.power,
+      angle: cue.aim.angle,
+      offset: cue.aim.offset.clone(),
+      elevation: cue.elevation,
+    })
+  }
+
+  private restoreCueSettingsFor(ball?: Ball) {
+    if (!ball) {
+      return
+    }
+
+    const table = this.container?.table
+    const cue = table?.cue
+    if (!table || !cue) {
+      return
+    }
+
+    const storedSettings = this.aimSettingsByBallId.get(ball.id)
+    if (storedSettings) {
+      cue.aim.power = storedSettings.power
+      cue.aim.angle = storedSettings.angle
+      cue.aim.offset.copy(storedSettings.offset)
+      cue.elevation = storedSettings.elevation
+      cue.aim.elevation = storedSettings.elevation
+    } else {
+      cue.aim.offset.set(0, 0, 0)
+      cue.aim.power = cue.maxPower * 0.5
+      cue.elevation = cue.defaultElevation
+      cue.aim.elevation = cue.defaultElevation
+      this.aimSettingsByBallId.set(ball.id, {
+        power: cue.aim.power,
+        angle: cue.aim.angle,
+        offset: cue.aim.offset.clone(),
+        elevation: cue.elevation,
+      })
+    }
+
+    cue.aim.pos.copy(ball.pos)
+    cue.aim.i = table.balls.indexOf(ball)
+    cue.moveTo(ball.pos)
+    cue.updateAimInput()
+    this.captureCueSettings(ball)
   }
 
   private registerPointForCurrentCueBall() {
