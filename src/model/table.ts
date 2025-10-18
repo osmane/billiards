@@ -171,6 +171,7 @@ export class Table {
       balls: this.balls.map((b) => b.serialise()),
       aim: this.cue.aim.copy(),
       cushionModel: this.cushionModel,
+      cueballId: this.cueball.id,
     }
   }
 
@@ -193,6 +194,10 @@ export class Table {
     }
     if (data.cushionModel) {
       this.cushionModel = data.cushionModel
+    }
+    // Set cueball from serialised data (important for 3-cushion multiplayer)
+    if (data.cueballId !== undefined && this.balls[data.cueballId]) {
+      this.cueball = this.balls[data.cueballId]
     }
   }
 

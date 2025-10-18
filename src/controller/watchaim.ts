@@ -6,8 +6,11 @@ import { ControllerBase } from "./controllerbase"
 export class WatchAim extends ControllerBase {
   constructor(container) {
     super(container)
-    this.container.table.cueball = this.container.rules.otherPlayersCueBall()
-    this.container.table.cue.moveTo(this.container.table.cueball.pos)
+    // Don't override cueball here - it should already be set from WatchEvent/HitEvent
+    // For 3-cushion, the correct cueball is determined by the serialised data
+    if (this.container.table.cueball) {
+      this.container.table.cue.moveTo(this.container.table.cueball.pos)
+    }
     this.container.view.camera.suggestMode(this.container.view.camera.topView)
   }
 
@@ -24,6 +27,10 @@ export class WatchAim extends ControllerBase {
 
   override handleHit(event: HitEvent) {
     this.container.table.updateFromSerialised(event.tablejson)
+    // Sync rules cueball with table cueball (important for 3-cushion)
+    if (this.container.table.cueball) {
+      this.container.rules.cueball = this.container.table.cueball
+    }
     return new WatchShot(this.container)
   }
 }

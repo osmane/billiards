@@ -34,6 +34,10 @@ export class Init extends ControllerBase {
     this.container.chat.showMessage("Opponent to break")
     this.container.rules.secondToPlay()
     this.container.table.updateFromSerialised(event.json)
+    // Sync rules cueball with table cueball (important for 3-cushion)
+    if (this.container.table.cueball) {
+      this.container.rules.cueball = this.container.table.cueball
+    }
     // Update scores if present (for 3-cushion multiplayer sync)
     if ("whiteScore" in event.json && "yellowScore" in event.json) {
       if (typeof this.container.rules.setScores === "function") {

@@ -29,6 +29,10 @@ export class WatchShot extends ControllerBase {
       this.container.table.updateFromSerialised(event.json)
       return this
     }
+    // Sync rules cueball with table cueball (important for 3-cushion)
+    if (this.container.table.cueball) {
+      this.container.rules.cueball = this.container.table.cueball
+    }
     // Update scores if present (for 3-cushion multiplayer sync)
     if ("whiteScore" in event.json && "yellowScore" in event.json) {
       if (typeof this.container.rules.setScores === "function") {
