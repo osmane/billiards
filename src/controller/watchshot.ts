@@ -24,6 +24,12 @@ export class WatchShot extends ControllerBase {
       this.container.table.updateFromSerialised(event.json)
       return this
     }
+    // Update scores if present (for 3-cushion multiplayer sync)
+    if ("whiteScore" in event.json && "yellowScore" in event.json) {
+      if (typeof this.container.rules.setScores === "function") {
+        this.container.rules.setScores(event.json.whiteScore, event.json.yellowScore)
+      }
+    }
     return new WatchAim(this.container)
   }
 }

@@ -88,9 +88,15 @@ export class ThreeCushion implements Rules {
   update(outcomes: Outcome[]): Controller {
     if (Outcome.isThreeCushionPoint(this.cueball, outcomes)) {
       this.container.sound.playSuccess(outcomes.length / 3)
-      this.container.sendEvent(new WatchEvent(this.container.table.serialise()))
       this.currentBreak++
       this.registerPointForCurrentCueBall()
+      // Send table state with scores for multiplayer sync
+      const tableState = this.container.table.serialise()
+      this.container.sendEvent(new WatchEvent({
+        ...tableState,
+        whiteScore: this.whiteScore,
+        yellowScore: this.yellowScore
+      }))
       return new Aim(this.container)
     }
 
@@ -145,6 +151,13 @@ export class ThreeCushion implements Rules {
 
   private updateScoreButtons() {
     this.container?.scoreButtons?.setScores(this.whiteScore, this.yellowScore)
+  }
+
+  setScores(whiteScore: number, yellowScore: number) {
+    this.whiteScore = whiteScore
+    this.yellowScore = yellowScore
+    this.score = whiteScore + yellowScore
+    this.updateScoreButtons()
   }
 
   allowsPlaceBall() {
