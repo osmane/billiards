@@ -79,10 +79,10 @@ export const SNOOKER_PHYSICS: PhysicsContext = {
 export const CAROM_PHYSICS: PhysicsContext = {
   R: CAROM_BALL_RADIUS,
   m: CAROM_BALL_MASS,
-  mu: 0.015,
-  rho: 0.05,
-  muS: 0.22,
-  spinStopThreshold: 0.02
+  mu: 0.025,
+  rho: 0.07,
+  muS: 0.25,
+  spinStopThreshold: 0.03
 };
 
 // Global parameters (legacy - maintained for backward compatibility)
