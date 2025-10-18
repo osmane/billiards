@@ -50,9 +50,8 @@ export class CollisionThrow {
     // Normal impulse (inelastic collision)
     this.normalImpulse = (-(1 + e) * vRelNormalMag) / (2 / m)
 
-    // Tangential impulse (frictional constraint) reduced by 1/4 until understood
+    // Tangential impulse (frictional constraint) - Coulomb limit per Alciatore TP A-14
     this.tangentialImpulse =
-      0.25 *
       Math.min((μ * Math.abs(this.normalImpulse)) / vRelMag, 1 / 7) *
       -vRelTangential
 

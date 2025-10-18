@@ -39,8 +39,16 @@ export class Collision {
     // Continuous check with analytic TOI to reduce tunneling at high speeds
     const toi = timeOfImpactBallBall(a, b, t, context)
     if (toi >= 0) return true
-    // Fallback: end-of-step proximity check (legacy behavior)
-    return a.futurePosition(t).distanceToSquared(b.futurePosition(t)) < 4 * radius * radius
+    // Fallback: proximity check with velocity-based filtering
+    const futureA = a.futurePosition(t)
+    const futureB = b.futurePosition(t)
+    const offset = futureA.clone().sub(futureB)
+    if (offset.lengthSq() >= 4 * radius * radius) {
+      return false
+    }
+    // Only collide if balls are approaching each other
+    const relVel = a.vel.clone().sub(b.vel)
+    return relVel.dot(offset) < 0
   }
 
   static separateAtImpact(a: Ball, b: Ball, dt: number, context?: PhysicsContext) {
