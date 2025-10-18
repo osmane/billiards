@@ -11,6 +11,11 @@ export class WatchShot extends ControllerBase {
   }
 
   override handleStartAim(_) {
+    // Ensure cueball is set for 3-cushion multiplayer
+    if (!this.container.rules.cueball && this.container.table.balls.length > 0) {
+      // Set to first ball as default if not set
+      this.container.rules.cueball = this.container.table.balls[0]
+    }
     return new Aim(this.container)
   }
 
