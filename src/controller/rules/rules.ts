@@ -15,6 +15,7 @@ export interface Rules {
   tableGeometry()
   table(): Table
   secondToPlay()
+  prepareForLocalTurn?(): void
   otherPlayersCueBall(): Ball
   isPartOfBreak(outcome: Outcome[]): boolean
   isEndOfGame(outcome: Outcome[]): boolean

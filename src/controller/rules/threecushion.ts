@@ -28,6 +28,7 @@ export class ThreeCushion implements Rules {
   readonly container: Container
 
   cueball!: Ball
+  private assignedCueBall?: Ball
   currentBreak = 0
   previousBreak = 0
   score = 0
@@ -54,6 +55,7 @@ export class ThreeCushion implements Rules {
 
   secondToPlay() {
     this.cueball = this.container.table.balls[1]
+    this.assignedCueBall = this.cueball
   }
 
   /** Mod girişinde karambol masa kurulumu (fizik artık ball-level'da) */
@@ -77,6 +79,7 @@ export class ThreeCushion implements Rules {
     this.tableGeometry()
     const table = new Table(this.rack())
     this.cueball = table.cueball
+    this.assignedCueBall = this.cueball
     this.resetScores()
     return table
   }
@@ -118,6 +121,12 @@ export class ThreeCushion implements Rules {
   otherPlayersCueBall(): Ball {
     const balls = this.container.table.balls
     return this.cueball === balls[0] ? balls[1] : balls[0]
+  }
+
+  prepareForLocalTurn() {
+    if (this.assignedCueBall) {
+      this.cueball = this.assignedCueBall
+    }
   }
 
   isPartOfBreak(outcome: Outcome[]) {
