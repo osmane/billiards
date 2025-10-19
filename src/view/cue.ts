@@ -38,7 +38,8 @@ export class Cue {
   private lastHelperHasImpact = false
   private lastHelperImpactIsBall = false
   readonly offCenterLimitMasse = 0.8  // Increased limit for masse shots
-  readonly maxPower = 160 * R
+  readonly ballRadius: number  // Ball radius for this game mode
+  readonly maxPower: number    // Maximum power based on ball radius
   readonly defaultElevation = 0.17  // Default cue elevation (radians)
   t = 0
   aimInputs: AimInputs
@@ -49,11 +50,14 @@ export class Cue {
 
   length = TableGeometry.tableX * 1
 
-  constructor(container?: any) {
+  constructor(container?: any, ballRadius?: number) {
     this.container = container
+    // Use provided ball radius, or fall back to global R for backward compatibility
+    this.ballRadius = ballRadius ?? R
+    this.maxPower = 160 * this.ballRadius
     this.mesh = CueMesh.createCue(
-      (R * 0.05) / 0.5,
-      (R * 0.15) / 0.5,
+      (this.ballRadius * 0.05) / 0.5,
+      (this.ballRadius * 0.15) / 0.5,
       this.length
     )
     this.placerMesh = CueMesh.createPlacer()
@@ -174,7 +178,7 @@ export class Cue {
     direction.applyAxisAngle(perpendicularAxis, verticalAngle)
 
     const finalDirection = direction.normalize()
-    const hitPointOnSurface = pos.clone().addScaledVector(finalDirection, R)
+    const hitPointOnSurface = pos.clone().addScaledVector(finalDirection, this.ballRadius)
 
     const cueDirection = unitAtAngle(this.aim.angle + Math.PI)
     const cueDirection3D = new Vector3(
@@ -184,11 +188,11 @@ export class Cue {
     ).normalize()
 
     const radiusInMM = 30.75
-    const virtualCueHalfLength = (100 / radiusInMM) * R / 2
-    const additionalOffset = (10 / radiusInMM) * R
-    const cueClearance = 1.25 * 2 * R
+    const virtualCueHalfLength = (100 / radiusInMM) * this.ballRadius / 2
+    const additionalOffset = (10 / radiusInMM) * this.ballRadius
+    const cueClearance = 1.25 * 2 * this.ballRadius
     const totalOffset = virtualCueHalfLength + additionalOffset + cueClearance + cueClearance
-    const swing = (sin(this.t + Math.PI / 2) - 1) * 2 * R * (this.aim.power / this.maxPower)
+    const swing = (sin(this.t + Math.PI / 2) - 1) * 2 * this.ballRadius * (this.aim.power / this.maxPower)
     const cuePosition = hitPointOnSurface.clone()
       .addScaledVector(cueDirection3D, totalOffset)
       .addScaledVector(cueDirection3D, swing)
@@ -218,7 +222,7 @@ export class Cue {
     direction.applyAxisAngle(perpendicularAxis, verticalAngle)
 
     const finalDirection = direction.normalize()
-    const hitPointPosition = ballPos.clone().addScaledVector(finalDirection, R * 0.05)
+    const hitPointPosition = ballPos.clone().addScaledVector(finalDirection, this.ballRadius * 0.05)
     this.hitPointMesh.position.copy(hitPointPosition)
 
     const quaternion = new Quaternion()
@@ -238,7 +242,7 @@ export class Cue {
     direction.applyAxisAngle(perpendicularAxis, verticalAngle)
 
     const finalDirection = direction.normalize()
-    const hitPointOnSurface = ballPos.clone().addScaledVector(finalDirection, R)
+    const hitPointOnSurface = ballPos.clone().addScaledVector(finalDirection, this.ballRadius)
 
     this.virtualCueMesh.position.copy(hitPointOnSurface)
 
@@ -281,8 +285,8 @@ export class Cue {
 
   spinOffset() {
     return upCross(unitAtAngle(this.aim.angle)).clone()
-      .multiplyScalar(this.aim.offset.x * 2 * R)
-      .setZ(this.aim.offset.y * 2 * R)
+      .multiplyScalar(this.aim.offset.x * 2 * this.ballRadius)
+      .setZ(this.aim.offset.y * 2 * this.ballRadius)
   }
 
   intersectsAnything(table: Table) {
@@ -460,7 +464,7 @@ export class Cue {
 
     const normalizedDirection = direction.setZ(0).normalize()
     const start = cueBall.pos.clone()
-    const helperLength = (R * 30) / 0.5
+    const helperLength = (this.ballRadius * 30) / 0.5
     const end = start.clone().addScaledVector(normalizedDirection, helperLength)
 
     return [start, end]
@@ -539,7 +543,7 @@ export class Cue {
       return
     }
 
-    const baseRadius = this.container?.table?.cueball?.radius ?? R
+    const baseRadius = this.container?.table?.cueball?.radius ?? this.ballRadius
     const ghostRadius = baseRadius * this.helperGhostScale
     const gapDistance = (this.helperGhostGapDiameterMultiplier * 2 * baseRadius)
     const spacing = Math.max(ghostRadius * 2 + gapDistance, 1e-6)

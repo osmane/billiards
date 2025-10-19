@@ -82,11 +82,11 @@ export const SNOOKER_PHYSICS: PhysicsContext = {
 };
 
 export const CAROM_PHYSICS: PhysicsContext = {
-  R: CAROM_BALL_RADIUS,
-  m: CAROM_BALL_MASS,
-  mu: 0.022,
-  rho: 0.09,
-  muS: 0.22,
+  R: CAROM_BALL_RADIUS,  // 0.03075 m (61.5mm radius)
+  m: CAROM_BALL_MASS,     // 0.21 kg
+  mu: 0.0086,             // Rolling friction - Calibrated for 12.5m at max power
+  rho: 0.09,              // Spin decay coefficient (unchanged)
+  muS: 0.102,             // Sliding friction - Calibrated for 12.5m at max power
   spinStopThreshold: 0.06,
   rollingTransition: 0.08
 };

@@ -118,6 +118,9 @@ export const applyReplayState = (container: any, state: ReplayState) => {
   const aim = AimEventCtor.fromJson(shot)
   const cueBall = balls[shot.i]
   container.table.cueball = cueBall
+
+  // Cue is already set correctly by Container.ts for threecushion mode
+  // No need to override here - using production code path
   cue.aim = aim
   cue.elevation = shot.elevation ?? cue.defaultElevation
   cue.aim.elevation = cue.elevation

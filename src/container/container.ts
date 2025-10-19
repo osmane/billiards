@@ -24,11 +24,12 @@ import { endShot, recordShotFrame } from "../utils/shotstats"
 import { TrajectoryPredictor } from "../model/trajectorypredictor"
 import { TrajectoryRenderer } from "../view/trajectoryrenderer"
 import { Vector3 } from "three"
-import { R } from "../model/physics/constants"
+import { R, CAROM_PHYSICS } from "../model/physics/constants"
 import { CaromClothManager } from "../view/caromcloth"
 import { ClothPanel } from "../view/clothpanel"
 import { TableMesh } from "../view/tablemesh"
 import { PrecisionPanel } from "../view/precisionpanel"
+import { Cue } from "../view/cue"
 
 /**
  * Model, View, Controller container.
@@ -72,6 +73,9 @@ export class Container {
     this.scoreButtons = new ScoreButtons(this)
     this.rules = RuleFactory.create(ruletype, this)
     this.table = this.rules.table()
+    if (this.rules.rulename === "threecushion") {
+      this.table.cue = new Cue(undefined, CAROM_PHYSICS.R)
+    }
     this.view = new View(element, this.table, assets)
     this.trajectoryPredictor = new TrajectoryPredictor()
     this.trajectoryRenderer = new TrajectoryRenderer(this.view.scene)
