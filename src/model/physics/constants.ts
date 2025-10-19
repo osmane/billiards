@@ -19,7 +19,7 @@ export let μw = 0.14
 // Adjusted for 2D billiards physics - much lower than 3D aerodynamic coefficient
 // Original Han model value (0.065) was too strong for our implementation
 // This coefficient is empirically tuned for gentle, realistic curves
-export let magnusCoeff = 0.006  // Increased for stronger curve
+export let magnusCoeff = 0.009  // Increased for stronger curve
 
 // Table bounce restitution coefficient (felt dampening)
 // Typical values: 0.3-0.5 for cloth-covered table

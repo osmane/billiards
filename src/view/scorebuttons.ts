@@ -246,28 +246,35 @@ export class ScoreButtons {
           }
         }
 
-        let lastDoubleClickTime = 0
-        let doubleClickCount = 0
+        let clickResetTimer: ReturnType<typeof setTimeout> | undefined
+        let clickCount = 0
         const maxInterval = 500
+        const requiredClicks = 4
 
         const handleToggle = (visible?: boolean, triggerUpdate = true) => {
           const nextState =
             typeof visible === "boolean" ? visible : targetButton.style.display === "none"
           setVisible(nextState, triggerUpdate)
-          doubleClickCount = 0
-          lastDoubleClickTime = 0
+          clickCount = 0
+          if (clickResetTimer) {
+            clearTimeout(clickResetTimer)
+            clickResetTimer = undefined
+          }
         }
 
-        targetPlaceholder?.addEventListener("dblclick", () => {
-          const now = performance.now()
-          if (now - lastDoubleClickTime <= maxInterval) {
-            doubleClickCount += 1
-          } else {
-            doubleClickCount = 1
-          }
-          lastDoubleClickTime = now
+        targetPlaceholder?.addEventListener("click", () => {
+          clickCount += 1
 
-          if (doubleClickCount >= 2) {
+          if (clickResetTimer) {
+            clearTimeout(clickResetTimer)
+          }
+
+          clickResetTimer = window.setTimeout(() => {
+            clickCount = 0
+            clickResetTimer = undefined
+          }, maxInterval)
+
+          if (clickCount >= requiredClicks) {
             handleToggle(true)
           }
         })

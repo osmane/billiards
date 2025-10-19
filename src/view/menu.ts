@@ -1,9 +1,9 @@
 import { Container } from "../container/container"
+import JSONCrush from "jsoncrush"
 import { BreakEvent } from "../events/breakevent"
 import { ChatEvent } from "../events/chatevent"
 import { StationaryEvent } from "../events/stationaryevent"
 import { share, shorten } from "../utils/shorten"
-import JSONCrush from "jsoncrush"
 
 export class Menu {
   container: Container
@@ -11,7 +11,24 @@ export class Menu {
   share: HTMLButtonElement
   replay: HTMLButtonElement
   camera: HTMLButtonElement
+  menuToggle: HTMLButtonElement | null
+  menuPanel: HTMLElement | null
 
+  private menuPanelVisible = false
+  private handleOutsideClick = (_: MouseEvent) => {
+    if (!this.menuPanelVisible) {
+      return
+    }
+    this.setMenuPanelVisibility(false)
+  }
+  private handleEscapeKey = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      this.setMenuPanelVisibility(false)
+    }
+  }
+  private handlePanelSelection = () => {
+    this.setMenuPanelVisibility(false)
+  }
   disabled = true
 
   constructor(container) {
@@ -21,6 +38,10 @@ export class Menu {
     this.redo = this.getElement("redo")
     this.share = this.getElement("share")
     this.camera = this.getElement("camera")
+    this.menuToggle = document.getElementById("mainMenuToggle") as HTMLButtonElement | null
+    this.menuPanel = document.getElementById("mainMenuPanel")
+
+    this.setupMenuPanel()
 
     if (this.camera) {
       this.setMenu(true)
@@ -33,7 +54,12 @@ export class Menu {
   setMenu(disabled) {
     this.replay.disabled = disabled
     this.redo.disabled = disabled
-    this.share.disabled = disabled
+    if (this.share) {
+      this.share.disabled = disabled
+    }
+    if (disabled) {
+      this.setMenuPanelVisibility(false)
+    }
   }
 
   adjustCamera() {
@@ -48,12 +74,12 @@ export class Menu {
 
     this.setMenu(false)
     const queue = this.container.eventQueue
-    this.share.onclick = (_) => {
-      shorten(url, (url) => {
-        const response = share(url)
+    this.bindShare(() => {
+      shorten(url, (shortUrl) => {
+        const response = share(shortUrl)
         queue.push(new ChatEvent(null, response))
       })
-    }
+    })
     this.redo.onclick = (_) => {
       const redoEvent = new BreakEvent(breakEvent.init, breakEvent.shots)
       redoEvent.retry = true
@@ -69,65 +95,139 @@ export class Menu {
       return
     }
 
-    // Enable replay button in aim mode to share current state
-    this.replay.disabled = false
+    // In aim mode, allow replaying the most recent recorded shot
+    const canReplay = this.canReplayLastShot()
+    this.replay.disabled = !canReplay
     this.share.disabled = true
     this.redo.disabled = true
 
-    const queue = this.container.eventQueue
     this.replay.onclick = (_) => {
-      // Only allow sharing when balls are stationary
+      // Only allow replay when balls are stationary to prevent conflicts
       if (!this.container.table.allStationary()) {
         return
       }
 
-      // Build URL from current state
-      const currentState = this.buildCurrentStateUrl()
-      if (!currentState) {
-        return
-      }
-
-      // In single player aim mode, directly copy to clipboard without network call
-      const response = share(currentState)
-      queue.push(new ChatEvent(null, response))
+      this.replayLastRecordedShot()
     }
   }
 
-  private buildCurrentStateUrl(): string | null {
-    // Get current table state
-    const init = this.container.table.shortSerialise()
+  private setupMenuPanel() {
+    if (!this.menuToggle || !this.menuPanel) {
+      return
+    }
 
-    // Get current aim event (cue position, angle, power, elevation, spin)
-    const aim = this.container.table.cue.aim.copy()
+    this.menuToggle.addEventListener("click", (event) => {
+      event.stopPropagation()
+      this.toggleMenuPanel()
+    })
 
-    // Create a replay state with single shot
-    const state = {
-      init: init,
-      shots: [aim],
-      start: Date.now(),
-      now: Date.now(),
-      score: 0,
-      wholeGame: false,
-      v: 1,
+    this.menuPanel.addEventListener("click", (event) => {
+      event.stopPropagation()
+    })
+
+    document.addEventListener("click", this.handleOutsideClick)
+    document.addEventListener("keydown", this.handleEscapeKey)
+
+    const selectableItems = this.menuPanel.querySelectorAll("a, button")
+    selectableItems.forEach((item) => {
+      item.addEventListener("click", this.handlePanelSelection)
+      item.addEventListener("keydown", (event: KeyboardEvent) => {
+        if (event.key === "Enter" || event.key === " ") {
+          this.handlePanelSelection()
+        }
+      })
+    })
+  }
+
+  private toggleMenuPanel(force?: boolean) {
+    const targetState =
+      typeof force === "boolean" ? force : !this.menuPanelVisible
+    this.setMenuPanelVisibility(targetState)
+  }
+
+  private setMenuPanelVisibility(visible: boolean) {
+    this.menuPanelVisible = visible
+    if (!this.menuPanel || !this.menuToggle) {
+      return
+    }
+
+    this.menuPanel.classList.toggle("is-visible", visible)
+    this.menuPanel.setAttribute("aria-hidden", visible ? "false" : "true")
+    this.menuToggle.setAttribute("aria-expanded", visible ? "true" : "false")
+  }
+
+  private bindShare(handler: () => void) {
+    if (!this.share) {
+      return
+    }
+    this.share.onclick = (_) => {
+      handler()
+      this.setMenuPanelVisibility(false)
+    }
+  }
+
+  private replayLastRecordedShot() {
+    if (!this.canReplayLastShot()) {
+      return
+    }
+
+    const recorder = this.container.recorder
+    if (!recorder) {
+      return
+    }
+
+    const lastShotState = recorder.lastShot()
+    if (!this.isValidShotState(lastShotState)) {
+      return
+    }
+
+    const replayUrl = this.buildReplayUrlFromState(lastShotState)
+    if (!replayUrl) {
+      return
+    }
+
+    window.open(replayUrl, "_blank", "noopener")
+    this.setMenuPanelVisibility(false)
+  }
+
+  private isValidShotState(
+    state: any
+  ): state is {
+    init: unknown
+    shots: unknown[]
+  } {
+    return (
+      !!state &&
+      !!state.init &&
+      Array.isArray(state.shots) &&
+      state.shots.length > 0
+    )
+  }
+
+  private canReplayLastShot(): boolean {
+    const recorder = this.container.recorder
+    if (!recorder || !recorder.replayUrl) {
+      return false
+    }
+    return recorder.shots.length > 0
+  }
+
+  private buildReplayUrlFromState(state): string | null {
+    const recorder = this.container.recorder
+    const prefix = recorder?.replayUrl
+    if (!prefix) {
+      return null
     }
 
     const serialised = JSON.stringify(state)
     const compressed = JSONCrush.crush(serialised)
-
-    // Encode for URL
     const encoded = encodeURIComponent(compressed)
       .replace(/\(/g, "%28")
       .replace(/\)/g, "%29")
       .replace(/\!/g, "%21")
       .replace(/\*/g, "%2A")
 
-    // Get replay URL from recorder
-    const replayUrl = this.container.recorder.replayUrl
-    if (!replayUrl) {
-      return null
-    }
-
-    return `${replayUrl}${encoded}`
+    return `${prefix}${encoded}`
   }
 
   interuptEventQueue(breakEvent: BreakEvent) {
