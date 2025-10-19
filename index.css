@@ -155,15 +155,26 @@ input[type="range"].powerSlider {
   appearance: slider-vertical;
 }
 
+.hitButton,
+.menuButton.mainMenuButton,
+.menuPanel {
+  font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
 .hitButton {
-  height: 70%;
-  margin: auto;
-  margin-left: 5px;
-  aspect-ratio: 0.4;
+  min-height: 45px;
+  width: 100%;
+  margin: 0;
   border-radius: 10px;
   border-width: 4px;
   font-size: large;
+  font-weight: 600;
   min-width: 80px;
+  max-width: 120px;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   user-select: none;
   position: relative;
   z-index: 10;
@@ -172,10 +183,126 @@ input[type="range"].powerSlider {
   color: white;
 }
 
+.cueControls {
+  display: grid;
+  grid-template-rows: 27.333px minmax(45px, 1fr);
+  align-items: stretch;
+  justify-items: start;
+  gap: 6px;
+  height: 70%;
+  width: 80px;
+  margin-left: 5px;
+  margin-right: 0;
+  max-width: 80px;
+  flex: 0 0 auto;
+}
+
+.cueControls .menuButton.mainMenuButton,
+.cueControls .hitButton {
+  justify-self: start;
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+}
+
+.menuToggleContainer {
+  position: relative;
+  width: 80px;
+  max-width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: 100%;
+}
+
+.menuPanel {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  display: none;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  min-width: 100%;
+  padding: 6px 0;
+  border-radius: 5px;
+  background-color: rgba(47, 79, 79, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 200;
+  max-height: 240px;
+  overflow-y: auto;
+  font-family: inherit;
+  font-size: large;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+.menuPanel {
+  overflow: auto;                
+  -ms-overflow-style: none;      
+  scrollbar-width: none;         
+}
+
+.menuPanel::-webkit-scrollbar {
+  display: none;                 
+}
+
+.menuPanel.is-visible {
+  display: flex;
+}
+
+.menuPanel__link,
+.menuPanel__action {
+  display: block;
+  width: 100%;
+  padding: 1px 12px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  color: #f4f4f4;
+  font-size: inherit;
+  /* font-weight: 600;*/
+  text-align: left;
+  text-decoration: none;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+.menuPanel__link:hover,
+.menuPanel__action:hover,
+.menuPanel__link:focus,
+.menuPanel__action:focus {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+  outline: none;
+}
+
+.menuPanel__action {
+  cursor: pointer;
+  text-align: left;
+}
+
+.menuPanel__action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.menuPanel > *:last-child {
+  border-bottom: none;
+}
+
 .outerMenu {
   display: flex;
-  height: 50%;
+  flex: 1 1 auto;
+  height: 100%;
+  flex-flow: column wrap;
+  align-content: flex-start;
   justify-content: flex-start;
+  align-items: stretch;
+  gap: 6px;
+  padding: 4px 2px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-width: 100%;
+  min-height: 0;
   z-index: 10;
 }
 
@@ -204,6 +331,55 @@ input[type="range"].powerSlider {
   font-size: 16px;
   display: none;
   color: black;
+}
+
+.outerMenu .menuButton,
+.outerMenu .targetButton {
+  flex: 0 0 auto;
+  width: 40px;
+  max-width: 40px;
+  height: 27.333px;
+  max-height: 27.333px;
+  margin-right: 0;
+  aspect-ratio: auto;
+  padding: 2px;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.outerMenu .menuButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.outerMenu .targetButton {
+  align-items: center;
+  justify-content: center;
+}
+
+.menuButton.mainMenuButton {
+  height: 100%;
+  min-height: 27.333px;
+  max-height: 27.333px;
+  width: 100%;
+  /*max-width: 120px;*/
+  min-width: 80px;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: large;
+  font-weight: 600;
+  line-height: 1.1;
+  border-radius: 10px;
+  border-width: 4px;
+  /*border-style: solid;
+  border-color: rgb(200, 0, 0);
+  background-color: rgb(255, 0, 0);
+  color: white;*/
+  font-family: "Segoe UI", Tahoma, sans-serif;
 }
 
 .toggleButton {
@@ -241,17 +417,20 @@ input[type="range"].powerSlider {
 }
 
 .targetButtonPlaceholder {
-  display: inline-block;
-  height: 50%;
-  width: 12.5%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 27.333px;
+  width: 40px;
   max-width: 40px;
-  margin-right: 4px;
-  aspect-ratio: 0.4;
+  margin-right: 0;
+  aspect-ratio: auto;
   border-radius: 4px;
   border: 2px dashed rgba(255, 255, 255, 0.08);
   box-sizing: border-box;
   cursor: pointer;
   transition: border-color 0.2s ease, background-color 0.2s ease;
+  flex: 0 0 auto;
 }
 
 .targetButtonPlaceholder.is-active {
@@ -264,14 +443,19 @@ input[type="range"].powerSlider {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
+  gap: 6px;
   margin-right: 5px;
+  min-height: 0;
 }
 
 .chatoutput {
-  height: 30%;
-  width: 0px;
+  height: 15%;
+  min-height: 15%;
+  max-height: 15%;
+  width: 0;
   min-width: 100%;
-  overflow-y: scroll;
+  flex: 0 0 auto;
+  overflow-y: auto;
   background-color: rgba(47, 79, 79);
   padding: 5px;
   margin: 2px;
