@@ -32,7 +32,7 @@ export class TrajectoryPredictor {
 
   constructor() {}
 
-  predictTrajectory(table: Table, aim: AimEvent, rules?: any, masseMode?: boolean, elevation?: number, limitToHelper?: boolean): TrajectoryPrediction[] {
+  predictTrajectory(table: Table, aim: AimEvent, rules?: any, masseMode?: boolean, elevation?: number, _limitToHelper?: boolean): TrajectoryPrediction[] {
     // Create a copy of the table for simulation
     const serializedTable = table.serialise()
     const simulationTable = Table.fromSerialised(serializedTable)
@@ -214,7 +214,7 @@ export class TrajectoryPredictor {
     // Optimize simulation time when only helper is needed
     // Helper length is approximately (R * 30) / 0.5. When trajectory lines are hidden
     // we still simulate until the cue ball has travelled at least this much or hits something.
-    const maxSimTime = limitToHelper ? Math.min(this.maxSimulationTime, 3.0) : this.maxSimulationTime
+    const maxSimTime = this.maxSimulationTime
 
     // Run simulation with improved error handling
     let stepsWithoutMotion = 0
@@ -294,10 +294,6 @@ export class TrajectoryPredictor {
             }
           })
           lastSampleTime = simulationTime
-        }
-
-        if (limitToHelper && cueBallImpactRecorded) {
-          break
         }
 
         // Stop if all balls are stationary (using table's method)

@@ -63,6 +63,7 @@ export interface PhysicsContext {
   rho?: number; // Spin decay distribution coefficient override
   muS?: number; // Sliding friction coefficient override
   spinStopThreshold?: number; // Threshold for zero-spin detection
+  rollingTransition?: number; // Rolling transition threshold (m/s)
   // Collision resolution parameters (Codex 2025-10-21)
   collisionSeparationBias?: number; // Extra separation after collision (default: 0.01)
   minSeparationSpeed?: number; // Minimum separation velocity (default: 0.004 m/s)
@@ -83,10 +84,11 @@ export const SNOOKER_PHYSICS: PhysicsContext = {
 export const CAROM_PHYSICS: PhysicsContext = {
   R: CAROM_BALL_RADIUS,
   m: CAROM_BALL_MASS,
-  mu: 0.025,
-  rho: 0.07,
-  muS: 0.25,
-  spinStopThreshold: 0.03
+  mu: 0.022,
+  rho: 0.09,
+  muS: 0.22,
+  spinStopThreshold: 0.06,
+  rollingTransition: 0.08
 };
 
 // Global parameters (legacy - maintained for backward compatibility)

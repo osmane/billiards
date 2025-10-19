@@ -143,8 +143,10 @@ export class Ball {
     const vz = passesThroughZero(this.vel, delta.v)
     const wz = passesThroughZero(this.rvel, delta.w)
     const halts = this.state === State.Rolling ? vz || wz : vz && wz
+    const velocityMagnitude = this.vel.length()
     const spinThreshold = this.physicsContext?.spinStopThreshold ?? 0.01
-    if (halts && Math.abs(this.rvel.z) < spinThreshold) {
+    const spinMagnitude = this.rvel.length()
+    if ((halts || velocityMagnitude < 1e-3) && spinMagnitude < spinThreshold) {
       this.setStationary()
       return true
     }
@@ -158,10 +160,12 @@ export class Ball {
   }
 
   isRolling() {
+    const transitionThreshold = this.physicsContext?.rollingTransition ?? Ball.transition
     return (
       this.vel.lengthSq() !== 0 &&
       this.rvel.lengthSq() !== 0 &&
-      surfaceVelocityFull(this.vel, this.rvel).length() < Ball.transition
+      surfaceVelocityFull(this.vel, this.rvel, this.physicsContext).length() <
+        transitionThreshold
     )
   }
 
