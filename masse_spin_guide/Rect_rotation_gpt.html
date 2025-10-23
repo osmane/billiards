@@ -1,0 +1,107 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Aim + Cue Position (1000x800)</title>
+<style>
+  :root { --bg:#f4f5f7; --card:#fff; --ink:#0f172a; --sub:#64748b; --accent:#2563eb; }
+  *{box-sizing:border-box}
+  body{margin:0; padding:24px; background:var(--bg); color:var(--ink); font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial}
+  .layout{display:flex; justify-content:center; align-items:flex-start; gap:24px}
+  .stage{width:1000px; background:var(--card); border:1px solid #e2e8f0; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,.05); padding:16px}
+  svg{width:1000px; height:800px; display:block; background:#fafafa; border-radius:8px}
+  #aimTrack,#aimThumb{cursor:pointer; touch-action:none}
+  #cubuk-grup{cursor:pointer; touch-action:none}
+  .info{min-width:220px; background:var(--card); border:1px solid #e2e8f0; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,.05); padding:16px}
+  .info-title{font-size:14px; color:var(--sub); font-weight:600; margin-bottom:12px}
+  .info-row{display:flex; justify-content:space-between; align-items:center; font-size:14px; color:var(--ink); margin-bottom:10px}
+  .info-value{font-weight:700; color:var(--accent)}
+</style>
+</head>
+<body>
+  <div class="layout">
+    <div class="stage">
+      <svg id="scene" viewBox="0 0 1000 800" aria-label="scene" role="img">
+      <defs>
+        <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.2"/></filter>
+        <marker id="spinArrowHead" viewBox="-2 -2 8 8" refX="4" refY="2" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L4,2 L0,4 Z" fill="#f97316"/>
+        </marker>
+      </defs>
+
+      <g id="center" data-cx="500" data-cy="400"></g>
+
+      <circle id="ball" cx="500" cy="400" r="110" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.2"/>
+      <circle cx="500" cy="400" r="112" fill="none" stroke="#94a3b8" stroke-width="4" opacity=".25" filter="url(#soft)"/>
+
+      <circle id="orbit" cx="500" cy="400" r="250" fill="none" stroke="#cbd5e1" stroke-width="1.2" stroke-dasharray="6 8"/>
+
+      <g id="cueGroup" transform="translate(750,400) rotate(0)" pointer-events="bounding-box">
+        <rect x="-6" y="-60" width="12" height="12" fill="#1e80ff"/>
+        <rect x="-6" y="-48" width="12" height="228" fill="#8B5A2B"/>
+        <rect x="-6" y="-60" width="12" height="240" fill="none" stroke="#00000040" stroke-width="0.6"/>
+      </g>
+
+      <line id="aimLineC" x1="0" y1="0" x2="0" y2="0" stroke="#00d26a" stroke-width="1.5" stroke-linecap="round"/>
+      <line id="aimLineCGlow" x1="0" y1="0" x2="0" y2="0" stroke="#00d26a" stroke-width="4" stroke-linecap="round" opacity="0.15"/>
+      <line id="aimLineL" x1="0" y1="0" x2="0" y2="0" stroke="#00d26a" stroke-width="1.5" stroke-linecap="round"/>
+      <line id="aimLineLGlow" x1="0" y1="0" x2="0" y2="0" stroke="#00d26a" stroke-width="4" stroke-linecap="round" opacity="0.15"/>
+      <line id="aimLineR" x1="0" y1="0" x2="0" y2="0" stroke="#00d26a" stroke-width="1.5" stroke-linecap="round"/>
+      <line id="aimLineRGlow" x1="0" y1="0" x2="0" y2="0" stroke="#00d26a" stroke-width="4" stroke-linecap="round" opacity="0.15"/>
+
+      <circle id="contactC" r="3" fill="#ff3b3b" stroke="#ffecec" stroke-width="0.8" style="display:none"/>
+      <circle id="contactL" r="3" fill="#ff3b3b" stroke="#ffecec" stroke-width="0.8" style="display:none"/>
+      <circle id="contactR" r="3" fill="#ff3b3b" stroke="#ffecec" stroke-width="0.8" style="display:none"/>
+
+      <g id="spinArrows" stroke="#f97316" stroke-width="3" fill="none" marker-end="url(#spinArrowHead)" visibility="hidden">
+        <line class="spinArrow" x1="0" y1="0" x2="0" y2="0"/>
+        <line class="spinArrow" x1="0" y1="0" x2="0" y2="0"/>
+        <line class="spinArrow" x1="0" y1="0" x2="0" y2="0"/>
+      </g>
+
+      <line id="axisLine" x1="500" y1="0" x2="500" y2="800" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="6 8" pointer-events="none"/>
+      <line id="equatorLine" x1="390" y1="400" x2="610" y2="400" stroke="#94a3b8" stroke-width="2" stroke-dasharray="4 6" opacity="0.6" pointer-events="none"/>
+      <line id="tableFloorLine" x1="0" y1="510" x2="1000" y2="510" stroke="#94a3b8" stroke-width="4"/>
+      <circle id="spinTargetSlider" cx="500" cy="400" r="350" fill="none" stroke="#cbd5e1" stroke-width="8" stroke-dasharray="8 12" opacity="0.6"/>
+      <circle id="spinTargetMarker" cx="850" cy="400" r="16" fill="#2563eb" stroke="#1e40af" stroke-width="3"/>
+    </svg>
+    </div>
+    <div class="info">
+      <div class="info-title">Angle Indicators</div>
+      <div class="info-row"><span>Cue elevation</span><span id="cueElevation" class="info-value">0&#176;</span></div>
+      <div class="info-row"><span>Cue location</span><span id="cueLocation" class="info-value">0&#176;</span></div>
+      <div class="info-row"><span>Spin power</span><span id="spinValue" class="info-value">0/100</span></div>
+      <div class="info-row"><span>Status</span><span id="statusMessage" class="info-value"></span></div>
+    </div>
+    <div class="info">
+      <div class="info-title">Instructions</div>
+      <div class="info-row"><class="info-value">This work is an aiming/spin guide that visualizes the english (spin) induced on a cue ball as a function of the cue position at impact. The visualization and calculations are constructed from a strict side-view of the table, meaning the view represents a vertical cross-section of the ball. In lasers.js, the “aim” rays are cast from the cue tip at center/left/right offsets to find the contact point on the ball surface; in geometry.js, rayCircleIntersection performs the corresponding tangency/contact computation. The resulting multiple contact vectors are accumulated in spin.js as a moment (r×F) and rendered as the expected spin direction and magnitude (a “spin flower” on a 0–100 scale). This produces a visual analogy for center ball, as well as limited follow / draw and massé-like effects thanks to TIP_TOP / TIP_BOTTOM and CUE_ELEVATION_MAX in config.js. The ORBIT_MAX limit and the orbit motion simulate searching for a cut angle by pivoting the cue around the ball. In short, without engaging bank/kick calculations, the system acts as a “spin trainer” that builds intuition for the relationship between contact point, cut angle, and spin direction/magnitude.</span></div>      
+    </div>
+  </div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

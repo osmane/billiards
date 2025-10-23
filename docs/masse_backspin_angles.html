@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Masé Backspin Açısı Görselleştirme</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        margin: 24px;
+        color: #1f2933;
+        background: #f7f9fc;
+      }
+      h1 {
+        margin-bottom: 8px;
+        font-size: 1.6rem;
+      }
+      h2 {
+        margin-top: 28px;
+        margin-bottom: 8px;
+        font-size: 1.25rem;
+      }
+      p {
+        max-width: 720px;
+        line-height: 1.6;
+      }
+      .panel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 32px;
+        margin-top: 24px;
+      }
+      .controls {
+        min-width: 280px;
+        max-width: 360px;
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 12px 32px rgba(31, 41, 51, 0.12);
+      }
+      .controls label {
+        display: flex;
+        flex-direction: column;
+        font-size: 0.95rem;
+        margin-bottom: 18px;
+        gap: 6px;
+      }
+      .controls input[type="range"] {
+        width: 100%;
+      }
+      .controls output {
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        color: #0b7285;
+      }
+      svg {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(31, 41, 51, 0.12);
+      }
+      .details {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 12px 32px rgba(31, 41, 51, 0.12);
+        max-width: 700px;
+        margin-top: 24px;
+      }
+      dl {
+        display: grid;
+        grid-template-columns: minmax(160px, 220px) 1fr;
+        gap: 8px 16px;
+        margin: 0;
+      }
+      dt {
+        font-weight: 600;
+        color: #334155;
+      }
+      dd {
+        margin: 0;
+        font-variant-numeric: tabular-nums;
+      }
+      .pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+      .pill.ok {
+        background: rgba(16, 185, 129, 0.18);
+        color: #0f5132;
+      }
+      .pill.warn {
+        background: rgba(255, 193, 7, 0.18);
+        color: #7f5224;
+      }
+      .pill.error {
+        background: rgba(220, 38, 38, 0.18);
+        color: #7f1d1d;
+      }
+      .legend {
+        display: flex;
+        gap: 16px;
+        margin-top: 16px;
+        font-size: 0.9rem;
+      }
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .legend svg {
+        box-shadow: none;
+        background: none;
+      }
+      .note {
+        font-size: 0.9rem;
+        margin-top: 12px;
+        color: #475569;
+      }
+      .formula {
+        font-family: "Courier New", Consolas, monospace;
+        background: rgba(15, 118, 110, 0.08);
+        padding: 8px 12px;
+        border-radius: 8px;
+        margin-top: 8px;
+        display: inline-block;
+      }
+      @media (max-width: 900px) {
+        .panel {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Dikey (Masé) Vuruşlarda Backspin Açısı Görselleştirmesi</h1>
+    <p>
+      Aşağıdaki araç, bir bilardo topuna yüksek elevasyonla yapılan masé vuruşlarında
+      ekvatorun altına temas için hangi açıların mümkün olduğunu gösterir. Model
+      gerçekçi geometri varsayımlarıyla (top yarıçapı 30.75 mm, tip yarıçapı 6 mm)
+      çalışır ve <strong>yalnızca vuruş anındaki yakın çevreyi</strong> dikkate alır.
+      Oyunun fizik motorundan bağımsızdır; amaç, hangi açı aralığında backspin
+      üretilebileceğini görselleştirmektir.
+    </p>
+    <div class="panel">
+      <div class="controls">
+        <label>
+          Vuruş ofseti (normalize) —
+          <span>Ekvator altı için negatif değer seçiniz.</span>
+          <input
+            id="offsetInput"
+            type="range"
+            min="-0.4"
+            max="0.4"
+            step="0.01"
+            value="-0.28"
+          />
+          <output id="offsetOut"></output>
+        </label>
+        <label>
+          Vuruş açısı (derece)
+          <input
+            id="angleInput"
+            type="range"
+            min="0"
+            max="85"
+            step="0.5"
+            value="75"
+          />
+          <output id="angleOut"></output>
+        </label>
+        <label>
+          Backspin için gereken minimum serbest alan
+          <span>(Temastan itibaren ıstakanın masa üzerinde sürtmeden ilerleyebileceği mesafe, mm)</span>
+          <input
+            id="bridgeInput"
+            type="range"
+            min="5"
+            max="60"
+            step="1"
+            value="18"
+          />
+          <output id="bridgeOut"></output>
+        </label>
+        <label>
+          İlave açıklık payı (mm)
+          <span>Tip ile masa yüzeyi arasında bırakmak istediğiniz güvenlik marjı.</span>
+          <input
+            id="clearanceInput"
+            type="range"
+            min="0"
+            max="8"
+            step="0.5"
+            value="2"
+          />
+          <output id="clearanceOut"></output>
+        </label>
+        <label>
+          Çarpışma sonrası top hızı (m/s)
+          <span>Bu hız, lineer momentumun büyüklüğünü belirler.</span>
+          <input
+            id="velocityInput"
+            type="range"
+            min="0.5"
+            max="3.0"
+            step="0.05"
+            value="1.8"
+          />
+          <output id="velocityOut"></output>
+        </label>
+      </div>
+      <div>
+        <svg id="diagram" width="520" height="360" viewBox="0 0 520 360">
+          <defs>
+            <linearGradient id="felt" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#044343" />
+              <stop offset="100%" stop-color="#095454" />
+            </linearGradient>
+          </defs>
+          <rect x="40" y="240" width="440" height="80" fill="url(#felt)"></rect>
+          <line
+            id="maxCue"
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="0"
+            stroke="#ef6c00"
+            stroke-width="6"
+            stroke-linecap="round"
+            stroke-dasharray="12 10"
+            opacity="0.65"
+          ></line>
+          <line
+            id="actualCue"
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="0"
+            stroke="#0f8a5f"
+            stroke-width="6"
+            stroke-linecap="round"
+          ></line>
+          <circle
+            id="ball"
+            cx="0"
+            cy="0"
+            r="0"
+            fill="#f8fafc"
+            stroke="#0d3b66"
+            stroke-width="3"
+          ></circle>
+          <line
+            id="equator"
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="0"
+            stroke="#1e293b"
+            stroke-width="2"
+            stroke-dasharray="6 6"
+            opacity="0.35"
+          ></line>
+          <circle
+            id="contactPoint"
+            cx="0"
+            cy="0"
+            r="6"
+            fill="#d7263d"
+            stroke="white"
+            stroke-width="2"
+            opacity="0.9"
+          ></circle>
+          <text
+            id="angleLabel"
+            x="0"
+            y="0"
+            font-size="16"
+            font-weight="600"
+            fill="#0f172a"
+          >
+          </text>
+          <text
+            id="maxLabel"
+            x="0"
+            y="0"
+            font-size="14"
+            fill="#b45309"
+          ></text>
+        </svg>
+        <div class="legend">
+          <span>
+            <svg width="28" height="10">
+              <line
+                x1="2"
+                y1="5"
+                x2="26"
+                y2="5"
+                stroke="#0f8a5f"
+                stroke-width="6"
+                stroke-linecap="round"
+              ></line>
+            </svg>
+            Seçili vuruş açısı
+          </span>
+          <span>
+            <svg width="28" height="10">
+              <line
+                x1="2"
+                y1="5"
+                x2="26"
+                y2="5"
+                stroke="#ef6c00"
+                stroke-width="6"
+                stroke-linecap="round"
+                stroke-dasharray="12 8"
+              ></line>
+            </svg>
+            Ekvator altı temas için en dik açı
+          </span>
+        </div>
+        <p class="note">
+          <strong>Not:</strong> “Serbest alan” parametresi, ıstakanın temas noktasından itibaren
+          masa yüzeyine sürtmeden ilerleyebilmesi gereken minimum uzaklığı temsil eder. Değer azaldıkça
+          erişilebilir maksimum açı artar; masé vuruşlarda oyuncular, eli topa yaklaştırıp ıstakayı
+          havaya kaldırarak bu değeri küçültür.
+        </p>
+      </div>
+    </div>
+
+    <div class="details">
+      <h2>Hesaplanan Değerler</h2>
+      <dl>
+        <dt>Ekvator altı temasın geometrik sınırı</dt>
+        <dd>
+          <span id="limitText"></span>
+          <span class="pill" id="limitBadge"></span>
+        </dd>
+        <dt>Seçili vuruş açısı</dt>
+        <dd id="selectedAngleText"></dd>
+        <dt>Temas noktası (mm)</dt>
+        <dd id="contactText"></dd>
+        <dt>Lineer hız bileşenleri (m/s)</dt>
+        <dd id="linearText"></dd>
+        <dt>Üretilen açısal hız ω<sub>y</sub> (rad/s)</dt>
+        <dd id="omegaText"></dd>
+        <dt>Tabana göre yüzey hızı (m/s)</dt>
+        <dd id="surfaceText"></dd>
+        <dt>Vuruş tipi değerlendirmesi</dt>
+        <dd id="classificationText"></dd>
+      </dl>
+      <p class="note">
+        Aşağıdaki bağıntı, ıstakanın belirli bir mesafe içinde masa yüzeyine sürtmeden
+        ilerleyebilmesi koşuluyla erişilebilecek maksimum açıyı verir:
+      </p>
+      <div class="formula">
+        θ<sub>max</sub> = sin<sup>-1</sup>
+        (
+        <span id="formulaNumerator"></span>
+        /
+        <span id="formulaDenominator"></span>
+        )
+      </div>
+      <p class="note">
+        Burada &nbsp;θ<sub>max</sub>&nbsp; rad cinsindendir,
+        &nbsp;<em>h</em> temas noktası yüksekliği,
+        &nbsp;<em>r<sub>cue</sub></em> tip yarıçapı,
+        &nbsp;<em>δ</em> ise seçtiğiniz ekstra açıklık payıdır. Parametreler
+        <em>h − (r<sub>cue</sub> + δ)</em> ≤ 0 olduğunda, ıstakanın ekvator altına ulaşması
+        mümkün değildir.
+      </p>
+    </div>
+
+    <script>
+      const SCALE = 4; // px per mm
+      const BALL_RADIUS_MM = 30.75;
+      const BALL_RADIUS_M = BALL_RADIUS_MM / 1000;
+      const BALL_MASS = 0.21; // kg
+      const CUE_TIP_RADIUS_MM = 6; // realistic tip radius
+      const CUE_TIP_RADIUS_M = CUE_TIP_RADIUS_MM / 1000;
+      const CENTER_X = 240;
+      const TABLE_Y = 300;
+      const BALL_CENTER_Y = TABLE_Y - BALL_RADIUS_MM * SCALE;
+      const CUE_DRAW_LENGTH_MM = 320; // length to draw backwards along the cue
+
+      const els = {
+        offset: document.getElementById("offsetInput"),
+        angle: document.getElementById("angleInput"),
+        bridge: document.getElementById("bridgeInput"),
+        clearance: document.getElementById("clearanceInput"),
+        velocity: document.getElementById("velocityInput"),
+        offsetOut: document.getElementById("offsetOut"),
+        angleOut: document.getElementById("angleOut"),
+        bridgeOut: document.getElementById("bridgeOut"),
+        clearanceOut: document.getElementById("clearanceOut"),
+        velocityOut: document.getElementById("velocityOut"),
+        ball: document.getElementById("ball"),
+        equator: document.getElementById("equator"),
+        contactPoint: document.getElementById("contactPoint"),
+        actualCue: document.getElementById("actualCue"),
+        maxCue: document.getElementById("maxCue"),
+        angleLabel: document.getElementById("angleLabel"),
+        maxLabel: document.getElementById("maxLabel"),
+        limitText: document.getElementById("limitText"),
+        limitBadge: document.getElementById("limitBadge"),
+        selectedAngleText: document.getElementById("selectedAngleText"),
+        contactText: document.getElementById("contactText"),
+        linearText: document.getElementById("linearText"),
+        omegaText: document.getElementById("omegaText"),
+        surfaceText: document.getElementById("surfaceText"),
+        classificationText: document.getElementById("classificationText"),
+        formulaNumerator: document.getElementById("formulaNumerator"),
+        formulaDenominator: document.getElementById("formulaDenominator"),
+      };
+
+      function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+      }
+
+      function setLine(line, x1, y1, x2, y2) {
+        line.setAttribute("x1", x1.toFixed(2));
+        line.setAttribute("y1", y1.toFixed(2));
+        line.setAttribute("x2", x2.toFixed(2));
+        line.setAttribute("y2", y2.toFixed(2));
+      }
+
+      function updateDiagram() {
+        const offset = parseFloat(els.offset.value);
+        const angleDeg = parseFloat(els.angle.value);
+        const bridgeMm = parseFloat(els.bridge.value);
+        const clearanceMm = parseFloat(els.clearance.value);
+        const velocity = parseFloat(els.velocity.value);
+
+        els.offsetOut.textContent = offset.toFixed(2);
+        els.angleOut.textContent = angleDeg.toFixed(1) + "°";
+        els.bridgeOut.textContent = bridgeMm.toFixed(0) + " mm";
+        els.clearanceOut.textContent = clearanceMm.toFixed(1) + " mm";
+        els.velocityOut.textContent = velocity.toFixed(2) + " m/s";
+
+        // Ball and equator geometry (static)
+        const ballRadiusPx = BALL_RADIUS_MM * SCALE;
+        els.ball.setAttribute("cx", CENTER_X);
+        els.ball.setAttribute("cy", BALL_CENTER_Y);
+        els.ball.setAttribute("r", ballRadiusPx);
+        setLine(
+          els.equator,
+          CENTER_X - ballRadiusPx,
+          BALL_CENTER_Y,
+          CENTER_X + ballRadiusPx,
+          BALL_CENTER_Y
+        );
+
+        // Contact geometry
+        const offsetM = offset * BALL_RADIUS_M; // can be negative
+        const verticalOffsetM = -offsetM; // positive when below equator
+        const verticalOffsetMm = verticalOffsetM * 1000;
+        const contactHeightM = BALL_RADIUS_M - verticalOffsetM;
+        const contactHeightMm = contactHeightM * 1000;
+        const radialComponent = Math.sqrt(
+          clamp(BALL_RADIUS_M * BALL_RADIUS_M - verticalOffsetM * verticalOffsetM, 0, BALL_RADIUS_M * BALL_RADIUS_M)
+        );
+        const contactXmm = radialComponent * 1000;
+        const contactX = CENTER_X - contactXmm * SCALE;
+        const contactY = TABLE_Y - contactHeightMm * SCALE;
+
+        els.contactPoint.setAttribute("cx", contactX.toFixed(2));
+        els.contactPoint.setAttribute("cy", contactY.toFixed(2));
+
+        // Maximum achievable angle given clearance constraints
+        const bridgeM = bridgeMm / 1000;
+        const clearanceM = clearanceMm / 1000;
+        const clearanceTotal = CUE_TIP_RADIUS_M + clearanceM;
+        let thetaMaxRad;
+        if (contactHeightM <= clearanceTotal + 1e-6) {
+          thetaMaxRad = 0;
+        } else if (bridgeM <= 1e-6) {
+          thetaMaxRad = Math.PI / 2;
+        } else {
+          const ratio = (contactHeightM - clearanceTotal) / bridgeM;
+          if (ratio >= 1) {
+            thetaMaxRad = Math.PI / 2;
+          } else if (ratio <= 0) {
+            thetaMaxRad = 0;
+          } else {
+            thetaMaxRad = Math.asin(ratio);
+          }
+        }
+        const thetaMaxDeg = thetaMaxRad * (180 / Math.PI);
+
+        // Use selected angle for cue drawing
+        const angleRad = angleDeg * (Math.PI / 180);
+        const limitedAngle = Math.min(angleDeg, 85);
+        const cueLengthPx = CUE_DRAW_LENGTH_MM * SCALE;
+
+        function lineEndpoints(angleRadians) {
+          const cos = Math.cos(angleRadians);
+          const sin = Math.sin(angleRadians);
+          const x2 = contactX + (-cos * CUE_DRAW_LENGTH_MM) * SCALE;
+          const y2 = contactY + (-sin * CUE_DRAW_LENGTH_MM) * SCALE;
+          return { x1: contactX, y1: contactY, x2, y2 };
+        }
+
+        const actualLine = lineEndpoints(angleRad);
+        setLine(els.actualCue, actualLine.x1, actualLine.y1, actualLine.x2, actualLine.y2);
+
+        const maxLine = lineEndpoints(thetaMaxRad);
+        setLine(els.maxCue, maxLine.x1, maxLine.y1, maxLine.x2, maxLine.y2);
+
+        const angleLabelX = contactX - 60;
+        const angleLabelY = contactY - 16;
+        els.angleLabel.setAttribute("x", angleLabelX);
+        els.angleLabel.setAttribute("y", angleLabelY);
+        els.angleLabel.textContent = angleDeg.toFixed(1) + "°";
+
+        els.maxLabel.setAttribute("x", maxLine.x2 + 8);
+        els.maxLabel.setAttribute("y", maxLine.y2 - 6);
+        els.maxLabel.textContent = "θₘₐₓ ≈ " + thetaMaxDeg.toFixed(1) + "°";
+
+        // Physics estimation for angular velocity
+        const R = BALL_RADIUS_M;
+        const h = verticalOffsetM; // >= 0 when below equator
+        const inertia = (2 / 5) * BALL_MASS * R * R;
+        const rVec = [-radialComponent, 0, -verticalOffsetM];
+        const direction = [Math.cos(angleRad), 0, -Math.sin(angleRad)];
+        const impulseMag = BALL_MASS * velocity;
+        const impulse = direction.map((c) => c * impulseMag);
+        const torqueY = rVec[2] * impulse[0] - rVec[0] * impulse[2];
+        const omegaY = inertia > 0 ? torqueY / inertia : 0;
+        const linearVX = velocity * Math.cos(angleRad);
+        const linearVZ = -velocity * Math.sin(angleRad);
+        const surfaceVelocity = linearVX - omegaY * R;
+
+        // Classification
+        let classification;
+        let badgeClass;
+        if (offset >= 0) {
+          classification = "Ofset ekvator altında olmadığı için backspin oluşmaz.";
+          badgeClass = "warn";
+        } else if (thetaMaxRad <= 0) {
+          classification = "Geometrik kısıtlar nedeniyle ekvator altına inmek mümkün değil.";
+          badgeClass = "error";
+        } else if (angleDeg > thetaMaxDeg + 0.2) {
+          classification = "Bu açı seçilen serbest alan koşulları altında fiziksel olarak ulaşılabilir değil.";
+          badgeClass = "error";
+        } else if (surfaceVelocity < 0) {
+          classification = "Seçilen parametreler güçlü bir backspin/draw etkisi üretir.";
+          badgeClass = "ok";
+        } else if (Math.abs(surfaceVelocity) < 0.05) {
+          classification =
+            "Yüzey hızı neredeyse sıfır: vurulan top kısa sürede tam kayma/rolling’e geçer.";
+          badgeClass = "warn";
+        } else {
+          classification =
+            "Top spin yönünde ileri kayar (follow etkisi). Backspin için ofset veya açı ayarlanmalı.";
+          badgeClass = "warn";
+        }
+
+        els.limitText.textContent =
+          thetaMaxDeg >= 89.9
+            ? "≈ 90° (pratikte sınırlayan etken serbest alan değil)"
+            : thetaMaxDeg.toFixed(1) + "°";
+        els.limitBadge.className = "pill " + badgeClass;
+        els.limitBadge.textContent =
+          thetaMaxDeg <= 0 ? "Erişilemez" : thetaMaxDeg < angleDeg ? "Sınır Aşıldı" : "Uygulanabilir";
+
+        els.selectedAngleText.textContent = angleDeg.toFixed(1) + "°";
+        els.contactText.textContent =
+          "x = " +
+          (-contactXmm).toFixed(1) +
+          " mm, z = " +
+          contactHeightMm.toFixed(1) +
+          " mm (masa yüzeyinin üstü)";
+        els.linearText.textContent =
+          "vₓ = " +
+          linearVX.toFixed(2) +
+          " m/s, v_z = " +
+          linearVZ.toFixed(2) +
+          " m/s";
+        els.omegaText.textContent = omegaY.toFixed(2) + " rad/s";
+        els.surfaceText.textContent = surfaceVelocity.toFixed(2) + " m/s";
+        els.classificationText.textContent = classification;
+
+        const numerator = (contactHeightM - clearanceTotal) * 1000;
+        els.formulaNumerator.textContent = numerator.toFixed(2) + " mm";
+        els.formulaDenominator.textContent = bridgeMm.toFixed(1) + " mm";
+
+        // Cue colour feedback
+        if (angleDeg > thetaMaxDeg + 0.2 || thetaMaxRad <= 0 || offset >= 0) {
+          els.actualCue.setAttribute("stroke", "#d7263d");
+        } else {
+          els.actualCue.setAttribute("stroke", "#0f8a5f");
+        }
+      }
+
+      ["offset", "angle", "bridge", "clearance", "velocity"].forEach((key) => {
+        els[key].addEventListener("input", updateDiagram);
+      });
+
+      updateDiagram();
+    </script>
+  </body>
+</html>

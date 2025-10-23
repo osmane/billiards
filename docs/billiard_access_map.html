@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vuruş Erişimi ve İlk Fizik — Cue-Frame, Coulomb</title>
+<style>
+  :root { --bg:#0b1323; --panel:#121a2f; --edge:#2a3350; --text:#e7ecff; --muted:#9fb0ff; --accent:#7aa2ff; --warn:#ff7676; --ok:#68d391; }
+  html,body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+  .wrap { display:flex; flex-wrap:wrap; gap:18px; padding:18px; }
+  .card { background:var(--panel); border:1px solid var(--edge); border-radius:14px; padding:14px; }
+  .left { flex: 1 1 720px; min-width: 380px; }
+  .right { flex: 1 1 420px; min-width: 320px; }
+  h1 { margin:0 0 10px; font-size:1.2rem; color:var(--text); }
+  h2 { margin:10px 0 8px; font-size:1rem; color:var(--muted); }
+  .kv { display:grid; grid-template-columns: 180px 1fr; column-gap:10px; row-gap:6px; font-size:0.95rem; }
+  label { font-weight:600; color:var(--muted); }
+  input[type="range"]{ width:100%; }
+  canvas { background:linear-gradient(#0f1833,#0b1323); border:1px solid var(--edge); border-radius:12px; }
+  .note { font-size:0.9rem; color:#c7d2fe; opacity:0.95; }
+  .small { font-size:0.85rem; color:#cbd5ff; }
+  .chip { display:inline-block; border:1px solid var(--edge); padding:3px 8px; border-radius:999px; margin:0 6px 6px 0; font-size:0.85rem; color:#cfe0ff; }
+  .tag { font-size:0.85rem; padding:2px 6px; border-radius:10px; margin-left:6px; }
+  .ok { background:#133a2a; color:#a6f0c2; }
+  .bad { background:#3a1f1f; color:#ffb4b4; }
+  .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card left">
+    <h1>Vuruş Erişimi (Geometri) + İlk Spin/Hız (Fizik)</h1>
+    <div class="grid2">
+      <div>
+        <h2>Yan görünüm (x–z)</h2>
+        <canvas id="cvSide" width="720" height="420"></canvas>
+      </div>
+      <div>
+        <h2>Yüzey erişim haritası (θ–φ)</h2>
+        <canvas id="cvMap" width="720" height="420"></canvas>
+      </div>
+    </div>
+    <div class="note">
+      <span class="chip">Masa düzlemi: z=0 (ekvator)</span>
+      <span class="chip">Erişilebilir yüzey: <b>yeşil</b></span>
+      <span class="chip">Erişilemez yüzey: <b>kırmızı</b> (ıstaka masaya takılır)</span>
+      <span class="chip">Coulomb: |Jt| ≤ μJn</span>
+      <div class="small">Harita: Yatay eksen φ (−180°→180°), dikey eksen θ (0° tepe, 180° alt kutup). İşaretçi: seçili temas noktası.</div>
+    </div>
+  </div>
+  <div class="card right">
+    <h2>Parametreler</h2>
+    <div class="kv">
+      <label>Top yarıçapı R (m)</label> <input id="R" type="range" min="0.020" max="0.033" step="0.0005" value="0.0285">
+      <label>Kütle m (kg)</label> <input id="m" type="range" min="0.140" max="0.220" step="0.001" value="0.170">
+      <label>Sürtünme μ</label> <input id="mu" type="range" min="0.02" max="0.30" step="0.002" value="0.10">
+      <label>İtki J (N·s)</label> <input id="Jc" type="range" min="0.02" max="0.40" step="0.002" value="0.12">
+      <label>Elevasyon (°)</label> <input id="elev" type="range" min="0" max="70" step="0.2" value="8">
+      <label>Azimut (°)</label> <input id="azim" type="range" min="-90" max="90" step="0.5" value="0">
+      <label>İpucu (cue tip) yarıçapı r_tip (m)</label> <input id="rtip" type="range" min="0.003" max="0.0075" step="0.0001" value="0.0055">
+      <label>Gerekli arka açıklık L_back (m)</label> <input id="Lback" type="range" min="0.05" max="0.50" step="0.005" value="0.25">
+      <label>Seçili θ (°)</label> <input id="theta" type="range" min="0" max="180" step="0.2" value="30">
+      <label>Seçili φ (°)</label> <input id="phi" type="range" min="-180" max="180" step="1" value="0">
+      <label>Coulomb limiti (|Jt| ≤ μJn)</label> <input id="coul" type="checkbox" checked>
+    </div>
+
+    <h2>Çıktılar</h2>
+    <div id="out" class="kv"></div>
+
+    <h2>Kısa açıklamalar</h2>
+    <ul class="small">
+      <li><b>Erişilebilirlik testi:</b> Seçilen θ–φ noktasında, vuruş doğrultusu ê<sub>cue</sub> geriye doğru L_back boyunca izlenir; çizginin <em>z - r_tip ≥ 0</em> koşulunu sağlaması gerekir (ıstaka masaya çarpmamalı). Ayrıca <code>ê_cue · n &lt; 0</code> olmalı (yüzeye yaklaşım).</li>
+      <li><b>Cue-frame:</b> <code>J = Jc·ê_cue</code>, <code>Jn = −J·n</code> (pozitifse topa doğru), <code>Jt = J − Jn n</code>, Coulomb sınırı aktifle ise <code>|Jt| ≤ μJn</code>.</li>
+      <li><b>Hız/Spin:</b> <code>v⁺ = J/m</code>, <code>ω⁺ = I⁻¹ (r×J)</code>, <code>I=2/5 mR²</code>.</li>
+      <li><b>Follow/Draw:</b> Alt temas noktasının hızı: <code>s = v⁺ + ω⁺×(0,0,−R)</code>. Yatay cue yönündeki izdüşüm s·ĉ(+/−) → follow/draw eğilimi.</li>
+      <li><b>Not:</b> Bu araç vuruş anını ve ilk durumu hesaplar; sonraki kayma→yuvarlanma, Magnus ve sıçrama burada yoktur.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+function d2r(a){return a*Math.PI/180;}
+function norm3(a){return Math.hypot(a[0],a[1],a[2]);}
+function nrm(a){const s=norm3(a); return s>0?[a[0]/s,a[1]/s,a[2]/s]:[0,0,0];}
+function dot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
+function add(a,b){return [a[0]+b[0],a[1]+b[1],a[2]+b[2]];}
+function sub(a,b){return [a[0]-b[0],a[1]-b[1],a[2]-b[2]];}
+function mul(a,k){return [a[0]*k,a[1]*k,a[2]*k];}
+function cross(a,b){return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];}
+
+const cvSide = document.getElementById('cvSide'); const ctxS = cvSide.getContext('2d');
+const cvMap  = document.getElementById('cvMap');  const ctxM = cvMap.getContext('2d');
+
+function compute(){
+  const R   = parseFloat(document.getElementById('R').value);
+  const m   = parseFloat(document.getElementById('m').value);
+  const mu  = parseFloat(document.getElementById('mu').value);
+  const Jc  = parseFloat(document.getElementById('Jc').value);
+  const elev= d2r(parseFloat(document.getElementById('elev').value));
+  const azim= d2r(parseFloat(document.getElementById('azim').value));
+  const rtip= parseFloat(document.getElementById('rtip').value);
+  const Lback = parseFloat(document.getElementById('Lback').value);
+  const thSel  = d2r(parseFloat(document.getElementById('theta').value));
+  const phSel  = d2r(parseFloat(document.getElementById('phi').value));
+  const applyCoul = document.getElementById('coul').checked;
+
+  const I = (2/5)*m*R*R;
+  const cueDir = nrm([ Math.cos(elev)*Math.cos(azim),
+                       Math.cos(elev)*Math.sin(azim),
+                       Math.sin(elev) ]);
+
+  // === ACCESS MAP (θ×φ grid) ===
+  const W = cvMap.width, H = cvMap.height;
+  const img = ctxM.createImageData(W,H);
+  function setPx(x,y, r,g,b,a){
+    const i = (y*W + x)*4; img.data[i]=r; img.data[i+1]=g; img.data[i+2]=b; img.data[i+3]=a;
+  }
+  for (let y=0; y<H; y++){
+    const theta = (y/(H-1))*Math.PI; // 0..π
+    for (let x=0; x<W; x++){
+      const phi = ((x/(W-1))*2*Math.PI) - Math.PI; // -π..π
+      const r = [ R*Math.sin(theta)*Math.cos(phi),
+                  R*Math.sin(theta)*Math.sin(phi),
+                  R*Math.cos(theta) ];
+      const n = nrm(r);
+
+      // approach condition
+      const approachOK = dot(cueDir, n) < -1e-5;
+
+      // back-clear: along -cueDir from contact point r, the line z - rtip >= 0 for s∈[0,Lback]
+      // param: P(s) = r - s*cueDir  (s≥0). Require Pz - rtip >= 0 for all s in [0,Lback].
+      // Since z(s) = r_z - s*cueDir.z is linear, min occurs at s = Lback if cueDir.z>0, else at s=0.
+      let minZ = r[2]; // z at s=0
+      if (cueDir[2] > 0) { // going upward as we go forward, so backwards lowers z
+        minZ = Math.min(r[2], r[2] - Lback*cueDir[2]);
+      } else { // backwards raises z or flat
+        minZ = r[2];
+      }
+      const backOK = (minZ - rtip) >= 0;
+
+      const ok = approachOK && backOK;
+      const col = ok ? [40, 190, 120] : [205, 70, 70];
+      setPx(x,y, col[0], col[1], col[2], 255);
+    }
+  }
+  ctxM.putImageData(img,0,0);
+
+  // draw axes labels
+  ctxM.strokeStyle="#7aa2ff"; ctxM.lineWidth=1; ctxM.strokeRect(0,0,W,H);
+  ctxM.fillStyle="#cfe5ff"; ctxM.fillText("φ (−180° → +180°)", W/2-70, 16);
+  ctxM.save(); ctxM.translate(16,H/2); ctxM.rotate(-Math.PI/2); ctxM.fillText("θ (0° → 180°)",  -40,0); ctxM.restore();
+
+  // mark selected point
+  const xp = Math.round(((phSel + Math.PI)/(2*Math.PI))*(W-1));
+  const yp = Math.round((thSel/Math.PI)*(H-1));
+  ctxM.fillStyle="#fff"; ctxM.beginPath(); ctxM.arc(xp,yp,4,0,2*Math.PI); ctxM.fill();
+  ctxM.strokeStyle="#000"; ctxM.beginPath(); ctxM.arc(xp,yp,6,0,2*Math.PI); ctxM.stroke();
+
+  // === SIDE VIEW ===
+  const S = 3600; // px/m
+  const cx = 170, cy = 340;
+  const ballC = [cx + 220, cy - R*S];
+  const rpx = R*S;
+
+  ctxS.clearRect(0,0,cvSide.width,cvSide.height);
+  // table line
+  ctxS.strokeStyle="#31406b"; ctxS.lineWidth=2;
+  ctxS.beginPath(); ctxS.moveTo(30, cy); ctxS.lineTo(cvSide.width-30, cy); ctxS.stroke();
+  // ball + equator
+  ctxS.fillStyle="#cfe5ff"; ctxS.beginPath(); ctxS.arc(ballC[0], ballC[1], rpx, 0, 2*Math.PI); ctxS.fill();
+  ctxS.strokeStyle="#6b84c9"; ctxS.lineWidth=2; ctxS.stroke();
+  ctxS.setLineDash([6,5]); ctxS.strokeStyle="#a7b7f5";
+  ctxS.beginPath(); ctxS.moveTo(ballC[0]-rpx, cy); ctxS.lineTo(ballC[0]+rpx, cy); ctxS.stroke(); ctxS.setLineDash([]);
+
+  // contact from selected θ,φ projected to side (x–z)
+  const rSel = [ R*Math.sin(thSel)*Math.cos(phSel),
+                 R*Math.sin(thSel)*Math.sin(phSel),
+                 R*Math.cos(thSel) ];
+  const nSel = nrm(rSel);
+  const cp = [ ballC[0] + rSel[0]*S, ballC[1] - rSel[2]*S ];
+  // cue segment near contact, back Lback
+  function projXZ(P){ return [ballC[0] + P[0]*S, ballC[1] - P[2]*S]; }
+  const p1 = projXZ( add(rSel, mul(cueDir,  0.08)) );
+  const p2 = projXZ( add(rSel, mul(cueDir, -Lback)) );
+  // set color by accessibility at selected point (recompute test quick)
+  const approachOK = dot(cueDir, nSel) < -1e-5;
+  let minZ = rSel[2];
+  if (cueDir[2]>0){ minZ = Math.min(rSel[2], rSel[2] - Lback*cueDir[2]); }
+  const backOK = (minZ - rtip) >= 0;
+  const accOK  = approachOK && backOK;
+
+  // draw cue
+  ctxS.lineWidth= accOK ? 6 : 6;
+  ctxS.strokeStyle= accOK ? "#9ad1ff" : "#ff9090";
+  ctxS.beginPath(); ctxS.moveTo(p1[0],p1[1]); ctxS.lineTo(p2[0],p2[1]); ctxS.stroke();
+  // show tip radius as little circle
+  ctxS.fillStyle = accOK ? "#00d38d" : "#ff6a6a";
+  ctxS.beginPath(); ctxS.arc(cp[0], cp[1], Math.max(3, rtip*S), 0, 2*Math.PI); ctxS.fill();
+
+  // physics at selected point (if accessible)
+  let v=[0,0,0], w=[0,0,0], J=[0,0,0], Jn=0, JtMag=0, sPar=0;
+  if (accOK){
+    // raw impulse along cue
+    let Jraw = mul(cueDir, Jc);
+    // decompose
+    Jn = Math.max(0, -dot(Jraw, nSel));
+    const Jn_vec = mul(nSel, -Jn);
+    let Jt_vec = sub(Jraw, Jn_vec);
+    JtMag = norm3(Jt_vec);
+    let t_hat = JtMag>0 ? nrm(Jt_vec) : nrm(sub(cueDir, mul(nSel, dot(cueDir,nSel))));
+    if (applyCoul){
+      const Jt_lim = mu * Jn;
+      if (JtMag > Jt_lim) JtMag = Jt_lim;
+      Jt_vec = mul(t_hat, JtMag);
+    }
+    J = add(Jn_vec, Jt_vec);
+    // post v, w
+    v = [J[0]/m, J[1]/m, J[2]/m];
+    const rXJ = cross(rSel, J);
+    w = [ rXJ[0]/I, rXJ[1]/I, rXJ[2]/I ];
+    // slip at bottom
+    const rbot = [0,0,-R];
+    const s = add(v, cross(w, rbot));
+    const cueHoriz = nrm([cueDir[0], cueDir[1], 0]);
+    sPar = dot(s, cueHoriz);
+
+    // draw v arrow (side projection)
+    const v2d = [v[0], v[2]];
+    function drawArrow(ctx,x1,y1,x2,y2,col,lw){
+      const ang=Math.atan2(y2-y1,x2-x1); const len=Math.hypot(x2-x1,y2-y1);
+      ctx.strokeStyle=col; ctx.lineWidth=lw||3;
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+      const ah = Math.min(12, Math.max(7, len*0.12));
+      ctx.beginPath();
+      ctx.moveTo(x2,y2);
+      ctx.lineTo(x2-ah*Math.cos(ang-Math.PI/6), y2-ah*Math.sin(ang-Math.PI/6));
+      ctx.lineTo(x2-ah*Math.cos(ang+Math.PI/6), y2-ah*Math.sin(ang+Math.PI/6));
+      ctx.closePath(); ctx.fillStyle=col; ctx.fill();
+    }
+    drawArrow(ctxS, ballC[0], ballC[1], ballC[0] + v2d[0]*90, ballC[1] - v2d[1]*90, "#7cffb3", 4);
+
+    // spin indicator (about y gives back/topspin in side view)
+    const wy = w[1];
+    ctxS.strokeStyle="#a0b8ff"; ctxS.lineWidth=3;
+    const arcR = rpx*0.85;
+    ctxS.beginPath();
+    const cw = (wy<0);
+    const start = cw ? -Math.PI*0.2 : Math.PI*0.2;
+    const end   = cw ? -Math.PI*1.4 : Math.PI*1.4;
+    ctxS.arc(ballC[0], ballC[1], arcR, start, end, cw);
+    ctxS.stroke();
+  }
+
+  // Outputs
+  const out = document.getElementById('out');
+  function row(k,v){ return `<div>${k}</div><div>${v}</div>`;}
+  const accTag = accOK ? `<span class="tag ok">Erişilebilir</span>` : `<span class="tag bad">Erişilemez (masaya takılır)</span>`;
+  const cls = accOK ? (sPar< -1e-6 ? "Draw eğilimi" : (sPar>1e-6 ? "Follow eğilimi" : "Eşik")) : "-";
+  out.innerHTML =
+    row("Seçili nokta (θ°, φ°)", `${(thSel*180/Math.PI).toFixed(1)}, ${(phSel*180/Math.PI).toFixed(1)} ${accTag}`) +
+    row("|Jn| (N·s)", Jn.toFixed(4)) +
+    row("|Jt| (N·s)", JtMag.toFixed(4) + (applyCoul? " (Coulomb sonrası)":" (ham)")) +
+    row("v⁺ (m/s)", `(${v.map(x=>x.toFixed(3)).join(", ")})`) +
+    row("ω⁺ (rad/s)", `(${w.map(x=>x.toFixed(3)).join(", ")})`) +
+    row("s·ĉ (m/s) — follow/draw", (accOK? sPar.toFixed(5): "-") + " " + (accOK? "→ "+cls: ""));
+}
+
+for (const id of ["R","m","mu","Jc","elev","azim","rtip","Lback","theta","phi","coul"]) {
+  document.getElementById(id).addEventListener('input', compute);
+}
+compute();
+</script>
+</body>
+</html>
