@@ -61,6 +61,8 @@ export class Container {
   frame: (timestamp: number) => void
   private wasMoving = false
   private debugModeEnabled = false
+  private isPaused = false
+  private pauseResumeCallback?: () => void
 
   last = performance.now()
   readonly step = 0.001953125 * 1
@@ -122,6 +124,18 @@ export class Container {
       }
     }
     requestAnimationFrame(ensureInitialTrajectory)
+
+    // Debug mode: Enter key to resume from pause
+    // Use capture phase to catch event before Keyboard class blocks it
+    if (typeof window !== "undefined") {
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && this.isPaused) {
+          this.resumePhysics()
+          e.stopPropagation()
+          e.preventDefault()
+        }
+      }, true) // useCapture = true
+    }
   }
 
   sendChat = (msg) => {
@@ -176,15 +190,19 @@ export class Container {
   }
 
   processEvents() {
-    if (this.keyboard) {
+    // Block keyboard inputs when paused (except Enter which is handled separately)
+    if (this.keyboard && !this.isPaused) {
       const inputs = this.keyboard.getEvents()
       inputs.forEach((i) => this.inputQueue.push(i))
     }
 
-    while (this.inputQueue.length > 0) {
-      this.lastEventTime = this.last
-      const input = this.inputQueue.shift()
-      input && this.updateController(this.controller.handleInput(input))
+    // Process input queue only when not paused
+    if (!this.isPaused) {
+      while (this.inputQueue.length > 0) {
+        this.lastEventTime = this.last
+        const input = this.inputQueue.shift()
+        input && this.updateController(this.controller.handleInput(input))
+      }
     }
 
     // only process events when stationary
@@ -206,7 +224,10 @@ export class Container {
     const clampedDt = Math.max(dt, 0)
 
     const advanceStart = now()
-    this.advance(clampedDt)
+    // Only advance physics if not paused
+    if (!this.isPaused) {
+      this.advance(clampedDt)
+    }
     const advanceTime = now() - advanceStart
     this.last = timestamp
 
@@ -414,6 +435,45 @@ export class Container {
       this.trajectoryRenderer.clearTrajectories()
       this.table.cue.updateHelperCurve(null)
     }
+  }
+
+  /**
+   * Pause physics simulation (debug mode)
+   * @param callback Optional callback to execute when resumed
+   */
+  pausePhysics(callback?: () => void) {
+    this.isPaused = true
+    this.pauseResumeCallback = callback
+    this.log("⏸️  Physics paused (press Enter to continue)")
+  }
+
+  /**
+   * Resume physics simulation
+   */
+  resumePhysics() {
+    if (this.isPaused) {
+      this.isPaused = false
+      this.log("▶️  Physics resumed")
+
+      // Clear any accumulated keyboard inputs during pause
+      if (this.keyboard) {
+        this.keyboard.pressed = {}
+        this.keyboard.released = {}
+      }
+      this.inputQueue = []
+
+      if (this.pauseResumeCallback) {
+        this.pauseResumeCallback()
+        this.pauseResumeCallback = undefined
+      }
+    }
+  }
+
+  /**
+   * Check if physics is paused
+   */
+  isPhysicsPaused(): boolean {
+    return this.isPaused
   }
 }
 

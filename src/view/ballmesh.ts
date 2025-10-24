@@ -1,15 +1,19 @@
 import {
   ArrowHelper,
+  CanvasTexture,
   CircleGeometry,
   Color,
   DoubleSide,
+  Euler,
   Material,
   MathUtils,
   Mesh,
+  MeshBasicMaterial,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
   Quaternion,
   SphereGeometry,
+  Vector2,
   Vector3,
 } from "three"
 import { State } from "../model/ball"
@@ -119,6 +123,7 @@ const clampLighting = (config: LightingConfig): LightingConfig => {
 export class BallMesh {
   mesh: Mesh
   spinAxisArrow: ArrowHelper
+  velocityArrow: ArrowHelper
   trace: Trace
   color: Color
   radius: number
@@ -137,13 +142,17 @@ export class BallMesh {
     this.mesh = this.createBallMesh()
     this.spinAxisArrow = new ArrowHelper(up, zero, 2, 0x000000, 0.01, 0.01)
     this.spinAxisArrow.visible = false
+    // Velocity arrow (debug): black arrow showing velocity direction
+    this.velocityArrow = new ArrowHelper(up, zero, 2 * this.radius, 0x000000, 0.015, 0.015)
+    this.velocityArrow.visible = false
     this.trace = new Trace(500, color)
+
     BallMesh.instances.add(this)
   }
 
   updateAll(ball, t: number) {
     this.updatePosition(ball.pos)
-    this.updateArrows(ball.pos, ball.rvel, ball.state)
+    this.updateArrows(ball.pos, ball.rvel, ball.vel, ball.state)
     if (ball.rvel.lengthSq() !== 0) {
       this.updateRotation(ball.rvel, t)
       this.trace.addTrace(ball.pos, ball.vel)
@@ -162,33 +171,43 @@ export class BallMesh {
     this.mesh.rotateOnWorldAxis(norm(rvel), angle)
   }
 
-  updateArrows(pos: Vector3, rvel: Vector3, state: State) {
-    if (!this.spinAxisArrow.visible) {
-      return
+  updateArrows(pos: Vector3, rvel: Vector3, vel: Vector3, state: State) {
+    // Update spin axis arrow
+    if (this.spinAxisArrow.visible) {
+      this.spinAxisArrow.setLength(
+        this.radius + (this.radius * rvel.length()) / 2,
+        this.radius,
+        this.radius
+      )
+      this.spinAxisArrow.position.copy(pos)
+      this.spinAxisArrow.setDirection(norm(rvel))
+      if (state === State.Rolling) {
+        this.spinAxisArrow.setColor(0xcc0000)
+      } else {
+        this.spinAxisArrow.setColor(0x00cc00)
+      }
     }
-    this.spinAxisArrow.setLength(
-      this.radius + (this.radius * rvel.length()) / 2,
-      this.radius,
-      this.radius
-    )
-    this.spinAxisArrow.position.copy(pos)
-    this.spinAxisArrow.setDirection(norm(rvel))
-    if (state === State.Rolling) {
-      this.spinAxisArrow.setColor(0xcc0000)
-    } else {
-      this.spinAxisArrow.setColor(0x00cc00)
+
+    // Update velocity arrow (debug mode)
+    if (this.velocityArrow.visible && vel.lengthSq() > 0) {
+      // Arrow length = ball diameter (2 * radius)
+      this.velocityArrow.setLength(2 * this.radius, 0.015, 0.015)
+      this.velocityArrow.position.copy(pos)
+      this.velocityArrow.setDirection(norm(vel))
     }
   }
 
   addToScene(scene) {
     scene.add(this.mesh)
     scene.add(this.spinAxisArrow)
+    scene.add(this.velocityArrow)
     scene.add(this.trace.line)
   }
 
   removeFromScene(scene) {
     scene.remove(this.mesh)
     scene.remove(this.spinAxisArrow)
+    scene.remove(this.velocityArrow)
     scene.remove(this.trace.line)
   }
 

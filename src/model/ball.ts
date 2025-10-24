@@ -76,15 +76,23 @@ export class Ball {
 
   private updateVelocity(t: number) {
     if (this.inMotion()) {
-      if (this.isRolling()) {
-        this.state = State.Rolling
-        forceRoll(this.vel, this.rvel, this.physicsContext)
-        this.addDelta(t, rollingFull(this.rvel, this.physicsContext))
-      } else {
-        this.state = State.Sliding
-        this.addDelta(t, sliding(this.vel, this.rvel, this.physicsContext))
+      // Airborne detection threshold - calibrated for elevated shots
+      const tableThreshold = this.physicsContext.R * 0.08
+      const isAirborne = this.pos.z > tableThreshold
+
+      // Only apply table friction (rolling/sliding) when on table surface
+      if (!isAirborne) {
+        if (this.isRolling()) {
+          this.state = State.Rolling
+          forceRoll(this.vel, this.rvel, this.physicsContext)
+          this.addDelta(t, rollingFull(this.rvel, this.physicsContext))
+        } else {
+          this.state = State.Sliding
+          this.addDelta(t, sliding(this.vel, this.rvel, this.physicsContext))
+        }
       }
 
+      // Magnus effect (spin-induced curve) - applies both airborne and on table
       if (this.magnusEnabled) {
         const magnusAccel = magnus(
           this.vel,
@@ -96,9 +104,8 @@ export class Ball {
         this.vel.addScaledVector(magnusAccel, t)
       }
 
-      const tableThreshold = this.physicsContext.R * 0.01
-      if (this.pos.z > tableThreshold) {
-        // Ball is airborne - apply gravity
+      if (isAirborne) {
+        // Ball is airborne - apply gravity only
         this.vel.z -= g * t
       } else {
         // Ball hit or is on table
@@ -114,10 +121,11 @@ export class Ball {
           if (Math.abs(this.vel.z) > minBounceVelocity) {
             // Significant impact - bounce
             this.vel.z = -this.vel.z * restitution
-            this.pos.z = tableThreshold * 0.5 // Small lift to prevent immediate re-collision
+            // Lift ball above threshold to ensure it's recognized as airborne
+            this.pos.z = tableThreshold * 2.0
 
             // Table contact also dampens horizontal velocity and spin (friction)
-            const tableFriction = 0.95 // Horizontal velocity retention on bounce
+            const tableFriction = 0.90 // Horizontal velocity retention on bounce
             this.vel.x *= tableFriction
             this.vel.y *= tableFriction
           } else {

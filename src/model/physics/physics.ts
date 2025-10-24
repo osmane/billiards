@@ -1,7 +1,14 @@
-import { Vector3 } from "three"
+import { Vector3, Mesh, SphereGeometry, MeshStandardMaterial, Scene, ArrowHelper } from "three"
 import { norm, upCross, up, sin, cos } from "../../utils/utils"
 import { muS, muC, g, m, Mz, Mxy, R, I, e, ee, μs, μw, magnusCoeff, magnusAirborneMultiplier, magnusTableMultiplier, PhysicsContext, refreshWithContext } from "./constants"
 import { Mathaven } from "./mathaven"
+
+// Debug flag for physics logging
+export const DEBUG_PHYSICS = true
+
+// Debug velocity arrow (created once, reused)
+let debugVelocityArrow: ArrowHelper | null = null
+let debugVelocityArrowData: { origin: Vector3; direction: Vector3; length: number; hitPoint: Vector3 } | null = null
 
 const MU_CUSHION_MIN = 0.02
 const MU_CUSHION_MAX = 0.50
@@ -312,7 +319,31 @@ export function mathavenAdapter(v: Vector3, w: Vector3) {
 }
 
 /**
- * Spin on ball after strike with cue
+ * Universal physics-based spin calculation from 3D hit point
+ *
+ * @param hitPoint3D 3D position where cue strikes the ball surface
+ * @param ballCenter3D 3D position of ball center
+ * @param v velocity imparted to ball
+ * @returns angular velocity
+ */
+export function cueToSpinUniversal(hitPoint3D: Vector3, ballCenter3D: Vector3, v: Vector3): Vector3 {
+  // Radius vector from ball center to hit point
+  const r = new Vector3().subVectors(hitPoint3D, ballCenter3D)
+
+  // Normalize to ball surface (should already be ~R, but ensure it)
+  const hitDirection = r.clone().normalize()
+
+  // Angular velocity from cross product: ω ∝ r × v
+  // Using standard physics: τ = r × F, and ω = τ/I
+  // For a sphere: I = (2/5)mR², so factor is 5/(2R²)
+  const crossProduct = new Vector3().crossVectors(hitDirection, v)
+  const angularVel = crossProduct.multiplyScalar(5 / (2 * R))
+
+  return angularVel
+}
+
+/**
+ * Spin on ball after strike with cue (legacy offset-based version)
  * https://billiards.colostate.edu/technical_proofs/new/TP_A-12.pdf
  *
  * @param offset (x,y,0) from center strike where x,y range from -0.5 to 0.5 the fraction of R from center.
@@ -323,8 +354,104 @@ export function cueToSpin(offset: Vector3, v: Vector3) {
   const spinAxis = Math.atan2(-offset.x, offset.y)
   const spinRate = ((5 / 2) * v.length() * (offset.length() * R)) / (R * R)
   const dir = v.clone().normalize()
-  const rvel = upCross(dir)
+  const upCrossResult = upCross(dir)
+  const rvel = upCrossResult.clone()
     .applyAxisAngle(dir, spinAxis)
     .multiplyScalar(spinRate)
+
+  // Debug logging for spin calculation
+  if (DEBUG_PHYSICS) {
+    console.log(`🎯 cueToSpin() INPUT | Offset:(${offset.x.toFixed(3)},${offset.y.toFixed(3)},${offset.z.toFixed(3)}) | Velocity:(${v.x.toFixed(2)},${v.y.toFixed(2)},${v.z.toFixed(2)}) | v.length:${v.length().toFixed(2)}`)
+    console.log(`🔧 INTERMEDIATE | dir:(${dir.x.toFixed(3)},${dir.y.toFixed(3)},${dir.z.toFixed(3)}) | upCross(dir):(${upCrossResult.x.toFixed(3)},${upCrossResult.y.toFixed(3)},${upCrossResult.z.toFixed(3)})`)
+    const spinAxisDeg = (spinAxis * 180 / Math.PI)
+    console.log(`🌀 SPIN | spinAxis:${spinAxisDeg.toFixed(1)}° | Rate:${spinRate.toFixed(1)} → Result:(${rvel.x.toFixed(1)},${rvel.y.toFixed(1)},${rvel.z.toFixed(1)}) | Mag:${rvel.length().toFixed(1)}`)
+    console.log('')
+  }
+
   return rvel
+}
+
+/**
+ * Add debug black arrow showing velocity direction at hit point
+ * Arrow tip touches hit point, arrow points in velocity direction
+ * Arrow length = 2 × carom ball diameter = 4R
+ *
+ * @param scene Three.js scene
+ * @param hitPoint3D Exact 3D hit point from physics calculation
+ * @param velocity Velocity vector from physics calculation
+ * @param ballRadius Radius of the ball being hit
+ */
+export function addDebugVelocityArrow(scene: Scene, hitPoint3D: Vector3, velocity: Vector3, ballRadius: number) {
+  // Remove existing debug arrow if present
+  if (debugVelocityArrow) {
+    scene.remove(debugVelocityArrow)
+    debugVelocityArrow.dispose()
+    debugVelocityArrow = null
+    debugVelocityArrowData = null
+  }
+
+  if (velocity.lengthSq() === 0) {
+    return // No velocity, no arrow
+  }
+
+  // Arrow length = 2 × ball diameter = 2 × 2R = 4R
+  const arrowLength = 4 * ballRadius
+  const direction = velocity.clone().normalize()
+
+  // Arrow origin: hit point minus arrow length in velocity direction
+  // This makes the arrow TIP touch the hit point, and arrow extends backward
+  const origin = hitPoint3D.clone().addScaledVector(direction, -arrowLength)
+
+  // Store arrow data for logging
+  debugVelocityArrowData = {
+    origin: origin.clone(),
+    direction: direction.clone(),
+    length: arrowLength,
+    hitPoint: hitPoint3D.clone()
+  }
+
+  // Create black arrow
+  debugVelocityArrow = new ArrowHelper(
+    direction,
+    origin,
+    arrowLength,
+    0x000000, // Black
+    arrowLength * 0.15, // Head length (15% of total)
+    arrowLength * 0.1   // Head width (10% of total)
+  )
+
+  scene.add(debugVelocityArrow)
+}
+
+/**
+ * Remove debug velocity arrow from scene
+ */
+export function removeDebugVelocityArrow(scene: Scene) {
+  if (debugVelocityArrow) {
+    scene.remove(debugVelocityArrow)
+    debugVelocityArrow.dispose()
+    debugVelocityArrow = null
+  }
+}
+
+/**
+ * Get debug velocity arrow information for logging
+ * Returns arrow tip, tail positions and angle to ground
+ * Uses the stored creation data, not the visual mesh data
+ */
+export function getDebugVelocityArrowInfo(): { tip: Vector3; tail: Vector3; angleToGround: number } | null {
+  if (!debugVelocityArrowData) {
+    return null
+  }
+
+  // Use stored data from arrow creation
+  const tip = debugVelocityArrowData.hitPoint.clone()
+  const tail = debugVelocityArrowData.origin.clone()
+  const direction = debugVelocityArrowData.direction.clone()
+
+  // Angle to ground (XZ plane): angle between direction and XZ projection
+  // Ground angle = asin(y_component / |direction|)
+  const angleToGround = Math.asin(direction.y) * (180 / Math.PI)
+
+  return { tip, tail, angleToGround }
 }

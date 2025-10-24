@@ -4,7 +4,7 @@ import { upCross, unitAtAngle, norm, atan2, sin } from "../utils/utils"
 import { AimEvent } from "../events/aimevent"
 import { AimInputs } from "./aiminputs"
 import { Ball, State } from "../model/ball"
-import { cueToSpin } from "../model/physics/physics"
+import { cueToSpin, cueToSpinUniversal, DEBUG_PHYSICS, addDebugVelocityArrow } from "../model/physics/physics"
 import { CueMesh } from "./cuemesh"
 import {
   AdditiveBlending,
@@ -98,26 +98,81 @@ export class Cue {
     this.t = 0
     ball.state = State.Sliding
 
-    // Calculate velocity with elevation angle
-    const horizontalVel = unitAtAngle(aim.angle).multiplyScalar(aim.power)
+    // Get cue mesh direction (where the cue stick points)
+    // Mesh -Y axis points in cue direction (from handle to tip)
+    const cueMeshDir = new Vector3(0, -1, 0).applyQuaternion(this.mesh.quaternion).normalize()
+    
+    // Ball moves OPPOSITE to cue direction (ball moves away from cue)
+    ball.vel.x = -cueMeshDir.x * aim.power
+    ball.vel.y = -cueMeshDir.y * aim.power
+    ball.vel.z = -cueMeshDir.z * aim.power
 
-    if (this.elevation > 0.2) {
-      // In masse mode with high elevation, apply vertical component
-      const horizontalMagnitude = aim.power * Math.cos(this.elevation)
-      const verticalMagnitude = aim.power * Math.sin(this.elevation)
-      ball.vel.copy(unitAtAngle(aim.angle).multiplyScalar(horizontalMagnitude))
-      ball.vel.z = verticalMagnitude
-    } else {
-      // Normal shot - pure horizontal
-      ball.vel.copy(horizontalVel)
-      ball.vel.z = 0
-    }
+    // Use 3D hit point directly - pure physics, no coordinate transformations
+    const hitPoint3D = this.hitPointMesh.position.clone()
+    const hitPointRelative = hitPoint3D.clone().sub(ball.pos)
 
-    ball.rvel.copy(cueToSpin(aim.offset, ball.vel))
+    // Debug logging - coordinates from physics engine
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log(`🎱 VURUŞ | Elevation: ${(this.elevation * 180 / Math.PI).toFixed(1)}° | Aim: ${(aim.angle * 180 / Math.PI).toFixed(1)}°`)
+    console.log(`� Canvas Offset: X=${aim.offset.x.toFixed(3)}, Y=${aim.offset.y.toFixed(3)}`)
+    console.log(`📍 Physics Hit Point (relative): X=${hitPointRelative.x.toFixed(3)}, Y=${hitPointRelative.y.toFixed(3)}, Z=${hitPointRelative.z.toFixed(3)}`)
+    console.log(`�📍 Physics Hit Point (world): X=${hitPoint3D.x.toFixed(3)}, Y=${hitPoint3D.y.toFixed(3)}, Z=${hitPoint3D.z.toFixed(3)}`)
+    console.log(`🌍 Ball Center: X=${ball.pos.x.toFixed(3)}, Y=${ball.pos.y.toFixed(3)}, Z=${ball.pos.z.toFixed(3)}`)
+    console.log(`⚡ Velocity: X=${ball.vel.x.toFixed(3)}, Y=${ball.vel.y.toFixed(3)}, Z=${ball.vel.z.toFixed(3)}`)
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+    // PHYSICS: Calculate spin from hit point and velocity
+    ball.rvel.copy(cueToSpinUniversal(hitPoint3D, ball.pos, ball.vel))
     ball.magnusEnabled = this.elevation > 0.2
     ball.magnusElevation = this.elevation
+
+    // DEBUG: Add black arrow showing velocity direction (WITHOUT pause)
+    if (this.container && DEBUG_PHYSICS) {
+      addDebugVelocityArrow(this.container.view.scene, hitPoint3D, ball.vel, this.ballRadius)
+    }
+
     this.hitPointMesh.visible = false
     this.container?.trajectoryRenderer?.clearTrajectories()
+  }
+
+  /**
+   * Calculate actual hit offset from visual hit point indicator geometry.
+   * This method extracts the hit point from the visual mesh position and converts
+   * it to the offset coordinate system expected by cueToSpin().
+   *
+   * The approach:
+   * 1. Get the 3D direction from ball center to hit point mesh
+   * 2. Project this direction onto the cue's reference frame axes
+   * 3. Return normalized offset coordinates [-1, 1] for physics
+   *
+   * This eliminates coordinate transformation issues at high elevations by
+   * directly reading the visual representation that the user sees.
+   */
+  getActualHitOffset(ballPos: Vector3): Vector3 {
+    // Read the mesh position and project it onto CUE's reference frame,
+    // not the table's reference frame. This is crucial for elevated shots.
+
+    const hitPointWorldPos = this.hitPointMesh.position.clone()
+    const directionFromCenter = hitPointWorldPos.clone().sub(ballPos)
+    const hitDirection = directionFromCenter.normalize()
+
+    // Cue reference frame
+    const aimDirection = unitAtAngle(this.aim.angle)
+    const rightAxis = upCross(aimDirection).normalize()
+
+    // Forward axis: cue direction with elevation
+    const forwardAxis = new Vector3(aimDirection.x, aimDirection.y, 0).normalize()
+    forwardAxis.applyAxisAngle(rightAxis, -this.elevation)
+
+    // Up axis: perpendicular to cue direction (cue's vertical)
+    // Use forwardAxis × rightAxis to get upward direction
+    const upAxisCue = new Vector3().crossVectors(forwardAxis, rightAxis).normalize()
+
+    // Project the hit direction onto cue reference axes
+    const horizontalOffset = hitDirection.dot(rightAxis)
+    const verticalOffset = hitDirection.dot(upAxisCue)
+
+    return new Vector3(horizontalOffset, verticalOffset, 0)
   }
 
   aimAtNext(cueball, ball) {
@@ -211,18 +266,23 @@ export class Cue {
   }
 
   updateHitPoint(ballPos: Vector3) {
+    // Use arcsin to convert normalized offset to proper rotation angle
     const baseDirection = unitAtAngle(this.aim.angle + Math.PI)
     let direction = new Vector3(baseDirection.x, baseDirection.y, 0)
 
-    const horizontalAngle = -this.aim.offset.x * Math.PI / 2
+    // Convert normalized offset to angle using arcsin
+    // offset [-1,1] maps to angle [-π/2, π/2]
+    const horizontalAngle = -Math.asin(Math.max(-1, Math.min(1, this.aim.offset.x)))
     direction.applyAxisAngle(new Vector3(0, 0, 1), horizontalAngle)
 
-    const verticalAngle = -this.aim.offset.y * Math.PI / 2
+    const verticalAngle = -Math.asin(Math.max(-1, Math.min(1, this.aim.offset.y)))
     const perpendicularAxis = upCross(baseDirection).normalize()
     direction.applyAxisAngle(perpendicularAxis, verticalAngle)
 
     const finalDirection = direction.normalize()
-    const hitPointPosition = ballPos.clone().addScaledVector(finalDirection, this.ballRadius * 0.05)
+
+    // Position mesh exactly on ball surface for accurate physics
+    const hitPointPosition = ballPos.clone().addScaledVector(finalDirection, this.ballRadius)
     this.hitPointMesh.position.copy(hitPointPosition)
 
     const quaternion = new Quaternion()
@@ -644,34 +704,3 @@ export class Cue {
     })
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

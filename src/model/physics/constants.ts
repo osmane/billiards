@@ -1,13 +1,14 @@
+// The default values ​​here should be based on carom (3 cushion) mode.
 export const g = 9.8
 export let mu = 0.00985
 export let muS = 0.16
 export let muC = 0.85
-export let rho = 0.034
+export let rho = 0.04
 export let e = 0.86
 
 // Mathaven specific
 // Coefficient of restitution
-export let ee = 0.98
+export let ee = 0.95
 
 // Coefficient of sliding friction (table)
 export let μs = 0.212
@@ -19,15 +20,15 @@ export let μw = 0.14
 // Adjusted for 2D billiards physics - much lower than 3D aerodynamic coefficient
 // Original Han model value (0.065) was too strong for our implementation
 // This coefficient is empirically tuned for gentle, realistic curves
-export let magnusCoeff = 0.009  // Increased for stronger curve
+export let magnusCoeff = 0.007  // Increased for stronger curve
 
 // Table bounce restitution coefficient (felt dampening)
 // Typical values: 0.3-0.5 for cloth-covered table
-export let tableRestitution = 0.35  // Lower = less bounce height
+export let tableRestitution = 0.3  // Lower = less bounce height
 
 // Magnus effect multipliers for different states
-export let magnusAirborneMultiplier = 3.0  // Airborne magnus strength
-export let magnusTableMultiplier = 0.4     // On-table magnus strength
+export let magnusAirborneMultiplier = 2.5  // Airborne magnus strength
+export let magnusTableMultiplier = 0.3     // On-table magnus strength
 
 export let Mz: number
 export let Mxy: number
@@ -86,7 +87,7 @@ export const CAROM_PHYSICS: PhysicsContext = {
   m: CAROM_BALL_MASS,     // 0.21 kg
   mu: 0.0086,             // Rolling friction - Calibrated for 12.5m at max power
   rho: 0.09,              // Spin decay coefficient (unchanged)
-  muS: 0.102,             // Sliding friction - Calibrated for 12.5m at max power
+  muS: 0.16,             // Sliding friction - Calibrated for 12.5m at max power
   spinStopThreshold: 0.06,
   rollingTransition: 0.08
 };

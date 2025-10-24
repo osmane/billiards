@@ -36,10 +36,12 @@ module.exports = {
   ],
   coverageReporters: ["text", "json"],
   testEnvironment: "jsdom",
+  setupFiles: ["<rootDir>/test/setup-canvas.js"],
   moduleNameMapper: {
     ".*GLTFExporter": "<rootDir>/test/mocks/gltfexporter.ts",
     ".*GLTFLoader": "<rootDir>/test/mocks/gltfloader.ts",
     ".*/sound": "<rootDir>/test/mocks/mocksound.ts",
+    "^.*/view/cuemesh$": "<rootDir>/test/mocks/cuemesh.ts",
   },
   // Enable ESM support in Jest
   extensionsToTreatAsEsm: [".ts"],
