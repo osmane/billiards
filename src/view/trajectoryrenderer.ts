@@ -3,7 +3,6 @@ import {
   BufferGeometry,
   BufferAttribute,
   Line,
-  Vector3,
   Scene
 } from "three"
 import { TrajectoryPrediction } from "../model/trajectorypredictor"
@@ -59,6 +58,9 @@ export class TrajectoryRenderer {
 
     geometry.setAttribute('position', new BufferAttribute(positions, 3))
 
+    for (let i = 2; i < positions.length; i += 3) positions[i] += 1e-4
+    geometry.setAttribute("position", new BufferAttribute(positions, 3))
+
     // Create material with enhanced visibility for trajectory prediction
     // Use brighter, more contrasting colors for better visibility
     let trajectoryColor = ballColor.clone()
@@ -66,16 +68,16 @@ export class TrajectoryRenderer {
     // Make the trajectory color brighter and more saturated
     trajectoryColor.multiplyScalar(1.5) // Brighten
     trajectoryColor.setHSL(
-      trajectoryColor.getHSL({h: 0, s: 0, l: 0}).h, // Keep hue
-      Math.min(1.0, trajectoryColor.getHSL({h: 0, s: 0, l: 0}).s * 1.2), // Increase saturation
-      Math.min(0.8, trajectoryColor.getHSL({h: 0, s: 0, l: 0}).l * 1.3)   // Brighten but not too much
+      trajectoryColor.getHSL({ h: 0, s: 0, l: 0 }).h, // Keep hue
+      Math.min(1.0, trajectoryColor.getHSL({ h: 0, s: 0, l: 0 }).s * 1.2), // Increase saturation
+      Math.min(0.8, trajectoryColor.getHSL({ h: 0, s: 0, l: 0 }).l * 1.3)   // Brighten but not too much
     )
 
     const material = new LineBasicMaterial({
       color: trajectoryColor,
-      opacity: 0.8, // More visible than trace lines
-      linewidth: 3, // Match trace line width
-      transparent: true
+      opacity: 0.7,
+      transparent: true,
+      depthWrite: false
     })
 
     const line = new Line(geometry, material)

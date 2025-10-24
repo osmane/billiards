@@ -1,22 +1,18 @@
 import { Table } from "./table"
 import { Ball } from "./ball"
 import { AimEvent } from "../events/aimevent"
-import { unitAtAngle } from "../utils/utils"
-import { cueToSpin } from "./physics/physics"
-import { State } from "./ball"
 import { OutcomeType } from "./outcome"
 import { R } from "./physics/constants"
 import { Vector3 } from "three"
 import { CAROM_PHYSICS } from "./physics/constants"
-import { setR, setm, CAROM_BALL_RADIUS, CAROM_BALL_MASS } from "./physics/constants"
-import { Collision } from "./physics/collision"
 import { CAROM_TABLE_LENGTH, CAROM_TABLE_WIDTH } from "./physics/constants"
-import { applyShotKinematics } from "./physics/shot"
+import { applyShotFromPose } from "./physics/shot"
+import { ENGINE_DT, TRAJECTORY_SAMPLE_DT } from "./physics/engine"
+
+const MIN_PREVIEW_SPEED = 0.25
+
 const tableDiag = Math.hypot(CAROM_TABLE_LENGTH, CAROM_TABLE_WIDTH)
 const helperDistanceLimit = tableDiag * 2
-
-setR(CAROM_BALL_RADIUS)
-setm(CAROM_BALL_MASS)
 
 export interface TrajectoryPoint {
   position: { x: number; y: number; z: number }
@@ -32,10 +28,23 @@ export interface TrajectoryPrediction {
   hadSimulationError?: boolean
 }
 
+function sanitizeAim(aim: { angle?: number; offset?: any; power?: number }) {
+  const angle = Number.isFinite(aim?.angle as number) ? (aim!.angle as number) : 0
+  const off = aim?.offset ?? { x: 0, y: 0, z: 0 }
+  const offset = new Vector3(
+    Number.isFinite(off.x) ? off.x : 0,
+    Number.isFinite(off.y) ? off.y : 0,
+    Number.isFinite(off.z) ? off.z : 0,
+  )
+  let power = Number.isFinite(aim?.power as number) ? (aim!.power as number) : 0
+  if (power <= 0) power = MIN_PREVIEW_SPEED
+  return { angle, offset, power }
+}
+
 export class TrajectoryPredictor {
   private maxSimulationTime = 10.0 // Maximum simulation time in seconds
-  private timeStep = 0.001953125 // Same as container step size
-  private sampleInterval = 0.008 // Sample positions every 50ms for smooth lines
+  private timeStep = ENGINE_DT
+  private sampleInterval = TRAJECTORY_SAMPLE_DT
   private maxRetries = 100 // Maximum collision resolution retries per step
   private readonly COLLISION_BUG_SHORTEN_DISTANCE = 50 // TEST: Distance to backtrack when collision bug detected
 
@@ -45,6 +54,28 @@ export class TrajectoryPredictor {
     // Create a copy of the table for simulation
     const serializedTable = table.serialise()
     const simulationTable = Table.fromSerialised(serializedTable)
+    const { angle, offset, power } = sanitizeAim(aim)
+
+    let cueDir: Vector3
+    const cue = table as any as { cue?: any } // proje tiplerine göre uyumlu
+    if (cue?.cue?.mesh?.quaternion) {
+      cueDir = new Vector3(0, -1, 0).applyQuaternion(cue.cue.mesh.quaternion).normalize()
+    } else {
+      cueDir = new Vector3(Math.cos(angle), Math.sin(angle), 0).normalize()
+    }
+
+    // 2) darbe noktası: varsa cue.hitPointMesh’ten, yoksa offset’ten türet
+    let hitPointWorld: Vector3
+    if (cue?.cue?.hitPointMesh?.position) {
+      hitPointWorld = cue.cue.hitPointMesh.position.clone()
+    } else {
+      // offset küresel (%R) ise R ile ölçekleyip cue ball merkezine ekliyoruz
+      const cb = simulationTable.cueball
+      hitPointWorld = cb.pos.clone().add(new Vector3(offset.x * R, offset.y * R, offset.z * R))
+    }
+
+    // 3) elevation
+    const elevationVal = Number.isFinite((aim as any)?.elevation) ? (aim as any).elevation : 0
 
     simulationTable.balls.forEach((b, i) => {
       b.physicsContext = (table.balls[i] as any)?.physicsContext ?? CAROM_PHYSICS
@@ -84,36 +115,13 @@ export class TrajectoryPredictor {
       }
     }
 
-    // Apply the shot to the current player's cue ball
-    currentCueBall.state = State.Sliding
-    applyShotKinematics(currentCueBall, aim, elevation ?? 0)
+    applyShotFromPose(currentCueBall, {
+      cueDir: cueDir,
+      hitPointWorld: hitPointWorld,
+      elevation: elevationVal,
+      power
+    })
     const cueBallStartPos = currentCueBall.pos.clone()
-
-    // Calculate velocity with elevation angle (same as in cue.ts hit method)
-    const horizontalVel = unitAtAngle(aim.angle).multiplyScalar(aim.power)
-
-    if (masseMode && elevation !== undefined && elevation > 0.2) {
-      // In masse mode with high elevation, apply vertical component
-      const horizontalMagnitude = aim.power * Math.cos(elevation)
-      const verticalMagnitude = aim.power * Math.sin(elevation)
-      currentCueBall.vel.copy(unitAtAngle(aim.angle).multiplyScalar(horizontalMagnitude))
-      currentCueBall.vel.z = verticalMagnitude
-    } else {
-      // Normal shot - pure horizontal
-      currentCueBall.vel.copy(horizontalVel)
-      currentCueBall.vel.z = 0
-    }
-
-    currentCueBall.rvel.copy(cueToSpin(aim.offset, currentCueBall.vel))
-    const initialSpeed = currentCueBall.vel.length()
-
-    // Enable Magnus effect in trajectory prediction when masse behaviour applies
-    if (masseMode !== undefined) {
-      currentCueBall.magnusEnabled = (masseMode ?? false) && elevation !== undefined && elevation > 0.2
-      if (elevation !== undefined) {
-        currentCueBall.magnusElevation = elevation
-      }
-    }
 
     // Initialize trajectory data for each ball using simulation IDs
     const trajectories: Map<number, TrajectoryPoint[]> = new Map()
@@ -127,8 +135,8 @@ export class TrajectoryPredictor {
     let cueBallImpactRecorded = false
     let cueBallFirstImpactDistance: number | null = null
     //const helperDistanceLimit = (currentCueBall.radius * 30) / 0.5
-    const horizontalDirection = unitAtAngle(aim.angle).clone()
-    horizontalDirection.z = 0
+    const horizontalDirection = new Vector3(Math.cos(aim.angle), Math.sin(aim.angle), 0)
+    // (cos/sin zaten normalleştirili vektör verdiği için length ≈ 1; yine de güvenlik için)
     if (horizontalDirection.lengthSq() > 0) {
       horizontalDirection.normalize()
     }
@@ -360,15 +368,27 @@ export class TrajectoryPredictor {
     trajectories.forEach((points, simulationBallId) => {
       const originalBallId = ballIdMapping.get(simulationBallId)
       if (points.length > 1 && originalBallId !== undefined) { // Only include balls that moved and have valid mapping
-        const firstImpactIndex = firstImpactIndices.get(simulationBallId)
-        const firstImpactDistance = firstImpactDistances.get(simulationBallId)
-        predictions.push({
-          ballId: originalBallId, // Use original ball ID for rendering
-          points,
-          firstImpactIndex,
-          firstImpactDistance,
-          hadSimulationError
-        })
+        try {
+          const prediction: TrajectoryPrediction = {
+            ballId: originalBallId, // Use original ball ID for rendering
+            points,
+            hadSimulationError
+          }
+
+          const firstImpactIndex = firstImpactIndices.get(simulationBallId)
+          if (firstImpactIndex !== undefined) {
+            prediction.firstImpactIndex = firstImpactIndex
+          }
+
+          const firstImpactDistance = firstImpactDistances.get(simulationBallId)
+          if (firstImpactDistance !== undefined) {
+            prediction.firstImpactDistance = firstImpactDistance
+          }
+
+          predictions.push(prediction)
+        } catch {
+
+        }
       }
     })
 

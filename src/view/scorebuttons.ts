@@ -236,6 +236,7 @@ export class ScoreButtons {
           applyPlaceholderState(visible)
 
           if (visible) {
+            this.container?.trajectoryRenderer?.setVisible(true)
             if (triggerUpdate) {
               this.container?.updateTrajectoryPrediction()
             }

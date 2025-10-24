@@ -34,3 +34,29 @@ export function applyShotKinematics(ball: Ball, aim: { angle: number; offset: Ve
   ball.magnusElevation = elevation
   return { hitPoint }
 }
+
+export type ShotPose = {
+  /** Cue stick'in ileri doğru yönü (mesh -Y ekseni dünya ekseninde); TOP TERS YÖNE GİDER */
+  cueDir: Vector3
+  /** Dünya koordinatlarında 3B darbe noktası (top merkezinin üzerinde, küre yüzeyi) */
+  hitPointWorld: Vector3
+  elevation: number
+  power: number
+}
+
+export function applyShotFromPose(ball: Ball, pose: ShotPose) {
+  const { cueDir, hitPointWorld, elevation, power } = pose
+
+  ball.state = State.Sliding
+
+  // Top, ıstakanın baktığı yönün TERSİNE hareket eder
+  const shotVel = cueDir.clone().multiplyScalar(-power)
+  ball.vel.copy(shotVel)
+
+  // Spin: 3B darbe noktasından, tek kaynak
+  ball.rvel.copy(cueToSpinUniversal(hitPointWorld, ball.pos, ball.vel))
+
+  // Magnus
+  ball.magnusEnabled = elevation > 0.2
+  ball.magnusElevation = elevation
+}

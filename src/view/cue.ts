@@ -21,6 +21,7 @@ import {
 } from "three"
 import { R } from "../model/physics/constants"
 import { applyShotKinematics } from "../model/physics/shot"
+import { applyShotFromPose } from "../model/physics/shot"
 
 export class Cue {
   mesh: Mesh
@@ -95,7 +96,7 @@ export class Cue {
   }
 
   hit(ball: Ball) {
-    
+
     const aim = this.aim
     this.t = 0
     ball.state = State.Sliding
@@ -103,31 +104,18 @@ export class Cue {
     // Get cue mesh direction (where the cue stick points)
     // Mesh -Y axis points in cue direction (from handle to tip)
     const cueMeshDir = new Vector3(0, -1, 0).applyQuaternion(this.mesh.quaternion).normalize()
-    
-    // Ball moves OPPOSITE to cue direction (ball moves away from cue)
-    ball.vel.x = -cueMeshDir.x * aim.power
-    ball.vel.y = -cueMeshDir.y * aim.power
-    ball.vel.z = -cueMeshDir.z * aim.power
+
+
 
     // Use 3D hit point directly - pure physics, no coordinate transformations
     const hitPoint3D = this.hitPointMesh.position.clone()
-    
-    const hitPointRelative = hitPoint3D.clone().sub(ball.pos)
 
-    // Debug logging - coordinates from physics engine
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-    console.log(`🎱 VURUŞ | Elevation: ${(this.elevation * 180 / Math.PI).toFixed(1)}° | Aim: ${(aim.angle * 180 / Math.PI).toFixed(1)}°`)
-    console.log(`� Canvas Offset: X=${aim.offset.x.toFixed(3)}, Y=${aim.offset.y.toFixed(3)}`)
-    console.log(`📍 Physics Hit Point (relative): X=${hitPointRelative.x.toFixed(3)}, Y=${hitPointRelative.y.toFixed(3)}, Z=${hitPointRelative.z.toFixed(3)}`)
-    console.log(`�📍 Physics Hit Point (world): X=${hitPoint3D.x.toFixed(3)}, Y=${hitPoint3D.y.toFixed(3)}, Z=${hitPoint3D.z.toFixed(3)}`)
-    console.log(`🌍 Ball Center: X=${ball.pos.x.toFixed(3)}, Y=${ball.pos.y.toFixed(3)}, Z=${ball.pos.z.toFixed(3)}`)
-    console.log(`⚡ Velocity: X=${ball.vel.x.toFixed(3)}, Y=${ball.vel.y.toFixed(3)}, Z=${ball.vel.z.toFixed(3)}`)
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-
-    // PHYSICS: Calculate spin from hit point and velocity
-    ball.rvel.copy(cueToSpinUniversal(hitPoint3D, ball.pos, ball.vel))
-    ball.magnusEnabled = this.elevation > 0.2
-    ball.magnusElevation = this.elevation
+    applyShotFromPose(ball, {
+      cueDir: cueMeshDir,                 // mesh yönü
+      hitPointWorld: hitPoint3D,          // 3B darbe noktası (zaten hesaplıyorsun)
+      elevation: this.elevation,
+      power: aim.power
+    })
 
     // DEBUG: Add black arrow showing velocity direction (WITHOUT pause)
     if (this.container && DEBUG_PHYSICS) {
