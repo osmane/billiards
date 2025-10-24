@@ -119,11 +119,10 @@ export function magnus(
   // Cross product w × v gives the correct direction
   spinCrossVel.crossVectors(w, v)
 
-  if (!isAirborne) {
-    // Masa teması varken dikey lift fiziksel olarak serbest değil;
-    // normal reaksiyon onu yok eder. Z bileşenini at.
-    spinCrossVel.z = 0
-  }
+  // For billiard balls, vertical lift is minimal compared to lateral curve
+  // Zero out Z component to prevent unrealistic floating/vertical acceleration
+  // This ensures gravity dominates vertical motion
+  spinCrossVel.z = 0
 
   const crossMagnitude = spinCrossVel.length()
   if (crossMagnitude < 0.01) {

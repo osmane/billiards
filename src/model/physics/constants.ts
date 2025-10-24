@@ -20,15 +20,27 @@ export let μw = 0.14
 // Adjusted for 2D billiards physics - much lower than 3D aerodynamic coefficient
 // Original Han model value (0.065) was too strong for our implementation
 // This coefficient is empirically tuned for gentle, realistic curves
-export let magnusCoeff = 0.007  // Increased for stronger curve
+export let magnusCoeff = 0.003  // Reduced for more realistic airborne behavior
 
 // Table bounce restitution coefficient (felt dampening)
 // Typical values: 0.3-0.5 for cloth-covered table
 export let tableRestitution = 0.3  // Lower = less bounce height
 
 // Magnus effect multipliers for different states
-export let magnusAirborneMultiplier = 2.5  // Airborne magnus strength
+export let magnusAirborneMultiplier = 1.2  // Reduced for realistic airborne physics
 export let magnusTableMultiplier = 0.3     // On-table magnus strength
+
+// Air drag parameters (for airborne motion)
+// Air density at sea level (kg/m³)
+export let airDensity = 1.2
+
+// Drag coefficient for a sphere (dimensionless)
+// Typical values: 0.4-0.5 for smooth sphere at low Re
+export let dragCoefficient = 0.47
+
+// Air drag damping for horizontal velocity (per second)
+// Higher values = more air resistance
+export let airDragDamping = 0.15  // Calibrated for realistic deceleration
 
 export let Mz: number
 export let Mxy: number
@@ -179,4 +191,13 @@ export function setMagnusAirborneMultiplier(val: number) {
 }
 export function setMagnusTableMultiplier(val: number) {
   magnusTableMultiplier = val
+}
+export function setAirDensity(val: number) {
+  airDensity = val
+}
+export function setDragCoefficient(val: number) {
+  dragCoefficient = val
+}
+export function setAirDragDamping(val: number) {
+  airDragDamping = val
 }

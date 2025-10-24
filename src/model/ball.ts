@@ -9,7 +9,7 @@ import {
 } from "../model/physics/physics"
 import { BallMesh } from "../view/ballmesh"
 import { Pocket } from "./physics/pocket"
-import { PhysicsContext, POOL_PHYSICS, g, tableRestitution } from "./physics/constants"
+import { PhysicsContext, POOL_PHYSICS, g, tableRestitution, airDensity, dragCoefficient, airDragDamping } from "./physics/constants"
 import { airborneThresholdFactor } from "./physics/constants"
 
 export enum State {
@@ -108,8 +108,28 @@ export class Ball {
       }
 
       if (isAirborne) {
-        // Ball is airborne - apply gravity only
+        // Ball is airborne - apply gravity
         this.vel.z -= g * t
+
+        // Air drag primarily affects horizontal motion for billiard balls
+        // (small, heavy objects have minimal vertical drag compared to gravity)
+        // Apply simplified horizontal drag only
+        const horizontalSpeed = Math.sqrt(this.vel.x * this.vel.x + this.vel.y * this.vel.y)
+        if (horizontalSpeed > 0.01) {
+          // Simplified drag damping (linear approximation for low speeds)
+          const radius = this.physicsContext.R
+          const area = Math.PI * radius * radius
+          const mass = this.physicsContext.m
+
+          // Calculate drag force magnitude for horizontal motion
+          const dragForceMagnitude = 0.5 * airDensity * dragCoefficient * area * horizontalSpeed * horizontalSpeed
+          const dragAccelMagnitude = dragForceMagnitude / mass
+
+          // Apply drag only to horizontal velocity components
+          const horizontalDampingFactor = Math.max(0, 1 - (dragAccelMagnitude * t / horizontalSpeed))
+          this.vel.x *= horizontalDampingFactor
+          this.vel.y *= horizontalDampingFactor
+        }
       } else {
         // Ball hit or is on table
         if (this.pos.z < 0) {
