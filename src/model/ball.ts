@@ -10,6 +10,7 @@ import {
 import { BallMesh } from "../view/ballmesh"
 import { Pocket } from "./physics/pocket"
 import { PhysicsContext, POOL_PHYSICS, g, tableRestitution } from "./physics/constants"
+import { airborneThresholdFactor } from "./physics/constants"
 
 export enum State {
   Stationary = "Stationary",
@@ -77,11 +78,13 @@ export class Ball {
   private updateVelocity(t: number) {
     if (this.inMotion()) {
       // Airborne detection threshold - calibrated for elevated shots
-      const tableThreshold = this.physicsContext.R * 0.08
+      const tableThreshold = this.physicsContext.R * airborneThresholdFactor
       const isAirborne = this.pos.z > tableThreshold
 
       // Only apply table friction (rolling/sliding) when on table surface
       if (!isAirborne) {
+        if (this.pos.z > 0) this.pos.z = 0           // zeminde tut
+        if (this.vel.z > 0) this.vel.z = 0           // yukarı kaçışı engelle
         if (this.isRolling()) {
           this.state = State.Rolling
           forceRoll(this.vel, this.rvel, this.physicsContext)
@@ -122,7 +125,9 @@ export class Ball {
             // Significant impact - bounce
             this.vel.z = -this.vel.z * restitution
             // Lift ball above threshold to ensure it's recognized as airborne
-            this.pos.z = tableThreshold * 2.0
+            if (this.pos.z < tableThreshold) {
+              this.pos.z = tableThreshold   // 2.0x değil; eşik kadar yeterli
+            }
 
             // Table contact also dampens horizontal velocity and spin (friction)
             const tableFriction = 0.90 // Horizontal velocity retention on bounce
@@ -173,7 +178,7 @@ export class Ball {
       this.vel.lengthSq() !== 0 &&
       this.rvel.lengthSq() !== 0 &&
       surfaceVelocityFull(this.vel, this.rvel, this.physicsContext).length() <
-        transitionThreshold
+      transitionThreshold
     )
   }
 

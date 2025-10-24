@@ -39,7 +39,11 @@ export const sinθ = 2 / 5
 // Fixed angle of cushion contact point above ball center
 export const cosθ = Math.sqrt(21) / 5
 
-// src/model/physics/constants.ts
+export let airborneThresholdFactor = 0.06
+
+export function setAirborneThresholdFactor(val: number) {
+  airborneThresholdFactor = val
+}
 
 export const CAROM_TABLE_LENGTH = 2.84;     // Oynanabilir alan (banttan banta) uzunluk
 export const CAROM_TABLE_WIDTH = 1.42;     // Oynanabilir alan (banttan banta) genişlik

@@ -20,6 +20,7 @@ import {
   Vector3,
 } from "three"
 import { R } from "../model/physics/constants"
+import { applyShotKinematics } from "../model/physics/shot"
 
 export class Cue {
   mesh: Mesh
@@ -94,6 +95,7 @@ export class Cue {
   }
 
   hit(ball: Ball) {
+    
     const aim = this.aim
     this.t = 0
     ball.state = State.Sliding
@@ -109,6 +111,7 @@ export class Cue {
 
     // Use 3D hit point directly - pure physics, no coordinate transformations
     const hitPoint3D = this.hitPointMesh.position.clone()
+    
     const hitPointRelative = hitPoint3D.clone().sub(ball.pos)
 
     // Debug logging - coordinates from physics engine

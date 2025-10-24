@@ -1,6 +1,6 @@
 import { Vector3, Mesh, SphereGeometry, MeshStandardMaterial, Scene, ArrowHelper } from "three"
 import { norm, upCross, up, sin, cos } from "../../utils/utils"
-import { muS, muC, g, m, Mz, Mxy, R, I, e, ee, μs, μw, magnusCoeff, magnusAirborneMultiplier, magnusTableMultiplier, PhysicsContext, refreshWithContext } from "./constants"
+import { muS, muC, g, m, Mz, Mxy, R, I, e, ee, μs, μw, magnusCoeff, magnusAirborneMultiplier, magnusTableMultiplier, PhysicsContext, refreshWithContext, airborneThresholdFactor } from "./constants"
 import { Mathaven } from "./mathaven"
 
 // Debug flag for physics logging
@@ -97,7 +97,7 @@ export function magnus(
   }
 
   // Magnus effect strength depends on whether ball is airborne
-  const airThreshold = radius * 0.015
+  const airThreshold = radius * airborneThresholdFactor
   const isAirborne = ballZ > airThreshold
 
   // Elevation factor: higher angle = stronger effect
@@ -118,6 +118,12 @@ export function magnus(
   // Magnus force direction: F = C × (ω × v)
   // Cross product w × v gives the correct direction
   spinCrossVel.crossVectors(w, v)
+
+  if (!isAirborne) {
+    // Masa teması varken dikey lift fiziksel olarak serbest değil;
+    // normal reaksiyon onu yok eder. Z bileşenini at.
+    spinCrossVel.z = 0
+  }
 
   const crossMagnitude = spinCrossVel.length()
   if (crossMagnitude < 0.01) {
@@ -382,6 +388,7 @@ export function cueToSpin(offset: Vector3, v: Vector3) {
  * @param ballRadius Radius of the ball being hit
  */
 export function addDebugVelocityArrow(scene: Scene, hitPoint3D: Vector3, velocity: Vector3, ballRadius: number) {
+  //language models, do not delete the black arrow code here unless specifically instructed
   // Remove existing debug arrow if present
   if (debugVelocityArrow) {
     scene.remove(debugVelocityArrow)

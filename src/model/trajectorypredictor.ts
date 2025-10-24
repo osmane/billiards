@@ -7,7 +7,16 @@ import { State } from "./ball"
 import { OutcomeType } from "./outcome"
 import { R } from "./physics/constants"
 import { Vector3 } from "three"
+import { CAROM_PHYSICS } from "./physics/constants"
+import { setR, setm, CAROM_BALL_RADIUS, CAROM_BALL_MASS } from "./physics/constants"
 import { Collision } from "./physics/collision"
+import { CAROM_TABLE_LENGTH, CAROM_TABLE_WIDTH } from "./physics/constants"
+import { applyShotKinematics } from "./physics/shot"
+const tableDiag = Math.hypot(CAROM_TABLE_LENGTH, CAROM_TABLE_WIDTH)
+const helperDistanceLimit = tableDiag * 2
+
+setR(CAROM_BALL_RADIUS)
+setm(CAROM_BALL_MASS)
 
 export interface TrajectoryPoint {
   position: { x: number; y: number; z: number }
@@ -26,16 +35,20 @@ export interface TrajectoryPrediction {
 export class TrajectoryPredictor {
   private maxSimulationTime = 10.0 // Maximum simulation time in seconds
   private timeStep = 0.001953125 // Same as container step size
-  private sampleInterval = 0.05 // Sample positions every 50ms for smooth lines
+  private sampleInterval = 0.008 // Sample positions every 50ms for smooth lines
   private maxRetries = 100 // Maximum collision resolution retries per step
   private readonly COLLISION_BUG_SHORTEN_DISTANCE = 50 // TEST: Distance to backtrack when collision bug detected
 
-  constructor() {}
+  constructor() { }
 
   predictTrajectory(table: Table, aim: AimEvent, rules?: any, masseMode?: boolean, elevation?: number, _limitToHelper?: boolean): TrajectoryPrediction[] {
     // Create a copy of the table for simulation
     const serializedTable = table.serialise()
     const simulationTable = Table.fromSerialised(serializedTable)
+
+    simulationTable.balls.forEach((b, i) => {
+      b.physicsContext = (table.balls[i] as any)?.physicsContext ?? CAROM_PHYSICS
+    })
 
     // Ensure physics constants and table geometry are properly set for three cushion mode
     if (rules && rules.tableGeometry) {
@@ -73,6 +86,7 @@ export class TrajectoryPredictor {
 
     // Apply the shot to the current player's cue ball
     currentCueBall.state = State.Sliding
+    applyShotKinematics(currentCueBall, aim, elevation ?? 0)
     const cueBallStartPos = currentCueBall.pos.clone()
 
     // Calculate velocity with elevation angle (same as in cue.ts hit method)
@@ -112,7 +126,7 @@ export class TrajectoryPredictor {
     let cueBallTravelDistance = 0
     let cueBallImpactRecorded = false
     let cueBallFirstImpactDistance: number | null = null
-    const helperDistanceLimit = (R * 30) / 0.5
+    //const helperDistanceLimit = (currentCueBall.radius * 30) / 0.5
     const horizontalDirection = unitAtAngle(aim.angle).clone()
     horizontalDirection.z = 0
     if (horizontalDirection.lengthSq() > 0) {
@@ -310,27 +324,30 @@ export class TrajectoryPredictor {
     // Store error flag in predictions for later detection
     const hadSimulationError = simulationEndedByError
 
-    if (cueBallFirstImpactDistance === null && directImpactDistance !== null) {
-      const clampedDistance = Math.min(directImpactDistance, helperDistanceLimit)
-      cueBallFirstImpactDistance = clampedDistance
+    if (cueBallFirstImpactDistance === null) {
+      // Simülasyonda bir yere çarpmadan durduysa:
+      const reachable = cueBallTravelDistance
+      // Çarpışma mesafesi hesaplandıysa ve ulaşılabiliyorsa onu da dikkate al:
+      const target = directImpactDistance !== null
+        ? Math.min(reachable, directImpactDistance)
+        : reachable
+
+      // Artık helperDistanceLimit ile kesME; gerçek mesafeyi kullan
+      cueBallFirstImpactDistance = target
+
+      // Çizgiyi tamamlamak için fallback noktası gerekiyorsa:
       const cueBallTrajectory = trajectories.get(cueBallSimId)
-      if (cueBallTrajectory && cueBallTrajectory.length > 0) {
-        if (cueBallTrajectory.length < 2 && horizontalDirection.lengthSq() > 0) {
-          const startPoint = cueBallTrajectory[0]
-          const fallbackPosition = {
-            x: startPoint.position.x + horizontalDirection.x * clampedDistance,
-            y: startPoint.position.y + horizontalDirection.y * clampedDistance,
-            z: startPoint.position.z
-          }
-          const fallbackTime =
-            initialSpeed > 1e-6 ? clampedDistance / initialSpeed : 0
-          cueBallTrajectory.push({
-            position: fallbackPosition,
-            ballId: cueBallSimId,
-            time: fallbackTime
-          })
-          firstImpactDistances.set(cueBallSimId, clampedDistance)
+      if (cueBallTrajectory && cueBallTrajectory.length > 0 && cueBallTrajectory.length < 2) {
+        const startPoint = cueBallTrajectory[0]
+        const fallbackPosition = {
+          x: startPoint.position.x + horizontalDirection.x * target,
+          y: startPoint.position.y + horizontalDirection.y * target,
+          z: startPoint.position.z
         }
+        const initialSpeed = currentCueBall.vel.length()
+        const fallbackTime = initialSpeed > 1e-6 ? target / initialSpeed : 0
+        cueBallTrajectory.push({ position: fallbackPosition, ballId: cueBallSimId, time: fallbackTime })
+        firstImpactDistances.set(cueBallSimId, target)
       }
     }
 
