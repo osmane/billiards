@@ -25,6 +25,7 @@ import { TrajectoryPredictor } from "../model/trajectorypredictor"
 import { TrajectoryRenderer } from "../view/trajectoryrenderer"
 import { Vector3 } from "three"
 import { R, CAROM_PHYSICS } from "../model/physics/constants"
+import { toggleDebugPhysics, removeDebugVelocityArrow } from "../model/physics/physics"
 import { CaromClothManager } from "../view/caromcloth"
 import { ClothPanel } from "../view/clothpanel"
 import { TableMesh } from "../view/tablemesh"
@@ -183,6 +184,15 @@ export class Container {
     this.table.showTraces(enabled)
     this.table.showVirtualCue(enabled)
     this.view.setDebugMode(enabled)
+
+    // Toggle debug physics mode (controls black arrow visibility)
+    const debugPhysicsState = toggleDebugPhysics()
+    console.log(`🔧 Debug Physics Mode: ${debugPhysicsState ? 'ENABLED' : 'DISABLED'} - Black arrow ${debugPhysicsState ? 'will appear' : 'hidden'} on next shot`)
+
+    // If disabling debug mode, remove any existing debug arrow
+    if (!enabled) {
+      removeDebugVelocityArrow(this.view.scene)
+    }
   }
 
   isDebugModeEnabled() {

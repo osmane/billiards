@@ -3,8 +3,20 @@ import { norm, upCross, up, sin, cos } from "../../utils/utils"
 import { muS, muC, g, m, Mz, Mxy, R, I, e, ee, μs, μw, magnusCoeff, magnusAirborneMultiplier, magnusTableMultiplier, PhysicsContext, refreshWithContext, airborneThresholdFactor } from "./constants"
 import { Mathaven } from "./mathaven"
 
-// Debug flag for physics logging
-export const DEBUG_PHYSICS = true
+// Debug flag for physics logging and debug arrow visibility
+// Can be toggled at runtime by pressing 'D' key
+export let DEBUG_PHYSICS = false
+
+// Toggle debug physics mode
+export function toggleDebugPhysics(): boolean {
+  DEBUG_PHYSICS = !DEBUG_PHYSICS
+  return DEBUG_PHYSICS
+}
+
+// Set debug physics mode
+export function setDebugPhysics(enabled: boolean): void {
+  DEBUG_PHYSICS = enabled
+}
 
 // Debug velocity arrow (created once, reused)
 let debugVelocityArrow: ArrowHelper | null = null
