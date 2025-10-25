@@ -123,10 +123,16 @@ export class CueMesh {
     )
     geometry.rotateX(Math.PI / 2)
 
+    // Translate geometry so the cap's tip (north pole) is at (0,0,0)
+    // This ensures the visual center of the mesh aligns with mesh.position
+    // matching the black arrow tip position
+    geometry.translate(0, 0, -R * 1.05)
+
     const material = new ShaderMaterial({
       uniforms: {
         hitColor: { value: new Vector3(72/255, 72/255, 206/255) },
         spotSize: { value: 0.3 },
+        sphereCenter: { value: new Vector3(0, 0, -R * 1.05) },
       },
       vertexShader: `
         varying vec3 vPosition;
@@ -141,11 +147,13 @@ export class CueMesh {
       fragmentShader: `
         uniform vec3 hitColor;
         uniform float spotSize;
+        uniform vec3 sphereCenter;
         varying vec3 vPosition;
         varying vec3 vNormal;
 
         void main() {
-          vec3 pos = normalize(vPosition);
+          // Calculate position relative to sphere center (after geometry.translate)
+          vec3 pos = normalize(vPosition - sphereCenter);
           vec3 northPole = vec3(0.0, 0.0, 1.0);
           float dotProduct = dot(pos, northPole);
           float angularDist = acos(clamp(dotProduct, -1.0, 1.0)) / 3.14159;
