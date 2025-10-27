@@ -1,0 +1,9 @@
+<!-- /assets/spinner.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <!-- soluk arka halka -->
+    <circle cx="12" cy="12" r="9" opacity=".2"></circle>
+    <!-- ön tarafta kısa yay: dönerken "spinner" görünümü verir -->
+    <path d="M12 3 A9 9 0 0 1 21 12"></path>
+  </g>
+</svg>

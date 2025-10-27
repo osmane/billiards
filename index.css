@@ -81,6 +81,11 @@ canvas {
   align-items: center;
 }
 
+.panel.is-disabled {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
 .ballContainer {
   height: 70%;
   margin: auto;
@@ -289,6 +294,55 @@ input[type="range"].powerSlider {
   border-bottom: none;
 }
 
+/* NPC side panel shares look with main menu but is independent */
+.npcPanel {
+  position: fixed;
+  display: none;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 6px 0;
+  border-radius: 5px;
+  background-color: rgba(47, 79, 79, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  min-width: 320px;
+  width: 360px;
+  max-height: 85vh;
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  font-size: large;
+}
+.npcPanel::-webkit-scrollbar { display: none; }
+.npcPanel.is-visible { display: flex; }
+.npcPanel input[type="range"] {
+  /* Allow sliders to shrink and fill available space without overflowing */
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.npcPanel .menuPanel__link,
+.npcPanel .menuPanel__action {
+  display: block;
+  width: 100%;
+  padding: 1px 12px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  color: #f4f4f4;
+  text-align: left;
+  text-decoration: none;
+}
+.npcPanel .menuPanel__link:hover,
+.npcPanel .menuPanel__action:hover,
+.npcPanel .menuPanel__link:focus,
+.npcPanel .menuPanel__action:focus {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+  outline: none;
+}
+
 .outerMenu {
   display: flex;
   flex: 1 1 auto;
@@ -297,8 +351,8 @@ input[type="range"].powerSlider {
   align-content: flex-start;
   justify-content: flex-start;
   align-items: center;
-  gap: 6px;
-  padding: 4px 0;
+  gap: 4px;
+  padding: 2px 0;
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%;
@@ -336,15 +390,16 @@ input[type="range"].powerSlider {
 .outerMenu .menuButton,
 .outerMenu .targetButton {
   flex: 0 0 auto;
-  width: 40px;
-  max-width: 40px;
-  height: 27.333px;
-  max-height: 27.333px;
+  width: 32px;
+  max-width: 32px;
+  height: 32px;
+  max-height: 32px;
   margin-right: 0;
   aspect-ratio: auto;
-  padding: 2px;
-  font-size: 0.95rem;
+  padding: 0;
+  font-size: 0.9rem;
   line-height: 1;
+  position: relative; /* for spinner overlay */
 }
 
 .outerMenu .menuButton {
@@ -356,6 +411,49 @@ input[type="range"].powerSlider {
 .outerMenu .targetButton {
   align-items: center;
   justify-content: center;
+}
+
+/* spinner overlay for busy state on npc button and score buttons */
+.menuButton.is-busy::after,
+.targetButton.is-busy::after,
+.scoreButton.is-busy::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  margin-left: -16px;
+  margin-top: -16px;
+  background-image: url("images/spinner.svg");
+  background-size: 32px 32px;
+  background-repeat: no-repeat;
+  /* 50% transparent for softer look */
+  opacity: 0.5;
+  border-radius: 8px; /* yumuşak kenar */
+  z-index: 2;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+  animation: busy-spin 0.9s linear infinite;
+}
+
+@keyframes busy-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ensure score buttons can host overlay */
+.scoreButton {
+  position: relative;
+}
+
+/* Place target placeholder (and target button) to far right in outerMenu */
+.outerMenu .targetButtonPlaceholder {
+  margin-left: auto;
+  order: 100;
+}
+.outerMenu .targetButton {
+  order: 100;
 }
 
 .menuButton.mainMenuButton {
