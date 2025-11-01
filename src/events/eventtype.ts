@@ -1,0 +1,14 @@
+export enum EventType {
+  BEGIN = "BEGIN",
+  BREAK = "BREAK",
+  WATCHAIM = "WATCHAIM",
+  AIM = "AIM",
+  HIT = "HIT",
+  STATIONARY = "STATIONARY",
+  CHAT = "CHAT",
+  ABORT = "ABORT",
+  PLACEBALL = "PLACEBALL",
+  REJOIN = "REJOIN",
+  RERACK = "RERACK",
+  STARTAIM = "STARTAIM",
+}

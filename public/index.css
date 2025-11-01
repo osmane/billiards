@@ -1,0 +1,1089 @@
+body,
+html {
+  margin: 1px;
+  background-color: #000;
+  color: #444;
+  width: 100%;
+  height: 100%;
+  border: 0px solid black;
+  overflow: hidden;
+}
+
+::selection {
+  color: white;
+}
+
+div {
+  color: antiquewhite;
+  touch-action: none;
+}
+
+h1,
+p {
+  margin: 0 0 1em;
+}
+
+.flex-container {
+  display: flex;
+  align-items: stretch;
+  background-color: #2e9097;
+}
+
+.flex-container > div {
+  background-color: #1c802d;
+  border: 1px;
+  color: grey;
+}
+
+#snookerScore {
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  font-size: xx-large;
+  font-style: italic;
+  color: yellow;
+  text-align: center;
+  filter: drop-shadow(0.08em 0.08em black);
+}
+
+#snookerScoreOverlay {
+  position: absolute;
+  bottom: 1em;
+  right: 3em;
+}
+
+.view3d {
+  width: 100%;
+  height: 83%;
+  cursor: none;
+  caret-color: transparent;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  position: relative;
+}
+.view3d:focus {
+  outline: none;
+}
+
+canvas {
+  border-radius: 5px;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.panel {
+  width: 100%;
+  height: 17%;
+  display: flex;
+  padding: 0px;
+  background: linear-gradient(rgb(0, 64, 94), #000214);
+  border-radius: 5px;
+  align-items: center;
+}
+
+.panel.is-disabled {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.ballContainer {
+  height: 70%;
+  margin: auto;
+  margin-left: 10px;
+  margin-right: 10px;
+  position: relative;
+  overflow: visible;
+  border-radius: 5px;
+  aspect-ratio: 1;
+  padding: 0 5px;
+  z-index: 1;
+}
+
+.cueBall {
+  height: 100%;
+  margin: auto;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  z-index: 5;
+  overflow: hidden;
+}
+
+#cueBallCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.cueTip {
+  height: 20%;
+  width: 20%;
+  background-color: rgb(72, 72, 158);
+  border-radius: 50%;
+  top: 40%;
+  left: 40%;
+  z-index: 10;
+  position: relative;
+  pointer-events: none;
+}
+
+.elevationSlider {
+  width: 20px;
+  height: 70%;
+  margin: auto;
+  margin-right: 5px;
+  margin-left: 5px;
+  position: relative;
+  z-index: 10;
+}
+
+input[type="range"].elevationSlider {
+  appearance: slider-vertical;
+}
+
+.powerSlider {
+  width: 20px;
+  height: 70%;
+  margin: auto;
+  margin-right: 10px;
+  position: relative;
+  z-index: 10;
+  accent-color: rgb(255, 0, 0);
+}
+
+input[type="range"].powerSlider {
+  appearance: slider-vertical;
+}
+
+.hitButton,
+.menuButton.mainMenuButton,
+.menuPanel {
+  font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+.hitButton {
+  min-height: 45px;
+  width: 100%;
+  margin: 0;
+  border-radius: 10px;
+  border-width: 4px;
+  font-size: large;
+  font-weight: 600;
+  min-width: 80px;
+  max-width: 120px;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  position: relative;
+  z-index: 10;
+  background-color: rgb(255, 0, 0);
+  border-color: rgb(200, 0, 0);
+  color: white;
+}
+
+.cueControls {
+  display: grid;
+  grid-template-rows: 27.333px minmax(45px, 1fr);
+  align-items: stretch;
+  justify-items: start;
+  gap: 6px;
+  height: 70%;
+  width: 80px;
+  margin-left: 5px;
+  margin-right: 0;
+  max-width: 80px;
+  flex: 0 0 auto;
+}
+
+.cueControls .menuButton.mainMenuButton,
+.cueControls .hitButton {
+  justify-self: start;
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+}
+
+.menuToggleContainer {
+  position: relative;
+  width: 80px;
+  max-width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: 100%;
+}
+
+.menuPanel {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  display: none;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  min-width: 100%;
+  padding: 6px 0;
+  border-radius: 5px;
+  background-color: rgba(47, 79, 79, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 200;
+  max-height: 240px;
+  overflow-y: auto;
+  font-family: inherit;
+  font-size: large;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+.menuPanel {
+  overflow: auto;                
+  -ms-overflow-style: none;      
+  scrollbar-width: none;         
+}
+
+.menuPanel::-webkit-scrollbar {
+  display: none;                 
+}
+
+.menuPanel.is-visible {
+  display: flex;
+}
+
+.menuPanel__link,
+.menuPanel__action {
+  display: block;
+  width: 100%;
+  padding: 1px 12px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  color: #f4f4f4;
+  font-size: inherit;
+  /* font-weight: 600;*/
+  text-align: left;
+  text-decoration: none;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+.menuPanel__link:hover,
+.menuPanel__action:hover,
+.menuPanel__link:focus,
+.menuPanel__action:focus {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+  outline: none;
+}
+
+.menuPanel__action {
+  cursor: pointer;
+  text-align: left;
+}
+
+.menuPanel__action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.menuPanel > *:last-child {
+  border-bottom: none;
+}
+
+/* NPC side panel shares look with main menu but is independent */
+.npcPanel {
+  position: fixed;
+  display: none;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 6px 0;
+  border-radius: 5px;
+  background-color: rgba(47, 79, 79, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  min-width: 320px;
+  width: 360px;
+  max-height: 85vh;
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  font-size: large;
+}
+.npcPanel::-webkit-scrollbar { display: none; }
+.npcPanel.is-visible { display: flex; }
+.npcPanel input[type="range"] {
+  /* Allow sliders to shrink and fill available space without overflowing */
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.npcPanel .menuPanel__link,
+.npcPanel .menuPanel__action {
+  display: block;
+  width: 100%;
+  padding: 1px 12px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  color: #f4f4f4;
+  text-align: left;
+  text-decoration: none;
+}
+.npcPanel .menuPanel__link:hover,
+.npcPanel .menuPanel__action:hover,
+.npcPanel .menuPanel__link:focus,
+.npcPanel .menuPanel__action:focus {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+  outline: none;
+}
+
+.outerMenu {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  min-height: 0;
+  z-index: 10;
+}
+
+.menuButton {
+  height: 50%;
+  width: 12.5%;
+  margin-right: 4px;
+  aspect-ratio: 0.4;
+  border-radius: 4px;
+  border-width: 2px;
+  padding: 0;
+  max-width: 40px;
+  user-select: none;
+}
+
+.targetButton {
+  height: 50%;
+  width: 12.5%;
+  margin-right: 4px;
+  aspect-ratio: 0.4;
+  border-radius: 4px;
+  border-width: 2px;
+  padding: 0;
+  max-width: 40px;
+  user-select: none;
+  font-size: 16px;
+  display: none;
+  color: black;
+}
+
+.outerMenu .menuButton,
+.outerMenu .targetButton {
+  flex: 0 0 auto;
+  width: 32px;
+  max-width: 32px;
+  height: 32px;
+  max-height: 32px;
+  margin-right: 0;
+  aspect-ratio: auto;
+  padding: 0;
+  font-size: 0.9rem;
+  line-height: 1;
+  position: relative; /* for spinner overlay */
+}
+
+.outerMenu .menuButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.outerMenu .targetButton {
+  align-items: center;
+  justify-content: center;
+}
+
+/* spinner overlay for busy state on npc button and score buttons */
+.menuButton.is-busy::after,
+.targetButton.is-busy::after,
+.scoreButton.is-busy::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  margin-left: -16px;
+  margin-top: -16px;
+  background-image: url("images/spinner.svg");
+  background-size: 32px 32px;
+  background-repeat: no-repeat;
+  /* 50% transparent for softer look */
+  opacity: 0.5;
+  border-radius: 8px; /* yumuşak kenar */
+  z-index: 2;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+  animation: busy-spin 0.9s linear infinite;
+}
+
+@keyframes busy-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ensure score buttons can host overlay */
+.scoreButton {
+  position: relative;
+}
+
+/* Place target placeholder (and target button) to far right in outerMenu */
+.outerMenu .targetButtonPlaceholder {
+  margin-left: auto;
+  order: 100;
+}
+.outerMenu .targetButton {
+  order: 100;
+}
+
+.menuButton.mainMenuButton {
+  height: 100%;
+  min-height: 27.333px;
+  max-height: 27.333px;
+  width: 100%;
+  /*max-width: 120px;*/
+  min-width: 80px;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: large;
+  font-weight: 600;
+  line-height: 1.1;
+  border-radius: 10px;
+  border-width: 4px;
+  /*border-style: solid;
+  border-color: rgb(200, 0, 0);
+  background-color: rgb(255, 0, 0);
+  color: white;*/
+  font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+.toggleButton {
+  height: 100%;
+  width: 20%;
+  margin-right: 4px;
+  aspect-ratio: 0.4;
+  border-radius: 10px;
+  border-width: 4px;
+  padding: 0;
+  max-width: 80px;
+}
+
+.toggleButton:active,
+.menuButton:active,
+.hitButton:active,
+.targetButton:active {
+  transform: scale(0.97);
+}
+
+/* Toggle state for targetButton */
+.targetButton.is-active {
+  background-color: #4a90e2;
+  border-color: #357abd;
+  color: white;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Toggle state for precisionButton */
+.menuButton.is-active {
+  background-color: #4a90e2;
+  border-color: #357abd;
+  color: white;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.targetButtonPlaceholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 27.333px;
+  width: 40px;
+  max-width: 40px;
+  margin-right: 0;
+  aspect-ratio: auto;
+  border-radius: 4px;
+  border: 2px dashed rgba(255, 255, 255, 0.08);
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  flex: 0 0 auto;
+}
+
+.targetButtonPlaceholder.is-active {
+  border-color: rgba(74, 144, 226, 0.7);
+  background-color: rgba(74, 144, 226, 0.08);
+}
+
+.chatarea {
+  height: 70%;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  gap: 6px;
+  margin-right: 5px;
+  min-height: 0;
+}
+
+.chatoutput {
+  height: 15%;
+  min-height: 15%;
+  max-height: 15%;
+  width: 0;
+  min-width: 100%;
+  flex: 0 0 auto;
+  overflow-y: auto;
+  background-color: rgba(47, 79, 79);
+  padding: 0;
+  margin: 0;
+  border-radius: 5px;
+  font-size: smaller;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px;
+  z-index: 10;
+}
+
+.chatoutput::-webkit-scrollbar {
+  display: none;
+}
+
+a.pill {
+  outline: none;
+  background: linear-gradient(#888686, #b0b0b3);
+  border-radius: 4px;
+  text-decoration: none;
+  border-color: white;
+  border-width: 1px;
+  margin: 1px;
+  padding: 1px;
+  font-size: smaller;
+  border-top-style: groove;
+  display: inline-block;
+}
+
+a {
+  color: lightblue;
+}
+.constants {
+  background: linear-gradient(#495155, #0b0b0e);
+  border-radius: 5px;
+  position: fixed;
+  right: 0px;
+  top: 0px;
+  visibility: hidden;
+  padding: 10px;
+  border: double;
+  max-width: 400px;
+  min-width: 300px;
+  max-height: 90vh;
+  overflow-y: auto;
+  font-size: small;
+  z-index: 1000;
+  color: #fff;
+}
+
+.constants p {
+  color: #4CAF50;
+  margin: 5px 0;
+  font-weight: bold;
+}
+
+.nw {
+  display: flex;
+  align-items: center;
+  margin: 5px 0;
+  gap: 10px;
+}
+
+.nw input[type="range"] {
+  flex: 1;
+  min-width: 120px;
+}
+
+label {
+  display: inline-block;
+  min-width: 120px;
+  color: #ccc;
+  font-size: 13px;
+}
+
+.constants button {
+  margin-top: 10px;
+  padding: 8px 16px;
+  width: 100%;
+}
+
+
+
+
+.chatoutput .menuButton {
+  height: auto;
+  width: auto;
+  max-width: none;
+  aspect-ratio: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  margin-bottom: 4px;
+  padding: 0;
+}
+
+
+.scoreButtonsContainer {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  z-index: 1000;
+  padding: 8px;
+  opacity: 0.7;
+}
+
+.scoreButton {
+  font-weight: 600;
+  position: relative;
+  z-index: 100;
+}
+
+.scoreHighlight {
+  position: fixed;
+  display: none;
+  background-color: rgba(47, 79, 79, 0.486);
+  border: 2px solid #0b0b0e;
+  pointer-events: auto;
+  z-index: 1000;
+  min-height: 40px;
+  max-height: 200px;
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  opacity: 0.95;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  padding: 2px;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.scoreHighlight::-webkit-scrollbar {
+  display: none; /* WebKit */
+}
+
+.score-buttons-container {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  width: 100%;
+}
+
+.score-buttons-container a.pill {
+  outline: none;
+  background: linear-gradient(#888686, #b0b0b3);
+  border-radius: 4px;
+  text-decoration: none;
+  border-color: white;
+  border-width: 1px;
+  margin: 2px;
+  padding: 1px;
+  border-top-style: groove;
+  display: block;
+  width: calc(100% - 6px);
+  text-align: center;
+  color: black !important;
+}
+
+.scoreButton--white {
+  color: #ffffff;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(#888686, #b0b0b3) !important;
+}
+
+.scoreButton--yellow {
+  color: #f7d23e;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(#888686, #b0b0b3) !important;
+}
+.menuButton--large {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  max-width: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  line-height: 1;
+  aspect-ratio: auto;
+  padding: 0;
+}
+
+.chatoutput .menuButton--large {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* Precision Panel */
+.precisionPanel {
+	position: fixed;
+	left: 81px;
+	bottom: 17%;
+	display: none;
+	flex-direction: column;
+	align-items: center;
+	/* background: linear-gradient(rgb(0, 64, 94), #000214); */
+	/* background-color: rgba(0, 64, 94, 0.4); */
+	backdrop-filter: blur(2px);
+	opacity: 0.6;
+	border-radius: 0 8px 8px 0;
+	padding: 30px;
+	gap: 20px;
+	z-index: 500;
+	/* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); */
+	/* max-height = viewport - scoreButtonsContainer (48px) - gap (2px) - panel (17vh) */
+	max-height: calc(83vh - 50px);
+	overflow: visible;
+}
+
+.precisionPanel.is-visible {
+  display: flex;
+}
+
+.precisionBallContainer {
+  /* Use explicit pixel dimensions to ensure proper canvas rendering */
+  width: 336px;
+  height: 336px;
+  max-width: 336px;
+  max-height: 336px;
+  margin: 0;
+  position: relative;
+  overflow: visible;
+  border-radius: 5px;
+  aspect-ratio: 1;
+  z-index: 1;
+}
+
+.precisionCueBall {
+  height: 100%;
+  margin: auto;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  z-index: 5;
+  overflow: hidden;
+}
+
+#precisionCueBallCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.precisionSliderRow {
+  display: flex;
+  flex-direction: row;
+  gap: 40px;
+  align-items: center;
+  justify-content: center;
+}
+
+.precisionElevationSlider {
+  width: 40px;
+  height: 280px;
+  max-height: 280px;
+  margin: 0;
+  position: relative;
+  z-index: 10;
+}
+
+input[type="range"].precisionElevationSlider {
+  appearance: slider-vertical;
+}
+
+.precisionPowerSlider {
+  width: 40px;
+  height: 280px;
+  max-height: 280px;
+  margin: 0;
+  position: relative;
+  z-index: 10;
+  accent-color: rgb(255, 0, 0);
+}
+
+input[type="range"].precisionPowerSlider {
+  appearance: slider-vertical;
+}
+
+/* Mobile responsive adjustments for precisionPanel */
+@media screen and (max-height: 700px) {
+  .precisionPanel {
+    /* Calculate available height: 83vh (view3d) - scoreButtons (48px) - gap (2px) */
+    max-height: calc(83vh - 50px);
+    padding: 20px;
+    gap: 15px;
+  }
+
+  .precisionBallContainer {
+    /* Scale down proportionally when height is constrained */
+    height: auto;
+    width: auto;
+    max-width: min(280px, calc(83vh - 50px - 40px - 280px - 35px));
+    max-height: min(280px, calc(83vh - 50px - 40px - 280px - 35px));
+  }
+
+  .precisionElevationSlider,
+  .precisionPowerSlider {
+    height: auto;
+    max-height: min(240px, calc(83vh - 50px - 40px - 35px - 150px));
+  }
+
+  .precisionSliderRow {
+    gap: 30px;
+  }
+}
+
+@media screen and (max-height: 600px) {
+  .precisionPanel {
+    max-height: calc(83vh - 50px);
+    padding: 15px;
+    gap: 10px;
+  }
+
+  .precisionBallContainer {
+    max-width: min(200px, calc(83vh - 50px - 30px - 200px - 25px));
+    max-height: min(200px, calc(83vh - 50px - 30px - 200px - 25px));
+  }
+
+  .precisionElevationSlider,
+  .precisionPowerSlider {
+    max-height: min(180px, calc(83vh - 50px - 30px - 25px - 120px));
+  }
+
+  .precisionSliderRow {
+    gap: 20px;
+  }
+}
+
+/* Portrait mode (narrow screens) - switch to horizontal layout within panel */
+/* Only applies when width is too narrow for side-by-side layout outside panel */
+@media screen and (max-height: 500px) and (max-width: 500px) {
+  .precisionPanel {
+    flex-direction: row;
+    max-height: calc(83vh - 50px);
+    padding: 10px 15px;
+    gap: 15px;
+  }
+
+  .precisionBallContainer {
+    /* Place ball container to the right of sliders inside the panel */
+    position: relative !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    height: auto;
+    width: auto;
+    max-width: min(150px, calc(83vh - 50px - 20px));
+    max-height: min(150px, calc(83vh - 50px - 20px));
+    order: 2;
+  }
+
+  .precisionSliderRow {
+    gap: 15px;
+    order: 1;
+    height: 100%;
+  }
+
+  .precisionElevationSlider,
+  .precisionPowerSlider {
+    max-height: calc(83vh - 50px - 20px);
+  }
+}
+
+/* Very small portrait screens - more aggressive downscaling */
+@media screen and (max-height: 420px) and (max-width: 500px) {
+  .precisionPanel {
+    flex-direction: row;
+    max-height: calc(83vh - 50px);
+    padding: 8px 12px;
+    gap: 12px;
+  }
+
+  .precisionBallContainer {
+    position: relative !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    height: auto;
+    width: auto;
+    max-width: min(120px, calc(83vh - 50px - 16px));
+    max-height: min(120px, calc(83vh - 50px - 16px));
+    order: 2;
+  }
+
+  .precisionSliderRow {
+    gap: 12px;
+    order: 1;
+    height: 100%;
+  }
+
+  .precisionElevationSlider,
+  .precisionPowerSlider {
+    width: 30px;
+    max-height: calc(83vh - 50px - 16px);
+  }
+}
+
+/* When height < 778px AND width >= 450px: Move precisionBallContainer to the right of precisionSliderRow */
+/* This prevents overlay between ball container and sliders on wide enough screens */
+@media screen and (max-height: 778px) and (min-width: 450px) {
+  /* Override the flex layout */
+  .precisionPanel.is-visible {
+    /* Panel only contains sliders in this mode */
+    padding: 20px;
+    gap: 15px;
+  }
+
+  .precisionBallContainer {
+    /* Move ball container completely outside the panel, to the right of sliders */
+    position: fixed !important;
+    /* Position to the right of precisionPanel + padding + sliders */
+    /* left = panel left (81px) + panel padding (20px) + sliders width (~120px) + gap (20px) */
+    left: calc(81px + 20px + 120px + 20px) !important;
+    bottom: calc(17vh + 15px);
+    right: auto !important;
+    /* Calculate width: remaining viewport width */
+    width: min(200px, calc(100vw - 81px - 20px - 120px - 40px));
+    height: min(200px, calc(83vh - 50px));
+    max-width: min(200px, calc(100vw - 81px - 20px - 120px - 40px));
+    max-height: min(200px, calc(83vh - 50px));
+    margin: 0;
+    z-index: 501;
+  }
+
+  .precisionSliderRow {
+    /* Keep sliders in the left panel */
+    position: relative;
+    gap: 30px;
+  }
+
+  .precisionElevationSlider,
+  .precisionPowerSlider {
+    max-height: calc(83vh - 50px - 40px - 30px);
+  }
+}
+
+/* Narrow portrait screens with height < 778px: Use vertical stacking */
+@media screen and (max-height: 778px) and (max-width: 449px) {
+  .precisionPanel.is-visible {
+    flex-direction: column;
+    padding: 15px;
+    gap: 10px;
+    max-height: calc(83vh - 50px);
+  }
+
+  .precisionBallContainer {
+    /* Keep ball container in panel, above sliders */
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: min(280px, calc(100vw - 81px - 40px));
+    height: min(280px, calc(100vw - 81px - 40px));
+    max-width: min(280px, calc(100vw - 81px - 40px));
+    max-height: min(280px, calc(100vw - 81px - 40px));
+    margin: 0 auto;
+    order: 1;
+  }
+
+  .precisionSliderRow {
+    position: relative;
+    gap: 25px;
+    order: 2;
+  }
+
+  .precisionElevationSlider,
+  .precisionPowerSlider {
+    max-height: min(200px, calc(83vh - 50px - 280px - 40px));
+  }
+}
+
+/* For wider screens with height < 778px, allow ball container to be bigger */
+@media screen and (max-height: 778px) and (min-width: 600px) {
+  .precisionBallContainer {
+    left: calc(81px + 20px + 120px + 20px) !important;
+    width: min(280px, calc(100vw - 81px - 20px - 120px - 40px)) !important;
+    height: min(280px, calc(83vh - 50px)) !important;
+    max-width: min(280px, calc(100vw - 81px - 20px - 120px - 40px)) !important;
+    max-height: min(280px, calc(83vh - 50px)) !important;
+  }
+}
+
+/* For very wide screens with height < 778px, allow full size */
+@media screen and (max-height: 778px) and (min-width: 900px) {
+  .precisionBallContainer {
+    left: calc(81px + 20px + 120px + 20px) !important;
+    width: min(336px, calc(100vw - 81px - 20px - 120px - 40px)) !important;
+    height: min(336px, calc(83vh - 50px)) !important;
+    max-width: min(336px, calc(100vw - 81px - 20px - 120px - 40px)) !important;
+    max-height: min(336px, calc(83vh - 50px)) !important;
+  }
+}
+
+/* Very small height screens with enough width - more aggressive downscaling */
+@media screen and (max-height: 500px) and (min-width: 450px) {
+  .precisionBallContainer {
+    left: calc(81px + 20px + 120px + 20px) !important;
+    width: min(150px, calc(100vw - 81px - 20px - 120px - 40px)) !important;
+    height: min(150px, calc(83vh - 50px)) !important;
+    max-width: min(150px, calc(100vw - 81px - 20px - 120px - 40px)) !important;
+    max-height: min(150px, calc(83vh - 50px)) !important;
+    bottom: calc(17vh + 10px);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
